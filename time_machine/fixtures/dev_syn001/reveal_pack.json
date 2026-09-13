@@ -14,5 +14,6 @@
       "ticker": "SYN001",
       "reveal_only": true
     }
-  ]
+  ],
+  "known_at_rule": "min(filed, published, exchange_timestamp)"
 }

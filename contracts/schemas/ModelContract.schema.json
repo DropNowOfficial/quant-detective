@@ -1,0 +1,89 @@
+{
+  "properties": {
+    "model_id": {
+      "title": "Model Id",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    },
+    "inputs": {
+      "title": "Inputs"
+    },
+    "units": {
+      "additionalProperties": true,
+      "title": "Units",
+      "type": "object"
+    },
+    "as_of": {
+      "title": "As Of",
+      "type": "string"
+    },
+    "equations": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "Equations"
+    },
+    "invariants": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Invariants",
+      "type": "array"
+    },
+    "allowed_domains": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Allowed Domains",
+      "type": "array"
+    },
+    "missing_data_policy": {
+      "default": "UNAVAILABLE",
+      "title": "Missing Data Policy",
+      "type": "string"
+    },
+    "failure_conditions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Failure Conditions",
+      "type": "array"
+    },
+    "validation_tests": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Validation Tests",
+      "type": "array"
+    },
+    "output_interpretation": {
+      "default": "stress",
+      "title": "Output Interpretation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "model_id",
+    "version",
+    "inputs",
+    "as_of",
+    "equations"
+  ],
+  "title": "ModelContract",
+  "type": "object"
+}

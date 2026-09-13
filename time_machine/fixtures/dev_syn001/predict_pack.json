@@ -22,8 +22,8 @@
       "metric": "ttm_eps",
       "value": 5.0,
       "reporting_period": "TTM_ended_2024-03-31",
-      "ticker": "SYN001",
-      "dps_status": "verified_non_payer"
+      "ticker": "SYN001"
     }
-  ]
+  ],
+  "known_at_rule": "min(filed, published, exchange_timestamp)"
 }

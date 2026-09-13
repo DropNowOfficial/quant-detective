@@ -1,0 +1,38 @@
+{
+  "properties": {
+    "lock_id": {
+      "title": "Lock Id",
+      "type": "string"
+    },
+    "domain_scores": {
+      "additionalProperties": true,
+      "title": "Domain Scores",
+      "type": "object"
+    },
+    "error_taxonomy": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Error Taxonomy",
+      "type": "array"
+    },
+    "note": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Note"
+    }
+  },
+  "required": [
+    "lock_id",
+    "domain_scores"
+  ],
+  "title": "Score",
+  "type": "object"
+}

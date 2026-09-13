@@ -1,0 +1,59 @@
+{
+  "properties": {
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "simulation_date": {
+      "title": "Simulation Date",
+      "type": "string"
+    },
+    "pack_id": {
+      "title": "Pack Id",
+      "type": "string"
+    },
+    "model_id": {
+      "title": "Model Id",
+      "type": "string"
+    },
+    "model_version": {
+      "title": "Model Version",
+      "type": "string"
+    },
+    "code_commit": {
+      "title": "Code Commit",
+      "type": "string"
+    },
+    "phase": {
+      "enum": [
+        "predict",
+        "locked",
+        "revealed",
+        "scored"
+      ],
+      "title": "Phase",
+      "type": "string"
+    },
+    "truth_seal_path": {
+      "title": "Truth Seal Path",
+      "type": "string"
+    },
+    "predict_pack_path": {
+      "title": "Predict Pack Path",
+      "type": "string"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "simulation_date",
+    "pack_id",
+    "model_id",
+    "model_version",
+    "code_commit",
+    "phase",
+    "truth_seal_path",
+    "predict_pack_path"
+  ],
+  "title": "ExperimentManifest",
+  "type": "object"
+}

@@ -1,6 +1,6 @@
 {
   "asof": "2026-09-13",
-  "note": "Pinned to GitHub API HEAD at bootstrap; not vendored into tree",
+  "note": "Reviewed upstream commits only \u2014 NOT installed runtime deps. Runtime is pyproject.toml + uv.lock only.",
   "upstream": {
     "TauricResearch/TradingAgents": {
       "git_commit": "be952b8eccb49720509af544c6675233bc1f10d0",
@@ -17,5 +17,6 @@
       "stance": "ADAPT provider/MCP \u2014 not imported yet",
       "url": "https://github.com/OpenBB-finance/OpenBB"
     }
-  }
+  },
+  "registry_name": "upstream_review_pins"
 }

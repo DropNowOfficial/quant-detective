@@ -1,15 +1,18 @@
 # Quant Detective — clean-clone bootstrap
-.PHONY: verify install
+.PHONY: verify sync tm-fixture clean-room-check
 
-VENV := .venv
-PY := $(VENV)/bin/python
-PIP := $(VENV)/bin/pip
+sync:
+	uv sync --frozen
 
-install: $(VENV)/bin/pytest
+verify: sync
+	uv run python scripts/validate_schemas.py
+	uv run python -m validation_kernel.kernel_v0
+	uv run pytest -q
+	uv run python -m time_machine.cli run-fixture
+	@echo VERIFY_OK
 
-$(VENV)/bin/pytest:
-	python3 -m venv $(VENV)
-	$(PIP) install -q pytest
+tm-fixture:
+	uv run python -m time_machine.cli run-fixture
 
-verify: install
-	bash scripts/verify.sh
+clean-room-check:
+	bash scripts/clean_room_verify.sh

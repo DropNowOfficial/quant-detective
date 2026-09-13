@@ -1,0 +1,160 @@
+{
+  "$defs": {
+    "PackObject": {
+      "properties": {
+        "object_id": {
+          "title": "Object Id",
+          "type": "string"
+        },
+        "known_at": {
+          "title": "Known At",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "currency": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Currency"
+        },
+        "scale": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scale"
+        },
+        "dps_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "verified_non_payer",
+                "sourced_zero",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dps Status"
+        },
+        "metric": {
+          "title": "Metric",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value"
+        },
+        "reporting_period": {
+          "title": "Reporting Period",
+          "type": "string"
+        },
+        "ticker": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ticker"
+        },
+        "reveal_only": {
+          "default": false,
+          "title": "Reveal Only",
+          "type": "boolean"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "enum": [
+                "VERIFIED",
+                "PARTIAL",
+                "UNKNOWN",
+                "FAILED",
+                "EXCLUDE",
+                "UNAVAILABLE"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        }
+      },
+      "required": [
+        "object_id",
+        "known_at",
+        "source",
+        "metric",
+        "value",
+        "reporting_period"
+      ],
+      "title": "PackObject",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "pack_id": {
+      "title": "Pack Id",
+      "type": "string"
+    },
+    "simulation_date": {
+      "title": "Simulation Date",
+      "type": "string"
+    },
+    "known_at_rule": {
+      "title": "Known At Rule",
+      "type": "string"
+    },
+    "objects": {
+      "items": {
+        "$ref": "#/$defs/PackObject"
+      },
+      "title": "Objects",
+      "type": "array"
+    },
+    "era": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Era"
+    }
+  },
+  "required": [
+    "pack_id",
+    "simulation_date",
+    "known_at_rule",
+    "objects"
+  ],
+  "title": "EvidencePack",
+  "type": "object"
+}

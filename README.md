@@ -16,19 +16,26 @@ Research operating system for falsifiable equity investigation (US + China A-sha
 
 ## Upstream stance
 
-See `docs/adr/0001-dependency-reuse-map.md`:
+See `docs/adr/0001-dependency-reuse-map.md`.
 
-- TradingAgents → ADAPT orchestration; REJECT TA/BUY-SELL
-- Qlib → ADAPT PIT/backtest under our Kernel
-- OpenBB → ADAPT provider/MCP; not primary evidence
+Reviewed upstream commits (labels only, **not installed**):
+`connectors/upstream_review_pins.json`
 
-## Quick check
+Runtime dependencies: `pyproject.toml` + `uv.lock` only.
+
+## Bootstrap / verify
 
 ```bash
-python -m validation_kernel.kernel_v0
-python validation_kernel/vector_prepublish_v0.py
+uv sync --frozen
+make verify
+```
+
+Clean-room (fresh clone + fresh env):
+
+```bash
+make clean-room-check
 ```
 
 ## Connectors / keys still required
 
-See `connectors/REQUIRED_KEYS.md`.
+See `connectors/REQUIRED_KEYS.md`. Live keys are **not** required for `make verify`.

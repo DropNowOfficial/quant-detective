@@ -1,16 +1,18 @@
-# External connectors / API keys still required
+# Required connectors / API keys (runtime)
 
-| Connector | Purpose | Required for |
+Reviewed upstream SHAs live in `upstream_review_pins.json` and are **not** installed.
+
+Runtime deps are only `pyproject.toml` + `uv.lock`.
+
+Still required for live research (not for `make verify` synthetic fixture):
+
+| Connector | Purpose | Status |
 |---|---|---|
-| GitHub (Cursor SCM) | Repo hosting / CI / CloudAgent | First remote commit |
-| SEC EDGAR (public) | US primary filings | Evidence packs |
-| cninfo / SSE / SZSE | A-share primary disclosures | Evidence packs |
-| OpenBB (optional) | Secondary market data / MCP | connectors/openbb |
-| OpenBB provider keys (varies) | Vendor feeds behind OpenBB | As enabled |
-| Ken French / public factor CSV | US residual layer | Already used in sprint1 |
-| China local factor/risk feed | CN residual layer | **Not available yet** |
-| FactSet / Bloomberg (optional) | Consensus timestamps / dispersion | Assimilation tests |
-| Exchange halt/limit flag feed | A-share Amihud diagnostics | Module A completeness |
-| LLM provider (optional) | Agent orchestration only | Not for factual evidence |
+| GitHub SCM | remote push + Actions | pending connect |
+| SEC EDGAR / company filings | U.S. primary evidence | not wired |
+| Exchange / company disclosures | A-share primary evidence | not wired |
+| Market data (Yahoo etc.) | prices with source/timestamp | optional for research |
+| OpenBB (optional ADAPT) | provider/MCP layer | not in lockfile |
+| Qlib (optional ADAPT) | PIT/backtest engine | not in lockfile |
 
-Never treat social/LLM agreement as evidence.
+`make verify` must pass with **zero** of the above keys.

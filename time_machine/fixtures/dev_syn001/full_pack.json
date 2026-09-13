@@ -24,8 +24,7 @@
       "metric": "ttm_eps",
       "value": 5.0,
       "reporting_period": "TTM_ended_2024-03-31",
-      "ticker": "SYN001",
-      "dps_status": "verified_non_payer"
+      "ticker": "SYN001"
     },
     {
       "object_id": "obj_next_eps_SYN001",

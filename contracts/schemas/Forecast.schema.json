@@ -1,0 +1,197 @@
+{
+  "$defs": {
+    "ForecastItem": {
+      "properties": {
+        "quantity": {
+          "title": "Quantity",
+          "type": "string"
+        },
+        "domain": {
+          "enum": [
+            "fundamental",
+            "valuation_expectation",
+            "event_assimilation",
+            "risk",
+            "data_model"
+          ],
+          "title": "Domain",
+          "type": "string"
+        },
+        "point": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Point"
+        },
+        "prob_dist": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prob Dist"
+        },
+        "units": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MoneyUnits"
+            },
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            }
+          ],
+          "title": "Units"
+        },
+        "as_of": {
+          "title": "As Of",
+          "type": "string"
+        },
+        "pack_object_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Pack Object Ids",
+          "type": "array"
+        },
+        "falsifier_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Falsifier Ids",
+          "type": "array"
+        },
+        "kernel_prepublish_ok": {
+          "default": false,
+          "title": "Kernel Prepublish Ok",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "quantity",
+        "domain",
+        "units",
+        "as_of",
+        "pack_object_ids"
+      ],
+      "title": "ForecastItem",
+      "type": "object"
+    },
+    "MoneyUnits": {
+      "properties": {
+        "currency": {
+          "enum": [
+            "USD",
+            "CNY",
+            "JPY",
+            "EUR",
+            "yen"
+          ],
+          "title": "Currency",
+          "type": "string"
+        },
+        "scale": {
+          "enum": [
+            "raw",
+            "million",
+            "billion",
+            "B",
+            "\u4ebf\u5143",
+            "\u4ebf",
+            "T",
+            "trillion"
+          ],
+          "title": "Scale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "currency",
+        "scale"
+      ],
+      "title": "MoneyUnits",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "model_id": {
+      "title": "Model Id",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    },
+    "as_of": {
+      "title": "As Of",
+      "type": "string"
+    },
+    "pack_id": {
+      "title": "Pack Id",
+      "type": "string"
+    },
+    "forecasts": {
+      "items": {
+        "$ref": "#/$defs/ForecastItem"
+      },
+      "title": "Forecasts",
+      "type": "array"
+    },
+    "assumptions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Assumptions",
+      "type": "array"
+    },
+    "falsifiers": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Falsifiers",
+      "type": "array"
+    },
+    "known_at_rule": {
+      "title": "Known At Rule",
+      "type": "string"
+    },
+    "lock_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lock Id"
+    }
+  },
+  "required": [
+    "model_id",
+    "version",
+    "as_of",
+    "pack_id",
+    "forecasts",
+    "known_at_rule"
+  ],
+  "title": "Forecast",
+  "type": "object"
+}
