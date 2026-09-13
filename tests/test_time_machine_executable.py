@@ -6,6 +6,23 @@ import pytest
 from time_machine.engine import TimeMachineRun
 from time_machine.seal import assert_sealed_unreadable, unseal_path
 
+def _cleanup(run: TimeMachineRun) -> None:
+    import os, stat
+    root = run.run_dir
+    if not root.exists():
+        return
+    for dirpath, dirnames, filenames in os.walk(root, topdown=False):
+        for name in filenames + dirnames:
+            fp = Path(dirpath) / name
+            try:
+                os.chmod(fp, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+            except Exception:
+                pass
+    try:
+        os.chmod(root, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    except Exception:
+        pass
+
 
 def test_full_cycle_and_truth_isolation(tmp_path: Path):
     run = TimeMachineRun(tmp_path / "tm", code_commit="TESTCOMMIT")
@@ -22,7 +39,7 @@ def test_full_cycle_and_truth_isolation(tmp_path: Path):
     score = run.score()
     assert score["lock_id"] == h
     assert score["domain_scores"]["fundamental"]["point"] == pytest.approx(5.2)
-    unseal_path(run.sealed_dir)
+    _cleanup(run)
 
 
 def test_post_lock_mutation_invalidates_score(tmp_path: Path):
@@ -37,7 +54,7 @@ def test_post_lock_mutation_invalidates_score(tmp_path: Path):
     p.write_text(json.dumps(data))
     with pytest.raises(ValueError, match="LOCK_INVALIDATED"):
         run.score()
-    unseal_path(run.sealed_dir)
+    _cleanup(run)
 
 
 def test_code_commit_mutation_invalidates(tmp_path: Path):
@@ -51,4 +68,4 @@ def test_code_commit_mutation_invalidates(tmp_path: Path):
     (run.lock_dir / "experiment_manifest.json").write_text(json.dumps(m))
     with pytest.raises(ValueError, match="LOCK_INVALIDATED"):
         run.score()
-    unseal_path(run.sealed_dir)
+    _cleanup(run)

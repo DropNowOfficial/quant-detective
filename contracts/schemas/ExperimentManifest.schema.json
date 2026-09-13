@@ -34,12 +34,14 @@
       "title": "Phase",
       "type": "string"
     },
-    "truth_seal_path": {
-      "title": "Truth Seal Path",
+    "truth_seal_label": {
+      "default": "sealed_truth",
+      "title": "Truth Seal Label",
       "type": "string"
     },
-    "predict_pack_path": {
-      "title": "Predict Pack Path",
+    "predict_pack_label": {
+      "default": "predict/evidence_pack.json",
+      "title": "Predict Pack Label",
       "type": "string"
     }
   },
@@ -50,9 +52,7 @@
     "model_id",
     "model_version",
     "code_commit",
-    "phase",
-    "truth_seal_path",
-    "predict_pack_path"
+    "phase"
   ],
   "title": "ExperimentManifest",
   "type": "object"

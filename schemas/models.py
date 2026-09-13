@@ -113,8 +113,9 @@ class ExperimentManifest(BaseModel):
     model_version: str
     code_commit: str
     phase: Literal["predict", "locked", "revealed", "scored"]
-    truth_seal_path: str  # sealed until reveal
-    predict_pack_path: str
+    # Relative labels only — absolute paths must not enter the lock hash
+    truth_seal_label: str = "sealed_truth"
+    predict_pack_label: str = "predict/evidence_pack.json"
 
 class Score(BaseModel):
     lock_id: str
