@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import pytest
 from time_machine.engine import TimeMachineRun
-from time_machine.seal import assert_sealed_unreadable
+from time_machine.seal import assert_sealed_unreadable, unseal_path
 
 
 def test_full_cycle_and_truth_isolation(tmp_path: Path):
@@ -22,6 +22,7 @@ def test_full_cycle_and_truth_isolation(tmp_path: Path):
     score = run.score()
     assert score["lock_id"] == h
     assert score["domain_scores"]["fundamental"]["point"] == pytest.approx(5.2)
+    unseal_path(run.sealed_dir)
 
 
 def test_post_lock_mutation_invalidates_score(tmp_path: Path):
@@ -36,6 +37,7 @@ def test_post_lock_mutation_invalidates_score(tmp_path: Path):
     p.write_text(json.dumps(data))
     with pytest.raises(ValueError, match="LOCK_INVALIDATED"):
         run.score()
+    unseal_path(run.sealed_dir)
 
 
 def test_code_commit_mutation_invalidates(tmp_path: Path):
@@ -49,3 +51,4 @@ def test_code_commit_mutation_invalidates(tmp_path: Path):
     (run.lock_dir / "experiment_manifest.json").write_text(json.dumps(m))
     with pytest.raises(ValueError, match="LOCK_INVALIDATED"):
         run.score()
+    unseal_path(run.sealed_dir)

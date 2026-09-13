@@ -7,3 +7,5 @@ time_machine/runs/
 dist/
 build/
 .uv/
+validation_kernel/v0_report.json
+validation_kernel/last_prepublish_report.json

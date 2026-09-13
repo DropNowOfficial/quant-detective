@@ -2,7 +2,9 @@
 Not a stock analyzer. Synthetic + algebraic gates only.
 """
 from __future__ import annotations
-import json, math
+import json
+from pathlib import Path
+import math
 from dataclasses import dataclass, asdict, field
 from typing import Any, Callable, Optional
 
@@ -251,8 +253,7 @@ def run_kernel_v0() -> dict:
 
 if __name__ == "__main__":
     rep = run_kernel_v0()
-    path = "/workspace/validation_kernel/v0_report.json"
-    with open(path, "w") as f:
-        json.dump(rep, f, indent=2)
+    path = Path(__file__).resolve().parent / "v0_report.json"
+    path.write_text(json.dumps(rep, indent=2) + "\n")
     print(json.dumps(rep, indent=2))
     print("PASS" if rep["pass"] else "FAIL", "->", path)
