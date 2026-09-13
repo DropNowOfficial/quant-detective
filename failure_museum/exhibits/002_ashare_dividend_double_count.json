@@ -1,0 +1,22 @@
+{
+  "id": "002",
+  "name": "A-share dividend double count",
+  "parts": [
+    {
+      "kind": "interim",
+      "report_fy": "FY2025",
+      "dps": 1.0
+    },
+    {
+      "kind": "annual",
+      "report_fy": "FY2025",
+      "dps": 2.0
+    },
+    {
+      "kind": "annual",
+      "report_fy": "FY2024",
+      "dps": 2.0
+    }
+  ],
+  "fiscal_year": "FY2025"
+}

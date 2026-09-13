@@ -1,0 +1,7 @@
+{
+  "id": "003",
+  "name": "residual-momentum omitted intercept",
+  "est_has_intercept": true,
+  "oos_subtracts_alpha": false,
+  "label": "Residual Momentum"
+}

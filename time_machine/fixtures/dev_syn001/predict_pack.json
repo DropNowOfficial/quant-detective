@@ -1,0 +1,29 @@
+{
+  "pack_id": "tm_dev_fixture_v0_predict",
+  "simulation_date": "2024-06-28",
+  "objects": [
+    {
+      "object_id": "obj_price_SYN001",
+      "known_at": "2024-06-28T20:00:00Z",
+      "source": "synthetic_fixture",
+      "currency": "USD",
+      "scale": "raw",
+      "metric": "close",
+      "value": 100.0,
+      "reporting_period": "2024-06-28",
+      "ticker": "SYN001"
+    },
+    {
+      "object_id": "obj_eps_SYN001_ttm",
+      "known_at": "2024-05-15T12:00:00Z",
+      "source": "synthetic_fixture",
+      "currency": "USD",
+      "scale": "raw",
+      "metric": "ttm_eps",
+      "value": 5.0,
+      "reporting_period": "TTM_ended_2024-03-31",
+      "ticker": "SYN001",
+      "dps_status": "verified_non_payer"
+    }
+  ]
+}

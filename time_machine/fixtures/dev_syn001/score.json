@@ -1,0 +1,16 @@
+{
+  "lock_id": "286fc6731ee86acfb299ab0c2df84f2f7b7695c12da9daa7a27b61598a4171da",
+  "domain_scores": {
+    "fundamental": {
+      "abs_error": 0.2999999999999998,
+      "point": 5.2,
+      "realized": 5.5
+    },
+    "valuation_expectation": null,
+    "event_assimilation": null,
+    "risk": null,
+    "data_model_invariant": "PASS"
+  },
+  "error_taxonomy": [],
+  "note": "synthetic fixture \u2014 not stock analysis"
+}

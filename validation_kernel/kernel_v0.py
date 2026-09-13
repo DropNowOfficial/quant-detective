@@ -30,7 +30,7 @@ def gate_pit(inputs: dict, as_of: str) -> Optional[str]:
     for name, meta in inputs.items():
         if not isinstance(meta, dict):
             continue
-        for key in ("as_of", "known_date", "filed", "published"):
+        for key in ("as_of", "known_at", "known_date", "filed", "published"):
             d = meta.get(key)
             if d and str(d) > str(as_of):
                 return f"PIT fail: {name}.{key}={d} > as_of={as_of}"

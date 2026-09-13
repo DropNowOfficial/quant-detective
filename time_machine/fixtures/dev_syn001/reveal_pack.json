@@ -1,0 +1,18 @@
+{
+  "pack_id": "tm_dev_fixture_v0_reveal",
+  "simulation_date": "2024-06-28",
+  "objects": [
+    {
+      "object_id": "obj_next_eps_SYN001",
+      "known_at": "2024-07-15T12:00:00Z",
+      "source": "synthetic_fixture",
+      "currency": "USD",
+      "scale": "raw",
+      "metric": "realized_eps_next",
+      "value": 5.5,
+      "reporting_period": "Q2_2024",
+      "ticker": "SYN001",
+      "reveal_only": true
+    }
+  ]
+}

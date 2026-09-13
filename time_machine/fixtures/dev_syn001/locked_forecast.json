@@ -1,0 +1,38 @@
+{
+  "model_id": "TM_FIXTURE_POINT_v0",
+  "version": "0.1.0",
+  "as_of": "2024-06-28",
+  "pack_id": "tm_dev_fixture_v0_predict",
+  "forecasts": [
+    {
+      "quantity": "next_period_eps",
+      "domain": "fundamental",
+      "point": 5.2,
+      "units": {
+        "currency": "USD",
+        "scale": "raw"
+      },
+      "as_of": "2024-06-28",
+      "pack_object_ids": [
+        "obj_eps_SYN001_ttm",
+        "obj_price_SYN001"
+      ],
+      "falsifier_ids": [
+        "fal_eps_below_5"
+      ],
+      "kernel_prepublish_ok": true
+    }
+  ],
+  "assumptions": [
+    "no growth shock",
+    "dps verified_non_payer"
+  ],
+  "falsifiers": [
+    {
+      "id": "fal_eps_below_5",
+      "test": "realized_eps < 5.0"
+    }
+  ],
+  "known_at_rule": "min(filed, published, exchange_timestamp); ambiguous=>EXCLUDE",
+  "lock_id": "286fc6731ee86acfb299ab0c2df84f2f7b7695c12da9daa7a27b61598a4171da"
+}

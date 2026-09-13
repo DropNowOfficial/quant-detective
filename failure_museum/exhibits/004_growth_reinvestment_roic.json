@@ -1,0 +1,18 @@
+{
+  "id": "004",
+  "name": "growth/reinvestment/ROIC inconsistency",
+  "paths": [
+    {
+      "g": 0.22,
+      "rr": 0.1,
+      "iroic": null,
+      "g_eff": null
+    },
+    {
+      "g": 0.93,
+      "rr": 0.1,
+      "iroic": null,
+      "g_eff": null
+    }
+  ]
+}

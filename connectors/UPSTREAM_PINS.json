@@ -1,0 +1,21 @@
+{
+  "asof": "2026-09-13",
+  "note": "Pinned to GitHub API HEAD at bootstrap; not vendored into tree",
+  "upstream": {
+    "TauricResearch/TradingAgents": {
+      "git_commit": "be952b8eccb49720509af544c6675233bc1f10d0",
+      "stance": "ADAPT orchestration only \u2014 not imported",
+      "url": "https://github.com/TauricResearch/TradingAgents"
+    },
+    "microsoft/qlib": {
+      "git_commit": "79633dd9506ea689e5400dea0197717b5b3d74b7",
+      "stance": "ADAPT PIT/backtest under Kernel \u2014 not imported yet",
+      "url": "https://github.com/microsoft/qlib"
+    },
+    "OpenBB-finance/OpenBB": {
+      "git_commit": "3e071fcc2cd9f891cac6040ae60296dba76dab46",
+      "stance": "ADAPT provider/MCP \u2014 not imported yet",
+      "url": "https://github.com/OpenBB-finance/OpenBB"
+    }
+  }
+}
