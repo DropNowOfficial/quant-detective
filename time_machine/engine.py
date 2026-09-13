@@ -99,8 +99,9 @@ class TimeMachineRun:
             "model_version": model["version"],
             "code_commit": self.code_commit,
             "phase": "locked",
-            "truth_seal_path": str(self.sealed_dir),
-            "predict_pack_path": str(self.predict_dir / "evidence_pack.json"),
+            # paths are run-local only — omitted from lock hash payload via relative labels
+            "truth_seal_label": "sealed_truth",
+            "predict_pack_label": "predict/evidence_pack.json",
         }
         ExperimentManifest.model_validate(manifest)
         ModelContract.model_validate(model)
