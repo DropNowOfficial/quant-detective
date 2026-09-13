@@ -45,6 +45,14 @@ class TimeMachineRun:
 
     def init_from_fixture(self) -> None:
         if self.run_dir.exists():
+            # unseal before delete (mode 000 blocks rmtree)
+            sealed = self.run_dir / "sealed_truth"
+            if sealed.exists():
+                try:
+                    from time_machine.seal import unseal_path
+                    unseal_path(sealed)
+                except Exception:
+                    pass
             shutil.rmtree(self.run_dir)
         self.predict_dir.mkdir(parents=True)
         self.sealed_dir.mkdir(parents=True)
