@@ -1,0 +1,10 @@
+{
+  "protocol": "PREDICT_LOCK_REVEAL_SCORE_DIAGNOSE_UPDATE_NEXT",
+  "eras": [
+    "DEVELOPMENT",
+    "WALK_FORWARD_LEARNING",
+    "UNTOUCHED_FINAL_TEST"
+  ],
+  "known_at_rule": "min(filed, published, exchange_timestamp); ambiguous => EXCLUDE",
+  "signed": true
+}

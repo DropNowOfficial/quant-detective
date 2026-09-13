@@ -1,0 +1,15 @@
+[project]
+name = "quant-detective"
+version = "0.1.0"
+description = "Falsifiable equity research OS — Evidence Contracts, Validation Kernel, Time Machine"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+openbb = ["openbb"]
+qlib = ["pyqlib"]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

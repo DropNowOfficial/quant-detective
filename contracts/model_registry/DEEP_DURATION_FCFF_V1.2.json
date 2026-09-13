@@ -1,0 +1,120 @@
+{
+  "model_id": "DEEP_DURATION_FCFF_V1.2",
+  "version": "1.2.0",
+  "status": "SIGNED_BY_SKEPTIC_NOT_VALIDATED_AS_FORECAST",
+  "purpose": "Duration stress only for a named equity: how many years of elevated operating economics (and on what funded path) are embedded in today's EV. NOT fair value, NOT target price, NOT a buy/sell signal.",
+  "formula": {
+    "growth_identity": "g_NOPAT = RR * iROIC + g_efficiency",
+    "definitions": {
+      "RR": "Reinvestment rate = reinvestment / NOPAT (same period basis). CapEx/NOPAT is a PROXY when \u0394IC unavailable \u2014 must be labeled.",
+      "iROIC": "Incremental ROIC on reinvested capital",
+      "g_efficiency": "NOPAT growth from margin/utilization/mix with no net reinvestment (must be explicitly named if nonzero)",
+      "FCFF_t": "NOPAT_t * (1 - RR) during elevated horizon H",
+      "Terminal": "After H: g_term, ROIC_term = r \u21d2 RR_term = g_term/r; TV = NOPAT_H*(1+g_term)*(1-RR_term)/(r-g_term)"
+    },
+    "EV": "sum_{t=1..H} FCFF_t/(1+r)^t + TV/(1+r)^H"
+  },
+  "inputs": {
+    "sourced_Ledger": [
+      "EV Method A components",
+      "FY26 company OP guide",
+      "FY26 CapEx guide",
+      "capacity roadmap text",
+      "Teradyne trajectory notes"
+    ],
+    "labeled_stress_not_Ledger": [
+      "r=10%",
+      "g_term=3%",
+      "ROIC_term=r",
+      "ETR for NOPAT from OP (guide-implied ~25.9% or explicit label)",
+      "Path A RR = CapEx_guide/NOPAT PROXY (not verified RR; not \u0394IC/NOPAT)"
+    ]
+  },
+  "assumptions": {
+    "r": 0.1,
+    "g_term": 0.03,
+    "ROIC_term": 0.1,
+    "RR_term": 0.3,
+    "ETR_label": 0.2593,
+    "RR_elevated_policy": "Path A uses RR = CapEx_guide/NOPAT as a PROXY only \u2014 NOT verified reinvestment rate. Excludes \u0394NWC; R&D guide separate; may understate economic reinvestment or overstate incremental RR if CapEx is mostly maintenance. Path B sets RR=g/iROIC with g_eff=0; never silently fix RR=10% while free-solving g."
+  },
+  "invariants": [
+    "Every published g must show (RR, iROIC, g_efficiency) with g = RR*iROIC + g_efficiency",
+    "If g_efficiency != 0, name the efficiency source (margin/utilization/mix) \u2014 no anonymous residual growth",
+    "If RR > 100%, flag external financing / iROIC definition break \u2014 do not auto-reject without flag",
+    "Tax/NOPAT: Ledger-sourced vs labeled stress must be tagged",
+    "No target price / fair value language from this model"
+  ],
+  "known_limitations": [
+    "Path A RR = CapEx_guide/NOPAT proxy \u2014 NOT measured reinvestment (excludes \u0394NWC; R&D \u00a5110B not in RR; partner capacity off-balance; maintenance vs growth unknown)",
+    "CapEx/NOPAT is not \u0394InvestedCapital/NOPAT",
+    "Teradyne + own ~10k SoC systems/yr ramp + foundry tester CapEx not dynamically reducing RR or margins in-model",
+    "Customer concentration, test-intensity fade, ASIC mix OPEN (Skeptic)",
+    "Terminal cliff to ROIC=r after H is discrete, not a smooth fade",
+    "July assimilation closed separately \u2014 not reopened here"
+  ],
+  "validation_status": "SIGNED_BY_SKEPTIC \u2014 framework/identity only; NOT VALIDATED as operating forecast. Cite only with full (g, RR, iROIC, g_eff) + PROXY/stress labels.",
+  "kill_criteria": [
+    "Publish if any row shows g without funded RR or explicit g_efficiency",
+    "Publish if RR fixed independently of g while claiming reinvestment identity without efficiency term",
+    "Kill/recompute if dated evidence shows tester supply catch-up before chosen H without margin/RR fade",
+    "Kill if Teradyne/own ramp clears scarcity and elevated OM still assumed flat for full H"
+  ],
+  "worked_example_anchors": {
+    "EV_yen": 22659259000000.0,
+    "OP0_yen": 846000000000.0,
+    "NOPAT0_yen": 626666666666.6666,
+    "RR_capex_proxy": 0.0797872340425532,
+    "path_A_rows": [
+      {
+        "path": "A_RR_equals_CapEx_over_NOPAT",
+        "H": 2,
+        "g": 0.9300872522557782,
+        "RR": 0.0797872340425532,
+        "iROIC_if_no_efficiency": 11.657093561605752,
+        "g_eff_at_iROIC_50pct": 0.8901936352345016,
+        "g_eff_at_iROIC_100pct": 0.850300018213225,
+        "g_eff_at_iROIC_150pct": 0.8104064011919484,
+        "financing_flag": false,
+        "OP_end_bn": 3151.55033391694,
+        "RR_label": "CapEx_guide/NOPAT_PROXY_not_verified_RR"
+      },
+      {
+        "path": "A_RR_equals_CapEx_over_NOPAT",
+        "H": 5,
+        "g": 0.3390506846402968,
+        "RR": 0.0797872340425532,
+        "iROIC_if_no_efficiency": 4.24943524749172,
+        "g_eff_at_iROIC_50pct": 0.2991570676190202,
+        "g_eff_at_iROIC_100pct": 0.2592634505977436,
+        "g_eff_at_iROIC_150pct": 0.219369833576467,
+        "financing_flag": false,
+        "OP_end_bn": 3642.129993731505,
+        "RR_label": "CapEx_guide/NOPAT_PROXY_not_verified_RR"
+      },
+      {
+        "path": "A_RR_equals_CapEx_over_NOPAT",
+        "H": 8,
+        "g": 0.22247582697711948,
+        "RR": 0.0797872340425532,
+        "iROIC_if_no_efficiency": 2.7883636981132307,
+        "g_eff_at_iROIC_50pct": 0.1825822099558429,
+        "g_eff_at_iROIC_100pct": 0.1426885929345663,
+        "g_eff_at_iROIC_150pct": 0.10279497591328969,
+        "financing_flag": false,
+        "OP_end_bn": 4219.8071608570735,
+        "RR_label": "CapEx_guide/NOPAT_PROXY_not_verified_RR"
+      }
+    ]
+  },
+  "legacy_kill": {
+    "model": "DEEP_DURATION_FCFF_V1.1 Advantest surface",
+    "reason": "RR\u224810% with solved g 22\u201393% implied iROIC 220\u2013930% with g_eff unstated \u2014 REJECTED"
+  },
+  "skeptic_signoff": {
+    "asof": "2026-09-13",
+    "scope": "registry + worked triplets for EV\u2194duration tension only",
+    "not_signed": "any row as approved operating forecast",
+    "note": "Matching EV at proxy RR still needs implausible iROIC or extreme named g_eff \u2014 red flag not cleared thesis"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "fields": [
+    "CONTRACT_STATUS",
+    "DATA_STATUS",
+    "VALIDATION_STATUS"
+  ],
+  "contract_status": [
+    "READY",
+    "NOT READY"
+  ],
+  "data_status": [
+    "READY",
+    "PARTIAL",
+    "UNAVAILABLE"
+  ],
+  "validation_status": [
+    "NOT APPLICABLE",
+    "NEEDS BACKTEST",
+    "VALIDATED"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "kernel": "VECTOR_PREPUBLISH_v0",
+  "ok_to_publish_to_atlas": false,
+  "failures": [
+    {
+      "gate": "money_scale",
+      "msg": "Unit fail CAUGHT: ev missing/invalid scale=None (need one of ['B', 'T', 'billion', 'million', 'raw', 'trillion', '\u4ebf', '\u4ebf\u5143'])"
+    }
+  ],
+  "warnings": [],
+  "historical_suite_pass": true,
+  "policy": "If ok_to_publish_to_atlas is False, VECTOR must not present the payload as a final Atlas-bound result."
+}
