@@ -24,12 +24,12 @@ payload schema (minimal):
   }
 """
 from __future__ import annotations
-import json, sys
+import json
 from pathlib import Path
 from typing import Any, Optional
 
-# allow import when run from /workspace
-sys.path.insert(0, "/workspace")
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
 from validation_kernel.kernel_v0 import (
     REQUIRED_REGISTRY_FIELDS,
     require_registry,
@@ -199,7 +199,7 @@ def prepublish_check(payload: dict) -> tuple[bool, dict]:
         "historical_suite_pass": hist["pass"],
         "policy": "If ok_to_publish_to_atlas is False, VECTOR must not present the payload as a final Atlas-bound result.",
     }
-    Path("/workspace/validation_kernel/last_prepublish_report.json").write_text(json.dumps(report, indent=2))
+    (_REPO_ROOT / "validation_kernel" / "last_prepublish_report.json").write_text(json.dumps(report, indent=2))
     return ok, report
 
 
@@ -258,7 +258,7 @@ def demo_selftest():
 
     ok, rep = prepublish_check({
         "as_of": "2026-09-13",
-        "model_registry": "/workspace/model_registry/DEEP_DURATION_FCFF_V1.2.json",
+        "model_registry": str(_REPO_ROOT / "model_registry" / "DEEP_DURATION_FCFF_V1.2.json"),
         "outputs": {"growth_paths": [
             {"g": 0.22, "rr": 0.10, "iroic": None, "g_eff": None},
             {"g": 0.93, "rr": 0.10, "iroic": None, "g_eff": None},
@@ -270,7 +270,7 @@ def demo_selftest():
     # Clean V1.2 path should pass descriptive stress cite
     ok, rep = prepublish_check({
         "as_of": "2026-09-13",
-        "model_registry": "/workspace/model_registry/DEEP_DURATION_FCFF_V1.2.json",
+        "model_registry": str(_REPO_ROOT / "model_registry" / "DEEP_DURATION_FCFF_V1.2.json"),
         "outputs": {"growth_paths": [
             {"g": 0.222, "rr": 0.08, "iroic": 1.0, "g_eff": 0.142, "rr_is_proxy": True, "rr_label": "CapEx_guide/NOPAT"},
         ]},
