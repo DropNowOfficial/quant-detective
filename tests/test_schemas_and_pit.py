@@ -51,3 +51,8 @@ def test_prepublish_blocks_pe_cancel():
         "evidence_quality": "PARTIAL",
     })
     assert ok is False
+
+
+def test_deliberate_negative_gate():
+    """Disposable governance probe — must fail CI; do not 'fix' before proving gate."""
+    assert False, "NEGATIVE_GATE_PROBE: intentional failure for ruleset test"
