@@ -1,4 +1,4 @@
-"""One-shot public K-lines and a manually refreshed local terminal."""
+"""One-shot public K-lines and the continuous public-data screening terminal."""
 import argparse
 import json
 from . import providers
@@ -30,7 +30,7 @@ def print_candles(result):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='无密钥公开K线；不连接账户，不计算交易信号，不承诺实时行情。')
+    parser = argparse.ArgumentParser(description='公开行情与持续分钟扫描；无密钥、无交易执行。candles命令仅展示K线。')
     sub = parser.add_subparsers(dest='command', required=True)
     for name in ['catalog', 'candles']:
         command = sub.add_parser(name)
@@ -45,7 +45,7 @@ def main():
     args = parser.parse_args()
     if args.command == 'serve':
         app = make_server(args.port)
-        print(f'多市场公开K线：http://127.0.0.1:{app.server_port}/（手动单次获取，无下单）', flush=True)
+        print(f'Quant Detective LIVE：http://127.0.0.1:{app.server_port}/（公开行情分批12秒轮询，页面打开后启动扫描）', flush=True)
         try:
             app.serve_forever()
         except KeyboardInterrupt:

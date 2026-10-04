@@ -1,0 +1,199 @@
+{
+  "verified_at_utc": "2026-10-04T09:36:36.610615+00:00",
+  "product": "Quant Detective LIVE",
+  "rule_id": "MINUTE_MA5_V1",
+  "baseline_commit": "33696e5afc3894b61b7a083f5449f86f60729d46",
+  "verification": {
+    "make_verify": "PASS",
+    "pytest_count": 146,
+    "legacy_count": 84,
+    "browser_contract": "PASS LIVE: continuous polling, row/keyboard selection, OUT, search, pause, source race, thresholds, catalog/watchlist, CSV, replay, stale/offline demotion, 320/768/1440px, no JS errors.",
+    "real_browser": [
+      {
+        "phase": "first_observed_scan",
+        "count": 11,
+        "cycle": "SCAN 1",
+        "statuses": [
+          "WATCH",
+          "WATCH",
+          "WATCH",
+          "WATCH",
+          "WATCH",
+          "WATCH",
+          "WATCH",
+          "OUT",
+          "OUT",
+          "OUT",
+          "OUT"
+        ],
+        "heading": "XRPUSDT",
+        "js_errors": []
+      },
+      {
+        "phase": "second_observed_scan",
+        "cycle": "SCAN 2",
+        "statuses": [
+          "WATCH",
+          "WATCH",
+          "WATCH",
+          "WATCH",
+          "WATCH",
+          "WATCH",
+          "WATCH",
+          "OUT",
+          "OUT",
+          "OUT",
+          "OUT"
+        ]
+      },
+      {
+        "phase": "research_secondary",
+        "scenarios_per_dataset": 64,
+        "metrics": "年化（历史价格收益）\n-8.97%\n最大回撤\n-66.08%\n总收益\n-59.96%\n已完成交易\n2449",
+        "errors": []
+      }
+    ],
+    "independent_review": {
+      "critical_findings": 0,
+      "important_findings": 3,
+      "resolution": "All reproduced and fixed; verified by regression tests. No second independent review claimed.",
+      "findings": [
+        "cycle-level ERROR must demote prior READY immediately",
+        "required benchmark failures need visible receipt and backoff",
+        "A-share ETF benchmark needs independent ETF identity"
+      ]
+    },
+    "data_claim": "Public REST batch polling; not exchange tick streaming or brokerage entitlement-certified real-time data."
+  },
+  "source_probes": {
+    "binance_spot": {
+      "cycles": [
+        {
+          "cycle": 1,
+          "state": "RUNNING",
+          "known_at_ms": 1791105481511,
+          "cycle_duration_seconds": 12.743454456329346,
+          "coverage": {
+            "catalog_total": 1372,
+            "universe": 3,
+            "scanned": 3,
+            "fresh": 3,
+            "batch_size": 12,
+            "remaining_in_round": 0,
+            "round": 1,
+            "scope_note": "所选来源目录"
+          },
+          "status_counts": {
+            "OUT": 2,
+            "WATCH": 1
+          },
+          "http_statuses": [
+            200
+          ]
+        },
+        {
+          "cycle": 2,
+          "state": "RUNNING",
+          "known_at_ms": 1791105505448,
+          "cycle_duration_seconds": 6.562028884887695,
+          "coverage": {
+            "catalog_total": 1372,
+            "universe": 3,
+            "scanned": 3,
+            "fresh": 3,
+            "batch_size": 12,
+            "remaining_in_round": 0,
+            "round": 2,
+            "scope_note": "所选来源目录"
+          },
+          "status_counts": {
+            "OUT": 2,
+            "WATCH": 1
+          },
+          "http_statuses": [
+            200
+          ]
+        }
+      ],
+      "error": null,
+      "http_status": null
+    },
+    "gate_usdt": {
+      "cycles": [
+        {
+          "cycle": 1,
+          "state": "RUNNING",
+          "known_at_ms": 1791105493367,
+          "cycle_duration_seconds": 11.653672456741333,
+          "coverage": {
+            "catalog_total": 1027,
+            "universe": 3,
+            "scanned": 3,
+            "fresh": 3,
+            "batch_size": 12,
+            "remaining_in_round": 0,
+            "round": 1,
+            "scope_note": "所选来源目录"
+          },
+          "status_counts": {
+            "OUT": 2,
+            "WATCH": 1
+          },
+          "http_statuses": [
+            200
+          ]
+        },
+        {
+          "cycle": 2,
+          "state": "RUNNING",
+          "known_at_ms": 1791105509979,
+          "cycle_duration_seconds": 4.326736688613892,
+          "coverage": {
+            "catalog_total": 1027,
+            "universe": 3,
+            "scanned": 3,
+            "fresh": 3,
+            "batch_size": 12,
+            "remaining_in_round": 0,
+            "round": 2,
+            "scope_note": "所选来源目录"
+          },
+          "status_counts": {
+            "OUT": 2,
+            "WATCH": 1
+          },
+          "http_statuses": [
+            200
+          ]
+        }
+      ],
+      "error": null,
+      "http_status": null
+    },
+    "okx_swap": {
+      "cycles": [],
+      "error": "HTTP 200，但响应不是可解析的JSON；不可作为行情。",
+      "http_status": 200
+    }
+  },
+  "limits": [
+    "Whole-directory USDT scan is rotating batches, not every-symbol 12-second updates.",
+    "OKX probe returned HTTP200 non-JSON; no substitute data.",
+    "Yahoo ETF benchmark probe returned HTTP429 at 2026-10-04T09:28:45Z; successful mainland quote coverage not certified by this run.",
+    "Source checkout includes frozen Research; wheel-only installations report missing summary explicitly.",
+    "MINUTE_MA5_V1 does not claim equivalence to daily HARNESS or validated trading alpha."
+  ],
+  "code_sha256": {
+    "market_data/__init__.py": "d220377f3891fc11153fe827ad127aa0414337895225d314e03dcfc674e6837c",
+    "market_data/__main__.py": "6d8b7d7846a845059d7a3107143f11131f63c5511d669b44085b15ec5e3d2279",
+    "market_data/cli.py": "bc8b344748216fec25ec18714f0170d75a2ca3577294522f285755b499b2775b",
+    "market_data/features.py": "b4406701f75cbcafb03b2719b35d732ca480917cf085a253938c76a60e6e6090",
+    "market_data/live.html": "cdb2a4e3bc9f61f7d0d9d971ea90fa41b52687eca4c4550682eeba3cf46cfd99",
+    "market_data/live.py": "238982db870dbc69f964cadf29a7eb0a5a0ba5379cbf28affee4ccafa0a7af8e",
+    "market_data/providers.py": "507830b87b399bf4d110b0910ebec7a64b69c608999b33925ab08aa4a69b298e",
+    "market_data/research.html": "64a7654616effda595c3c3f3cde3c2a5b45bc15363d3a075a11846999148e498",
+    "market_data/server.py": "4ee595419c67447f7c02e220b24ba07c8807db289d68b2ce37f63635ccf3bf0c",
+    "market_data/template.html": "987bfe294fa08c91992e19733fc24314fdb4bf8577651cf806165eadae62a1ab",
+    "market_data/transport.py": "61ff519b6723537d8a7eed46021c15598071671d1656bd910cd34f8b9eb4a7d1"
+  }
+}

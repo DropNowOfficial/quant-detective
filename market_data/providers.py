@@ -202,6 +202,23 @@ def _row(raw, market, interval_ms, now_ms, out):
             out["excluded_non_session_rows"] += 1
             return None
         row = dict(zip(("open", "high", "low", "close", "volume"), values))
+        row.update(quote_volume=None, base_volume=None)
+        # Quote/base amounts are separate from contract counts; never halve volume.
+        try:
+            amount = (raw.get("sum") if market == "gate_usdt" else
+                      raw[7] if market.startswith(("okx_", "binance_")) and market != "binance_coinm" else None)
+            amount = _number(amount)
+            if amount >= 0:
+                row["quote_volume"] = amount
+        except (ValueError, TypeError, IndexError):
+            pass
+        try:
+            base = raw[6] if market.startswith("okx_") else volume if market in {"binance_spot", "binance_usdm"} else None
+            base = _number(base)
+            if base >= 0:
+                row["base_volume"] = base
+        except (ValueError, TypeError, IndexError):
+            pass
         row.update(open_time_ms=stamp, open_time_utc=_utc(stamp), taker_buy_volume=None, closed=now_ms >= stamp + interval_ms)
         if market.startswith("okx_"):
             row["closed"] = row["closed"] and len(raw) > 8 and str(raw[8]) == "1"
@@ -266,7 +283,7 @@ def _yahoo_symbol(symbol, market):
     return code + "." + suffix
 
 
-def _validate_yahoo_meta(meta, expected_symbol, market):
+def _validate_yahoo_meta(meta, expected_symbol, market, etf_benchmark=False):
     required = ("symbol", "instrumentType", "exchangeName", "exchangeTimezoneName", "currency")
     if not isinstance(meta, dict) or any(not isinstance(meta.get(key), str) or not meta[key].strip() for key in required):
         raise ProviderError("Yahoo 品种身份元数据缺失或无效，无法核实资产类别 / 交易场所 / 时区 / 币种；拒绝标为股票行情。")
@@ -284,12 +301,15 @@ def _validate_yahoo_meta(meta, expected_symbol, market):
         expected_exchange = {"SS": "SHH", "SZ": "SHZ"}.get(expected_symbol.rsplit(".", 1)[-1])
         if expected_exchange is None:
             raise ProviderError("UNSUPPORTED_MARKET_IDENTITY：北交所分钟行情的交易场所身份尚未认证；目录可搜索不等于该来源报价可用。")
-        if (meta["instrumentType"] != "EQUITY" or meta["exchangeName"] != expected_exchange
+        required_kind = "ETF" if etf_benchmark else "EQUITY"
+        if etf_benchmark and expected_symbol != "510300.SS":
+            raise ProviderError("未授权的ETF基准身份")
+        if (meta["instrumentType"] != required_kind or meta["exchangeName"] != expected_exchange
                 or meta["exchangeTimezoneName"] != "Asia/Shanghai" or meta["currency"] != "CNY"):
             raise ProviderError("UNSUPPORTED_MARKET_IDENTITY：Yahoo 资产类别、交易场所、时区或币种与请求的 A 股代码不一致；拒绝跨市场标注。")
 
 
-def _yahoo_rows(data, expected_symbol, market):
+def _yahoo_rows(data, expected_symbol, market, etf_benchmark=False):
     if not isinstance(data, dict) or not isinstance(data.get("chart"), dict):
         raise ProviderError("Yahoo 响应缺少 chart")
     chart = data["chart"]
@@ -301,7 +321,7 @@ def _yahoo_rows(data, expected_symbol, market):
     item = result[0]
     if not isinstance(item, dict):
         raise ProviderError("Yahoo result 条目不是对象")
-    _validate_yahoo_meta(item.get("meta"), expected_symbol, market)
+    _validate_yahoo_meta(item.get("meta"), expected_symbol, market, etf_benchmark=etf_benchmark)
     times = item.get("timestamp", [])
     indicators = item.get("indicators", {})
     if not isinstance(times, list) or not isinstance(indicators, dict):
@@ -317,7 +337,7 @@ def _yahoo_rows(data, expected_symbol, market):
     return [[t * 1000, *(values[i] for values in fields)] for i, t in enumerate(times)]
 
 
-def get_candles(market="binance_spot", symbol="SOLUSDT", interval="1m", limit=5, fetch=None, now_ms=None):
+def get_candles(market="binance_spot", symbol="SOLUSDT", interval="1m", limit=5, fetch=None, now_ms=None, *, _etf_benchmark=False):
     """Fetch a bounded batch, explicitly retaining partial/error receipt semantics."""
     out = _base(market)
     if interval not in INTERVALS:
@@ -329,9 +349,13 @@ def get_candles(market="binance_spot", symbol="SOLUSDT", interval="1m", limit=5,
     if fetch is None:
         raise ValueError("必须提供有 12 秒请求上限的公开 GET 传输")
     symbol = symbol.upper()
+    if _etf_benchmark and (market != "cn_equity" or symbol != "510300"):
+        raise ValueError("ETF基准路径仅支持沪深300ETF 510300")
     now_ms = int(time.time() * 1000) if now_ms is None else int(now_ms)
     info = MARKETS[market]
     out.update(symbol=symbol, interval=interval, requested_count=limit, volume_unit=info["volume_unit"], rows=[], dropped_rows=0, excluded_non_session_rows=0)
+    if _etf_benchmark:
+        out.update(instrument_role="ETF_BENCHMARK", source="Yahoo Finance · 沪深300ETF 510300.SS 同源比较基准")
     out["warnings"].append("公开来源一次批量读取；不代表实时行情。未收盘状态按来源标志或请求时间推断。")
     if market != "binance_spot":
         out["warnings"].append("来源 B 没有主动买量。" if market == "gate_usdt" else "本来源不提供本工具定义的主动买量，保留为空。")
@@ -364,7 +388,7 @@ def get_candles(market="binance_spot", symbol="SOLUSDT", interval="1m", limit=5,
                 url = _url(info["host"], info["candles"], symbol=symbol, interval=interval, limit=page_size, endTime=None if cursor is None else cursor - 1)
                 raw = _array(_request(fetch, out, url), "Binance")
             else:
-                provider_symbol = _yahoo_symbol(symbol, market)
+                provider_symbol = "510300.SS" if _etf_benchmark else _yahoo_symbol(symbol, market)
                 path = "/v8/finance/chart/" + quote(provider_symbol, safe="")
                 if cursor is None:
                     # Source-defined latest trading day includes fewer than
@@ -375,7 +399,7 @@ def get_candles(market="binance_spot", symbol="SOLUSDT", interval="1m", limit=5,
                     end = _equity_end(cursor - 1, market)
                     start = max(0, end - 1000 * INTERVALS[interval])
                     url = _url("https://query1.finance.yahoo.com", path, period1=start, period2=end, interval=interval, includePrePost="false", events="div,splits")
-                raw = _yahoo_rows(_request(fetch, out, url), provider_symbol, market)
+                raw = _yahoo_rows(_request(fetch, out, url), provider_symbol, market, etf_benchmark=_etf_benchmark)
             if not raw:
                 out["warnings"].append("该页无可用 K 线；停止分页，没有补造历史。")
                 break
@@ -387,6 +411,10 @@ def get_candles(market="binance_spot", symbol="SOLUSDT", interval="1m", limit=5,
                     pass
                 row = _row(item, market, INTERVALS[interval] * 1000, now_ms, out)
                 if row is not None:
+                    previous = seen.get(row["open_time_ms"])
+                    if previous is not None and any(previous.get(k) != row.get(k) for k in ("open", "high", "low", "close", "volume", "quote_volume", "base_volume")):
+                        out["dropped_rows"] += 1
+                        out["warnings"].append("同一时间的K线内容冲突；该读取不能用于信号确认。")
                     seen.setdefault(row["open_time_ms"], row)
             out["rows"] = sorted(seen.values(), key=lambda r: r["open_time_ms"])[-limit:]
             consumed += len(raw)
@@ -409,3 +437,10 @@ def get_candles(market="binance_spot", symbol="SOLUSDT", interval="1m", limit=5,
     except (ProviderError, KeyError, TypeError, ValueError) as exc:
         return _fail(out, exc)
     return out
+
+
+def get_benchmark(market, interval, limit, fetch, now_ms=None):
+    """Separate ETF identity; this does not insert an ETF into the A-share catalog."""
+    if market != "cn_equity":
+        raise ValueError("该市场没有独立ETF基准路径")
+    return get_candles(market, "510300", interval, limit, fetch, now_ms, _etf_benchmark=True)

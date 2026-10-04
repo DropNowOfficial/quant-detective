@@ -1,17 +1,29 @@
-# Quant Detective
+# Quant Detective LIVE
 
-Falsifiable equity research: **LEDGER → VECTOR → SKEPTIC → ATLAS**. Evidence Contracts, Validation Kernel, Time Machine, and a reproducible MA5 strategy teaching lab. Research only; no order routing.
+**Public market data → closed-bar features → ranked candidates → rule explanations.** The default product is a continuously refreshed screening terminal. Research and backtests are secondary; no account connection or order routing.
 
-## Multi-market public K-line terminal
-
-Eight independent public adapters: A-shares, US listed securities, OKX perpetual/delivery contracts, Binance USD-M/COIN-M, Binance spot (source A), and Gate USDT perpetuals (source B). Load each actual directory, search symbols/names and manually request native `1m`, `5m` or `15m` OHLCV. No keys, accounts, orders, automatic refresh or new signals.
+## Start the LIVE screener
 
 ```bash
-uv sync --frozen
-uv run qd-market serve
+git clone --branch feature/live-screener-20261004 https://github.com/DropNowOfficial/quant-detective.git
+cd quant-detective
+python -m market_data serve
 ```
 
-Open `http://127.0.0.1:8767/`. Every upstream GET has a 12-second total deadline; failures, incomplete coverage and unfinished candles remain explicit. A directory entry is not proof of present tradability or available history. See the **[Chinese startup and coverage guide](docs/public-markets.zh-CN.md)** and [observed source receipts](research_outputs/public-markets.json).
+Open `http://127.0.0.1:8767/`. Python 3.11+ and `curl` are required; the LIVE runtime uses only the standard library. On Windows, run `start-live.cmd` from the repository. The reproducible developer environment remains `uv sync --frozen` and `uv run qd-market serve`.
+
+- **LIVE / SCREENER / STOCK:** ongoing provider GET requests, editable thresholds, ranked candidates, whole-row selection, source-specific charts and check-by-check explanations.
+- **Binance spot mirror, Gate USDT perpetual, OKX perpetual** public adapters; US/A-share and other original public directory adapters remain available. Live crypto comparisons use USDT-quoted instruments, not synthetic cross-currency returns. Derivative contracts never stand in for cash stocks.
+- Target **12-second batch cadence**, 12 symbols per batch, four concurrent GETs. Each GET stops at 12 seconds. Slow requests/other active tabs can lengthen actual cadence; the UI reports cycle duration, coverage and each observation's age. Whole-directory rotation is NOT a claim that every instrument updates every 12 seconds.
+- Current-price display includes explicitly marked unfinished candles. **MINUTE_MA5_V1** ranking uses completed bars only: MA5/MA20, ATR14, rolling VWAP60, RVOL20 and time-aligned same-source relative strength. These are minute-bar features, **not the original daily HARNESS** or a verified profit forecast.
+- Stale, missing, malformed or unavailable observations cannot remain READY. HTTP 429/451, non-JSON blocks and timeout errors stay visible; there is no source substitution.
+- **REPLAY:** last 30 observed scan batches in memory, marked historical. **RESEARCH:** existing frozen scenario/CAGR/drawdown research. Neither is a shadow account on the homepage.
+
+See the **[Chinese LIVE guide](docs/live-screener.zh-CN.md)**. The original eight-market one-shot K-line terminal is at `/market`; one-shot CLI requests still emit no signals:
+
+```bash
+python -m market_data candles --market binance_spot --symbol ETHUSDT --interval 5m --limit 5
+```
 
 ## Interactive research lab · 0.2.0
 
