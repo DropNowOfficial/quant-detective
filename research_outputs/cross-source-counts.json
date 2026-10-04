@@ -1,0 +1,5010 @@
+{
+  "status": "INDEPENDENT_SECONDARY_SOURCE_AUDIT_NOT_BLENDED",
+  "summary": {
+    "files": 45,
+    "yahoo_rows": 99651,
+    "common_rows": 52070,
+    "all_manifest_hashes_match": true,
+    "metadata_identity_diagnostics": {},
+    "yahoo_invalid_rows": 0,
+    "ibkr_invalid_rows": 88,
+    "ibkr_invalid_with_valid_yahoo_counterpart": 88,
+    "common_closes_above1bps_difference": 886,
+    "common_closes_above10bps_difference": 22,
+    "common_closes_above100bps_difference": 2,
+    "return_pairs": 52025,
+    "return_diffs_above1bps": 43,
+    "return_diffs_above10bps": 7,
+    "return_diffs_above100bps": 4,
+    "calendar_defects": {}
+  },
+  "per_symbol": [
+    {
+      "symbol": "AAOI",
+      "ibkr_file": "AAOI_daily.json",
+      "ibkr_contract_id": 135423662,
+      "ibkr_description": null,
+      "ibkr_known_at": "2026-10-04T03:13:35.322Z",
+      "yahoo_name": "Applied Optoelectronics, Inc.",
+      "yahoo_exchange": "NGM",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/AAOI?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:46.131454+00:00",
+      "yahoo_sha256": "642196ce3c813beddc5f0570dc3576b2b8c9a5e08e544f1f889cdda8901fd747",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 1,
+      "ibkr_invalid_common_yahoo_valid": 1,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0001997223697536299,
+        "p99_absolute": 0.0005372813061121917,
+        "maximum_absolute": 0.0005707776473684589,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999999998966,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0002798768577456181,
+        "p99_absolute": 0.0009014565459875002,
+        "maximum_absolute": 0.0010960026142203816,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2024-11-06",
+          "return_difference_bps": -0.0010960026142203816,
+          "ibkr_return": -0.019951632406287723,
+          "yahoo_return": -0.019951742006549145
+        },
+        {
+          "date": "2022-12-15",
+          "return_difference_bps": -0.0010720401066866003,
+          "ibkr_return": -0.004694835680751019,
+          "yahoo_return": -0.004694942884761688
+        },
+        {
+          "date": "2023-04-21",
+          "return_difference_bps": 0.001039739319086408,
+          "ibkr_return": 0.009433962264151052,
+          "yahoo_return": 0.009434066238082961
+        },
+        {
+          "date": "2026-02-27",
+          "return_difference_bps": 0.0010265191874303525,
+          "ibkr_return": 0.5688210094989758,
+          "yahoo_return": 0.5688211121508946
+        },
+        {
+          "date": "2023-04-06",
+          "return_difference_bps": 0.0010014212725728555,
+          "ibkr_return": 0.014218009478673022,
+          "yahoo_return": 0.014218109620800279
+        }
+      ],
+      "yahoo_actions": {}
+    },
+    {
+      "symbol": "AAPL",
+      "ibkr_file": "AAPL_daily.json",
+      "ibkr_contract_id": 265598,
+      "ibkr_description": "APPLE INC",
+      "ibkr_known_at": "2026-10-04T03:14:38.991Z",
+      "yahoo_name": "Apple Inc.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/AAPL?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:35.304859+00:00",
+      "yahoo_sha256": "b674a4626058f070b3b8d05f3e5303c2ceffa764de7f29d85be44df9cf1c703a",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 4,
+      "ibkr_invalid_common_yahoo_valid": 4,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00022283737188821817,
+        "p99_absolute": 0.0005256329500769042,
+        "maximum_absolute": 0.0005658826207621814,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999999977967,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0002930489540133183,
+        "p99_absolute": 0.0008767125382447284,
+        "maximum_absolute": 0.0010259157101621952,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2023-02-02",
+          "return_difference_bps": 0.0010259157101621952,
+          "ibkr_return": 0.03706250429760005,
+          "yahoo_return": 0.03706260688917107
+        },
+        {
+          "date": "2026-05-04",
+          "return_difference_bps": -0.0009960409608211762,
+          "ibkr_return": -0.011815520811023106,
+          "yahoo_return": -0.011815620415119188
+        },
+        {
+          "date": "2025-10-23",
+          "return_difference_bps": -0.0009939305933848175,
+          "ibkr_return": 0.0043722189978718795,
+          "yahoo_return": 0.004372119604812541
+        },
+        {
+          "date": "2026-04-14",
+          "return_difference_bps": -0.00098832327322107,
+          "ibkr_return": -0.001427469135802495,
+          "yahoo_return": -0.001427567968129817
+        },
+        {
+          "date": "2023-01-27",
+          "return_difference_bps": -0.0009815198831475413,
+          "ibkr_return": 0.01368435676576829,
+          "yahoo_return": 0.013684258613779976
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 40,
+        "splits": 1
+      }
+    },
+    {
+      "symbol": "ALAB",
+      "ibkr_file": "ALAB_daily.json",
+      "ibkr_contract_id": 692196414,
+      "ibkr_description": "ASTERA LABS INC",
+      "ibkr_known_at": "2026-10-04T03:14:19.204Z",
+      "yahoo_name": "Astera Labs, Inc.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/ALAB?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:46.001836+00:00",
+      "yahoo_sha256": "3770b41e4149faf7415c4b2c13bd118a8ddac556466b182adeed155ef0dfb3c3",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 637,
+      "yahoo_first": "2024-03-20",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 637,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 1,
+      "ibkr_invalid_common_yahoo_valid": 1,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0002128019860325736,
+        "p99_absolute": 0.30792689306293747,
+        "maximum_absolute": 1.256635483259938,
+        "above1bps": 2,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 636,
+      "return_correlation": 0.99999997899569,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.020185598304090016,
+        "p99_absolute": 0.5704574219570484,
+        "maximum_absolute": 1.319448082788277,
+        "above1bps": 4,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2024-08-23",
+          "return_difference_bps": 1.319448082788277,
+          "ibkr_return": 0.049761246544357984,
+          "yahoo_return": 0.04989319135263681
+        },
+        {
+          "date": "2024-08-22",
+          "return_difference_bps": -1.2297105960856758,
+          "ibkr_return": -0.02139695031972444,
+          "yahoo_return": -0.021519921379333007
+        },
+        {
+          "date": "2024-07-26",
+          "return_difference_bps": 1.0625049630075267,
+          "ibkr_return": 0.0017003188097770572,
+          "yahoo_return": 0.0018065693060778099
+        },
+        {
+          "date": "2024-07-29",
+          "return_difference_bps": -1.0355828528008093,
+          "ibkr_return": -0.0237640568639933,
+          "yahoo_return": -0.02386761514927338
+        },
+        {
+          "date": "2025-04-17",
+          "return_difference_bps": 0.85288691945129,
+          "ibkr_return": 0.0028916482394965026,
+          "yahoo_return": 0.0029769369314416316
+        }
+      ],
+      "yahoo_actions": {}
+    },
+    {
+      "symbol": "AMAT",
+      "ibkr_file": "AMAT_daily.json",
+      "ibkr_contract_id": 266093,
+      "ibkr_description": "APPLIED MATERIALS INC",
+      "ibkr_known_at": "2026-10-04T03:14:00.644Z",
+      "yahoo_name": "Applied Materials, Inc.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/AMAT?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:28.016788+00:00",
+      "yahoo_sha256": "0e728526e87965d98927a54914568d6cb0f2f1b06743d0963b4d0bf4598c03dc",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0002054882797253299,
+        "p99_absolute": 0.0005285039550662064,
+        "maximum_absolute": 0.6178984133509147,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999951158709,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0019306398583329631,
+        "p99_absolute": 0.0008798997560566235,
+        "maximum_absolute": 0.624735027190404,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2025-08-18",
+          "return_difference_bps": -0.624735027190404,
+          "ibkr_return": 0.011004636785162392,
+          "yahoo_return": 0.010942163282443351
+        },
+        {
+          "date": "2025-08-15",
+          "return_difference_bps": 0.5306941353444561,
+          "ibkr_return": -0.1407246068848279,
+          "yahoo_return": -0.14067153747129346
+        },
+        {
+          "date": "2025-11-24",
+          "return_difference_bps": -0.45976329930308424,
+          "ibkr_return": 0.03084821428571427,
+          "yahoo_return": 0.030802237955783962
+        },
+        {
+          "date": "2025-11-21",
+          "return_difference_bps": 0.45401864545269177,
+          "ibkr_return": 0.017118467057167575,
+          "yahoo_return": 0.017163868921712844
+        },
+        {
+          "date": "2023-11-01",
+          "return_difference_bps": -0.0009786901888908517,
+          "ibkr_return": 0.022213826973932704,
+          "yahoo_return": 0.022213729104913815
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 40
+      }
+    },
+    {
+      "symbol": "AMD",
+      "ibkr_file": "AMD_daily.json",
+      "ibkr_contract_id": 4391,
+      "ibkr_description": "ADVANCED MICRO DEVICES",
+      "ibkr_known_at": "2026-10-04T03:13:34.244Z",
+      "yahoo_name": "Advanced Micro Devices, Inc.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/AMD?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:13.770237+00:00",
+      "yahoo_sha256": "d5fc2c7fcc23bd8caa2c3a611850e2a6a44b6e87724d3c3449e2c5a52ecfc3e7",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00020626953700642048,
+        "p99_absolute": 0.0005365171303894911,
+        "maximum_absolute": 1.034926105019096,
+        "above1bps": 1,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999925688631,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.002920755201574677,
+        "p99_absolute": 0.0009676439531869373,
+        "maximum_absolute": 1.0585664239126658,
+        "above1bps": 2,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2025-04-25",
+          "return_difference_bps": 1.0585664239126658,
+          "ibkr_return": 0.02297025510744155,
+          "yahoo_return": 0.023076111749832817
+        },
+        {
+          "date": "2025-04-28",
+          "return_difference_bps": -1.0322051650635267,
+          "ibkr_return": -0.002586920529801362,
+          "yahoo_return": -0.0026901410463077147
+        },
+        {
+          "date": "2026-08-21",
+          "return_difference_bps": -0.21455143955906308,
+          "ibkr_return": 0.008094578762381621,
+          "yahoo_return": 0.008073123618425715
+        },
+        {
+          "date": "2026-08-20",
+          "return_difference_bps": 0.21392607148174037,
+          "ibkr_return": 0.00649629089661663,
+          "yahoo_return": 0.006517683503764804
+        },
+        {
+          "date": "2026-06-09",
+          "return_difference_bps": 0.2044090207176108,
+          "ibkr_return": -0.030244937083188872,
+          "yahoo_return": -0.03022449618111711
+        }
+      ],
+      "yahoo_actions": {}
+    },
+    {
+      "symbol": "AMZN",
+      "ibkr_file": "AMZN_daily.json",
+      "ibkr_contract_id": 3691937,
+      "ibkr_description": "AMAZON.COM INC",
+      "ibkr_known_at": "2026-10-04T03:14:09.420Z",
+      "yahoo_name": "Amazon.com, Inc.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/AMZN?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:35.256429+00:00",
+      "yahoo_sha256": "4785e6f2f5d6e2202a553b8aea10387af231a4ae9da913ae491aa19d77af8330",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 2,
+      "ibkr_invalid_common_yahoo_valid": 2,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0002007625332645091,
+        "p99_absolute": 0.0005345334407991232,
+        "maximum_absolute": 0.0005669777636274631,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.9999999999988975,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0002700949411934724,
+        "p99_absolute": 0.0008412507376043266,
+        "maximum_absolute": 0.0011106535380278615,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2026-05-18",
+          "return_difference_bps": -0.0011106535380278615,
+          "ibkr_return": 0.0027258272128418692,
+          "yahoo_return": 0.0027257161474880665
+        },
+        {
+          "date": "2023-07-31",
+          "return_difference_bps": -0.0010674483408301683,
+          "ibkr_return": 0.011118674835489006,
+          "yahoo_return": 0.011118568090654923
+        },
+        {
+          "date": "2023-08-31",
+          "return_difference_bps": -0.0009607466244787588,
+          "ibkr_return": 0.021766491448878433,
+          "yahoo_return": 0.021766395374215985
+        },
+        {
+          "date": "2022-01-25",
+          "return_difference_bps": -0.0009489048480304518,
+          "ibkr_return": -0.03153365065308844,
+          "yahoo_return": -0.031533745543573244
+        },
+        {
+          "date": "2023-12-19",
+          "return_difference_bps": -0.0009102858811171899,
+          "ibkr_return": -0.0018173557473875057,
+          "yahoo_return": -0.0018174467759756174
+        }
+      ],
+      "yahoo_actions": {
+        "splits": 1
+      }
+    },
+    {
+      "symbol": "ANET",
+      "ibkr_file": "ANET_daily.json",
+      "ibkr_contract_id": 740948854,
+      "ibkr_description": "ARISTA NETWORKS INC",
+      "ibkr_known_at": "2026-10-04T03:14:05.368Z",
+      "yahoo_name": "Arista Networks, Inc.",
+      "yahoo_exchange": "NYQ",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/ANET?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:31.596723+00:00",
+      "yahoo_sha256": "78c8f6b532fccf16c655b6a794cfe47ca4b8a21adf33c5562f1f4e1bbf70cbd7",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 1,
+      "ibkr_invalid_common_yahoo_valid": 1,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00022784027997602152,
+        "p99_absolute": 0.0005491138575841603,
+        "maximum_absolute": 2.8446515099767034,
+        "above1bps": 1,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.9999999295303706,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.004914214326847702,
+        "p99_absolute": 0.0008716733226665774,
+        "maximum_absolute": 2.895094452910474,
+        "above1bps": 2,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2024-12-04",
+          "return_difference_bps": -2.895094452910474,
+          "ibkr_return": 0.017806302176325728,
+          "yahoo_return": 0.01751679273103468
+        },
+        {
+          "date": "2024-12-05",
+          "return_difference_bps": 2.88259916985778,
+          "ibkr_return": 0.012990707377204647,
+          "yahoo_return": 0.013278967294190425
+        },
+        {
+          "date": "2024-02-08",
+          "return_difference_bps": 0.0010207658585059676,
+          "ibkr_return": 0.0331024152780377,
+          "yahoo_return": 0.03310251735462355
+        },
+        {
+          "date": "2024-02-07",
+          "return_difference_bps": -0.001018344046865849,
+          "ibkr_return": 0.008154328211710693,
+          "yahoo_return": 0.008154226377306006
+        },
+        {
+          "date": "2022-04-07",
+          "return_difference_bps": 0.0009734935879635032,
+          "ibkr_return": 0.006135898795545769,
+          "yahoo_return": 0.006135996144904565
+        }
+      ],
+      "yahoo_actions": {
+        "splits": 2
+      }
+    },
+    {
+      "symbol": "ARM",
+      "ibkr_file": "ARM_daily.json",
+      "ibkr_contract_id": 653400472,
+      "ibkr_description": "ARM HOLDINGS PLC-ADR",
+      "ibkr_known_at": "2026-10-04T03:13:55.675Z",
+      "yahoo_name": "Arm Holdings plc",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/ARM?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:22.871594+00:00",
+      "yahoo_sha256": "2bb17743850e2767e7ef7a447e30bb97029cfae775cc2ba81ce8668af2c47110",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 766,
+      "yahoo_first": "2023-09-14",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 766,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00022467871008124973,
+        "p99_absolute": 0.31893594993864827,
+        "maximum_absolute": 0.7069999083220146,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 765,
+      "return_correlation": 0.9999999896627898,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.011041048474810165,
+        "p99_absolute": 0.35315634733459356,
+        "maximum_absolute": 0.7620716847345221,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2023-12-14",
+          "return_difference_bps": 0.7620716847345221,
+          "ibkr_return": 0.07803688462124692,
+          "yahoo_return": 0.07811309178972037
+        },
+        {
+          "date": "2023-12-15",
+          "return_difference_bps": -0.7101210162696603,
+          "ibkr_return": 0.004241481690937299,
+          "yahoo_return": 0.004170469589310333
+        },
+        {
+          "date": "2023-12-29",
+          "return_difference_bps": 0.6448249643253856,
+          "ibkr_return": -0.03007615851297274,
+          "yahoo_return": -0.0300116760165402
+        },
+        {
+          "date": "2024-01-02",
+          "return_difference_bps": -0.6101348252673944,
+          "ibkr_return": -0.08277881288261912,
+          "yahoo_return": -0.08283982636514586
+        },
+        {
+          "date": "2025-06-03",
+          "return_difference_bps": 0.40508925929216844,
+          "ibkr_return": 0.021577026812628963,
+          "yahoo_return": 0.02161753573855818
+        }
+      ],
+      "yahoo_actions": {}
+    },
+    {
+      "symbol": "ASML",
+      "ibkr_file": "ASML_daily.json",
+      "ibkr_contract_id": 117902840,
+      "ibkr_description": "ASML HOLDING NV-NY REG SHS",
+      "ibkr_known_at": "2026-10-04T03:13:35.655Z",
+      "yahoo_name": "ASML Holding N.V.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/ASML?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:27.913809+00:00",
+      "yahoo_sha256": "774f1a6d5b08a31b4e009bd6d1db09c48bc4d66523476aa9feb8ee0baec65446",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 3,
+      "ibkr_invalid_common_yahoo_valid": 3,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00020080519136378427,
+        "p99_absolute": 0.0004961539265435634,
+        "maximum_absolute": 0.0005654075518890522,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999999991972,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0002803809262674336,
+        "p99_absolute": 0.0008412317592410012,
+        "maximum_absolute": 0.0010161786989648647,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2022-06-10",
+          "return_difference_bps": 0.0010161786989648647,
+          "ibkr_return": -0.03849486550764181,
+          "yahoo_return": -0.03849476388977191
+        },
+        {
+          "date": "2022-12-30",
+          "return_difference_bps": 0.0009690753133284602,
+          "ibkr_return": -0.009193609806517178,
+          "yahoo_return": -0.009193512898985845
+        },
+        {
+          "date": "2022-11-18",
+          "return_difference_bps": -0.0009567892433892666,
+          "ibkr_return": 0.00701152742644684,
+          "yahoo_return": 0.007011431747522501
+        },
+        {
+          "date": "2025-12-16",
+          "return_difference_bps": 0.000937268349598952,
+          "ibkr_return": -0.010819804747108863,
+          "yahoo_return": -0.010819711020273903
+        },
+        {
+          "date": "2022-02-08",
+          "return_difference_bps": -0.0009037857995330967,
+          "ibkr_return": 0.005292063443225858,
+          "yahoo_return": 0.005291973064645905
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 26
+      }
+    },
+    {
+      "symbol": "AVGO",
+      "ibkr_file": "AVGO_daily.json",
+      "ibkr_contract_id": 313130367,
+      "ibkr_description": "BROADCOM INC",
+      "ibkr_known_at": "2026-10-04T03:13:55.675Z",
+      "yahoo_name": "Broadcom Inc.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/AVGO?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:22.853636+00:00",
+      "yahoo_sha256": "b610412b70f46b00d8a9222aa36dafc42ea02b452678df3916fb98dbd21ad5ac",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 1,
+      "ibkr_invalid_common_yahoo_valid": 1,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0001934481153043066,
+        "p99_absolute": 0.0005079701786314672,
+        "maximum_absolute": 0.2792449211885817,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.9999999978442909,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0015438333012349178,
+        "p99_absolute": 0.0008548675413555531,
+        "maximum_absolute": 0.28763041064694406,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2026-09-08",
+          "return_difference_bps": -0.28763041064694406,
+          "ibkr_return": 0.029813629886277893,
+          "yahoo_return": 0.029784866845213198
+        },
+        {
+          "date": "2026-09-04",
+          "return_difference_bps": 0.27971292383410784,
+          "ibkr_return": 0.002043901892708977,
+          "yahoo_return": 0.0020718731850923877
+        },
+        {
+          "date": "2026-07-20",
+          "return_difference_bps": -0.27453508178787445,
+          "ibkr_return": 0.019793970120274063,
+          "yahoo_return": 0.019766516612095275
+        },
+        {
+          "date": "2026-07-17",
+          "return_difference_bps": 0.2663769060451404,
+          "ibkr_return": -0.00969421818667382,
+          "yahoo_return": -0.009667580496069306
+        },
+        {
+          "date": "2026-08-07",
+          "return_difference_bps": -0.24178814731934395,
+          "ibkr_return": 0.017120030435609612,
+          "yahoo_return": 0.017095851620877678
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 40,
+        "splits": 1
+      }
+    },
+    {
+      "symbol": "CEG",
+      "ibkr_file": "CEG_daily.json",
+      "ibkr_contract_id": 538132976,
+      "ibkr_description": "CONSTELLATION ENERGY",
+      "ibkr_known_at": "2026-10-04T03:14:28.392Z",
+      "yahoo_name": "Constellation Energy Corporation",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/CEG?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:55.243584+00:00",
+      "yahoo_sha256": "dd8788962192089f7a373e508a08e6a5efe40ac1e7f88b8277464af3bbf02d38",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 1181,
+      "yahoo_first": "2022-01-19",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1181,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00020635671171831405,
+        "p99_absolute": 0.1411455154642916,
+        "maximum_absolute": 0.6295570868064537,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1180,
+      "return_correlation": 0.9999999916233229,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.005229549918366215,
+        "p99_absolute": 0.1582505482519817,
+        "maximum_absolute": 0.6339331644222845,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2023-05-10",
+          "return_difference_bps": 0.6339331644222845,
+          "ibkr_return": 0.0063331222292590805,
+          "yahoo_return": 0.006396515545701309
+        },
+        {
+          "date": "2023-05-11",
+          "return_difference_bps": -0.6265570416041921,
+          "ibkr_return": -0.004153555695405875,
+          "yahoo_return": -0.004216211399566294
+        },
+        {
+          "date": "2022-01-26",
+          "return_difference_bps": 0.4929723620095139,
+          "ibkr_return": 0.03150357995226738,
+          "yahoo_return": 0.03155287718846833
+        },
+        {
+          "date": "2022-01-25",
+          "return_difference_bps": -0.46739330020417746,
+          "ibkr_return": -0.02102803738317749,
+          "yahoo_return": -0.021074776713197907
+        },
+        {
+          "date": "2025-05-01",
+          "return_difference_bps": -0.22364553813103427,
+          "ibkr_return": 0.07688865019692082,
+          "yahoo_return": 0.07686628564310771
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 19
+      }
+    },
+    {
+      "symbol": "COHR",
+      "ibkr_file": "COHR_daily.json",
+      "ibkr_contract_id": 584127832,
+      "ibkr_description": "COHERENT CORP",
+      "ibkr_known_at": "2026-10-04T03:14:19.204Z",
+      "yahoo_name": "Coherent Corp.",
+      "yahoo_exchange": "NYQ",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/COHR?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:46.139538+00:00",
+      "yahoo_sha256": "125bfcbe7b2fddf2c285fcb2229b00fbeb4765174c3bc73558047be8edca16bf",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 3,
+      "ibkr_invalid_common_yahoo_valid": 3,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00020186921245723966,
+        "p99_absolute": 0.0005324385572880175,
+        "maximum_absolute": 0.0005663639623953998,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.9999999999996146,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.00029374169638817556,
+        "p99_absolute": 0.0008904385611629984,
+        "maximum_absolute": 0.001067809052290869,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2023-09-12",
+          "return_difference_bps": -0.001067809052290869,
+          "ibkr_return": -0.002132196162046962,
+          "yahoo_return": -0.002132302942952191
+        },
+        {
+          "date": "2022-10-26",
+          "return_difference_bps": 0.0009947715251534817,
+          "ibkr_return": 0.006794682422451848,
+          "yahoo_return": 0.006794781899604363
+        },
+        {
+          "date": "2022-12-30",
+          "return_difference_bps": -0.0009787357080348613,
+          "ibkr_return": 0.015037593984962516,
+          "yahoo_return": 0.015037496111391713
+        },
+        {
+          "date": "2025-11-18",
+          "return_difference_bps": -0.0009620537311239019,
+          "ibkr_return": -0.006615373552886994,
+          "yahoo_return": -0.006615469758260106
+        },
+        {
+          "date": "2022-03-02",
+          "return_difference_bps": -0.0009596872496686615,
+          "ibkr_return": 0.03997060984570178,
+          "yahoo_return": 0.03997051387697681
+        }
+      ],
+      "yahoo_actions": {}
+    },
+    {
+      "symbol": "CRCL",
+      "ibkr_file": "CRCL_daily.json",
+      "ibkr_contract_id": 789044667,
+      "ibkr_description": "CIRCLE INTERNET GROUP INC",
+      "ibkr_known_at": "2026-10-04T03:13:40.726Z",
+      "yahoo_name": "Circle Internet Group",
+      "yahoo_exchange": "NYQ",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/CRCL?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:35.222205+00:00",
+      "yahoo_sha256": "2fbd4025c2d9a475a015c12b2d0fde2f4fa84f19ccd06466b4b9346209f0a3d8",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 334,
+      "yahoo_first": "2025-06-05",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 334,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 3,
+      "ibkr_invalid_common_yahoo_valid": 3,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0001929965853797455,
+        "p99_absolute": 0.0005091872270934773,
+        "maximum_absolute": 0.0005535231828446285,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 333,
+      "return_correlation": 0.9999999999998559,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0002994578800045837,
+        "p99_absolute": 0.0009114356506412238,
+        "maximum_absolute": 0.0010232939784415862,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2026-08-19",
+          "return_difference_bps": -0.0010232939784415862,
+          "ibkr_return": 0.09563641433152092,
+          "yahoo_return": 0.09563631200212308
+        },
+        {
+          "date": "2026-08-20",
+          "return_difference_bps": 0.000962014150562851,
+          "ibkr_return": 0.06451202443058901,
+          "yahoo_return": 0.06451212063200407
+        },
+        {
+          "date": "2025-08-06",
+          "return_difference_bps": 0.0009360274555447745,
+          "ibkr_return": 0.05054245436237248,
+          "yahoo_return": 0.050542547965118034
+        },
+        {
+          "date": "2026-08-18",
+          "return_difference_bps": 0.0009221916152934995,
+          "ibkr_return": -0.03834294141305805,
+          "yahoo_return": -0.03834284919389652
+        },
+        {
+          "date": "2025-06-06",
+          "return_difference_bps": -0.0008885792257551373,
+          "ibkr_return": 0.2940045656614201,
+          "yahoo_return": 0.2940044768034975
+        }
+      ],
+      "yahoo_actions": {}
+    },
+    {
+      "symbol": "CRDO",
+      "ibkr_file": "CRDO_daily.json",
+      "ibkr_contract_id": 541265127,
+      "ibkr_description": "CREDO TECHNOLOGY GROUP HOLDI",
+      "ibkr_known_at": "2026-10-04T03:14:14.636Z",
+      "yahoo_name": "Credo Technology Group Holding Ltd",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/CRDO?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:40.404750+00:00",
+      "yahoo_sha256": "01eb5309d3bc673188d48c4f257aa6422e81badb34feb347f4c94d8ff2b0de74",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 1175,
+      "yahoo_first": "2022-01-27",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1175,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 1,
+      "ibkr_invalid_common_yahoo_valid": 1,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00021674416261774354,
+        "p99_absolute": 0.0005562134530734397,
+        "maximum_absolute": 3.436635859643822,
+        "above1bps": 3,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1174,
+      "return_correlation": 0.9999999324311764,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.01604982833903819,
+        "p99_absolute": 0.2290533910612282,
+        "maximum_absolute": 3.4365047253404057,
+        "above1bps": 6,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2023-10-24",
+          "return_difference_bps": 3.4365047253404057,
+          "ibkr_return": 0.0,
+          "yahoo_return": 0.0003436504725340406
+        },
+        {
+          "date": "2023-10-25",
+          "return_difference_bps": -3.3602133214694074,
+          "ibkr_return": -0.021993127147766356,
+          "yahoo_return": -0.022329148479913297
+        },
+        {
+          "date": "2023-02-13",
+          "return_difference_bps": 2.780700434470429,
+          "ibkr_return": 0.03596349973161583,
+          "yahoo_return": 0.036241569775062876
+        },
+        {
+          "date": "2023-02-10",
+          "return_difference_bps": -2.7185328161638544,
+          "ibkr_return": 0.013050570962479524,
+          "yahoo_return": 0.012778717680863139
+        },
+        {
+          "date": "2024-10-24",
+          "return_difference_bps": -1.3055395288752436,
+          "ibkr_return": 0.009053285049146487,
+          "yahoo_return": 0.008922731096258962
+        }
+      ],
+      "yahoo_actions": {}
+    },
+    {
+      "symbol": "DELL",
+      "ibkr_file": "DELL_daily.json",
+      "ibkr_contract_id": 346218218,
+      "ibkr_description": "DELL TECHNOLOGIES -C",
+      "ibkr_known_at": "2026-10-04T03:14:14.636Z",
+      "yahoo_name": "Dell Technologies Inc.",
+      "yahoo_exchange": "NYQ",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/DELL?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:35.316814+00:00",
+      "yahoo_sha256": "68a10e12168cf1affa9bba0b40b19947b4e4b2b2e180f23d906589fcc3fc5f86",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 5,
+      "ibkr_invalid_common_yahoo_valid": 5,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0002152156430845764,
+        "p99_absolute": 18.62761399278341,
+        "maximum_absolute": 18.627894899150288,
+        "above1bps": 19,
+        "above10bps": 19,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.9999988825420418,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.014664804108648195,
+        "p99_absolute": 0.0008984501158160185,
+        "maximum_absolute": 17.998850265344977,
+        "above1bps": 1,
+        "above10bps": 1,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2021-11-02",
+          "return_difference_bps": -17.998850265344977,
+          "ibkr_return": -0.03195915672421723,
+          "yahoo_return": -0.03375904175075173
+        },
+        {
+          "date": "2023-10-11",
+          "return_difference_bps": -0.0010496590530095773,
+          "ibkr_return": 0.034716092968520185,
+          "yahoo_return": 0.034715988002614884
+        },
+        {
+          "date": "2024-05-24",
+          "return_difference_bps": -0.0009743887297020137,
+          "ibkr_return": 0.04304226085824059,
+          "yahoo_return": 0.04304216341936762
+        },
+        {
+          "date": "2023-09-14",
+          "return_difference_bps": 0.0009573631376547098,
+          "ibkr_return": 0.01007806955287438,
+          "yahoo_return": 0.010078165289188146
+        },
+        {
+          "date": "2022-10-14",
+          "return_difference_bps": -0.0009493899411072704,
+          "ibkr_return": -0.02086310374392697,
+          "yahoo_return": -0.02086319868292108
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 18,
+        "splits": 2
+      }
+    },
+    {
+      "symbol": "ETN",
+      "ibkr_file": "ETN_daily.json",
+      "ibkr_contract_id": 118017869,
+      "ibkr_description": "EATON CORP PLC",
+      "ibkr_known_at": "2026-10-04T03:14:28.392Z",
+      "yahoo_name": "Eaton Corporation plc",
+      "yahoo_exchange": "NYQ",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/ETN?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:55.248709+00:00",
+      "yahoo_sha256": "91587ff3c384523c6d15b3609355d3078a1592430c5bbe77fe5854507850a029",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 2,
+      "ibkr_invalid_common_yahoo_valid": 2,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0002215633232438563,
+        "p99_absolute": 0.0004968710188624216,
+        "maximum_absolute": 0.0005663639623953998,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999999983108,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.00029852355413796016,
+        "p99_absolute": 0.0008697798369983193,
+        "maximum_absolute": 0.0009753387930633295,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2025-03-31",
+          "return_difference_bps": -0.0009753387930633295,
+          "ibkr_return": -0.008534850640113945,
+          "yahoo_return": -0.008534948173993251
+        },
+        {
+          "date": "2022-04-25",
+          "return_difference_bps": 0.0009644918219642307,
+          "ibkr_return": 0.007052862229526058,
+          "yahoo_return": 0.007052958678708254
+        },
+        {
+          "date": "2025-03-14",
+          "return_difference_bps": -0.0009616452123495378,
+          "ibkr_return": 0.034931265421219715,
+          "yahoo_return": 0.03493116925669848
+        },
+        {
+          "date": "2025-04-01",
+          "return_difference_bps": 0.000951893939227233,
+          "ibkr_return": 0.017915609020343615,
+          "yahoo_return": 0.017915704209737537
+        },
+        {
+          "date": "2024-09-11",
+          "return_difference_bps": 0.0009444942095093722,
+          "ibkr_return": 0.030662504335761342,
+          "yahoo_return": 0.030662598785182293
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 38
+      }
+    },
+    {
+      "symbol": "GLW",
+      "ibkr_file": "GLW_daily.json",
+      "ibkr_contract_id": 7655,
+      "ibkr_description": "CORNING INC",
+      "ibkr_known_at": "2026-10-04T03:13:50.537Z",
+      "yahoo_name": "Corning Incorporated",
+      "yahoo_exchange": "NYQ",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/GLW?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:18.826177+00:00",
+      "yahoo_sha256": "c92086a7e629c7ee05ea6e9f1e93de9985c455d462676cf6f41d7bf994cfe4b0",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 2,
+      "ibkr_invalid_common_yahoo_valid": 2,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0002284982847378103,
+        "p99_absolute": 0.0005438237860033723,
+        "maximum_absolute": 0.0005691808169228096,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999999988876,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.00031405032478600117,
+        "p99_absolute": 0.0009216739007111846,
+        "maximum_absolute": 0.0010766620728297482,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2024-03-18",
+          "return_difference_bps": 0.0010766620728297482,
+          "ibkr_return": -0.00553675792063979,
+          "yahoo_return": -0.005536650254432507
+        },
+        {
+          "date": "2022-10-31",
+          "return_difference_bps": -0.0010750968837403008,
+          "ibkr_return": -0.009849184364419838,
+          "yahoo_return": -0.009849291874108212
+        },
+        {
+          "date": "2023-03-02",
+          "return_difference_bps": -0.0010250864934668869,
+          "ibkr_return": 0.0052432274978153615,
+          "yahoo_return": 0.005243124989166015
+        },
+        {
+          "date": "2025-08-11",
+          "return_difference_bps": 0.0010146792650544967,
+          "ibkr_return": -0.01201155542040433,
+          "yahoo_return": -0.012011453952477824
+        },
+        {
+          "date": "2022-06-15",
+          "return_difference_bps": 0.0010077159995347529,
+          "ibkr_return": 0.019937694704049935,
+          "yahoo_return": 0.01993779547564989
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 40
+      }
+    },
+    {
+      "symbol": "GOOG",
+      "ibkr_file": "GOOG_daily.json",
+      "ibkr_contract_id": 208813720,
+      "ibkr_description": "ALPHABET INC-CL C",
+      "ibkr_known_at": "2026-10-04T03:13:35.655Z",
+      "yahoo_name": "Alphabet Inc.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/GOOG?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:18.807123+00:00",
+      "yahoo_sha256": "e8af95077e3dfb063e43804fc5f103e23f40e212124721fc21e42bf55dba6ccb",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00021593899224292556,
+        "p99_absolute": 0.0005223913109198008,
+        "maximum_absolute": 0.4710659112572291,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.9999999955154215,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0010616411841913996,
+        "p99_absolute": 0.0009118048200473795,
+        "maximum_absolute": 0.4798457250565491,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2023-05-08",
+          "return_difference_bps": 0.4798457250565491,
+          "ibkr_return": 0.019017134249670553,
+          "yahoo_return": 0.019065118822176208
+        },
+        {
+          "date": "2023-05-05",
+          "return_difference_bps": -0.47550022209463805,
+          "ibkr_return": 0.009599847923201343,
+          "yahoo_return": 0.00955229790099188
+        },
+        {
+          "date": "2026-03-31",
+          "return_difference_bps": -0.0010995340837816059,
+          "ibkr_return": 0.05023065094823176,
+          "yahoo_return": 0.05023054099482338
+        },
+        {
+          "date": "2023-08-10",
+          "return_difference_bps": 0.0009850324378390951,
+          "ibkr_return": 0.00046100653092584487,
+          "yahoo_return": 0.0004611050341696288
+        },
+        {
+          "date": "2023-08-31",
+          "return_difference_bps": 0.0009822683399995924,
+          "ibkr_return": 0.0030672606441246586,
+          "yahoo_return": 0.0030673588709586586
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 10,
+        "splits": 1
+      }
+    },
+    {
+      "symbol": "HPE",
+      "ibkr_file": "HPE_daily.json",
+      "ibkr_contract_id": 209411798,
+      "ibkr_description": "HEWLETT PACKARD ENTERPRISE",
+      "ibkr_known_at": "2026-10-04T03:14:33.781Z",
+      "yahoo_name": "Hewlett Packard Enterprise Company",
+      "yahoo_exchange": "NYQ",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/HPE?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:55.235794+00:00",
+      "yahoo_sha256": "77c548af54fa24d118759550682c0998f974e8d3188d6430d50fcbaadc4d1cd8",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 3,
+      "ibkr_invalid_common_yahoo_valid": 3,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00020509125064904765,
+        "p99_absolute": 0.0005423298608642215,
+        "maximum_absolute": 0.0005647916989648394,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999999990301,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0002909249026027506,
+        "p99_absolute": 0.0009413233153510172,
+        "maximum_absolute": 0.0010820127638311305,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2022-04-01",
+          "return_difference_bps": 0.0010820127638311305,
+          "ibkr_return": -0.02513464991023351,
+          "yahoo_return": -0.025134541708957125
+        },
+        {
+          "date": "2024-03-22",
+          "return_difference_bps": 0.001024562708007437,
+          "ibkr_return": 0.009296920395119201,
+          "yahoo_return": 0.009297022851390002
+        },
+        {
+          "date": "2022-02-15",
+          "return_difference_bps": -0.0010099808700481105,
+          "ibkr_return": 0.030231179608772862,
+          "yahoo_return": 0.030231078610685858
+        },
+        {
+          "date": "2022-03-25",
+          "return_difference_bps": 0.0009972979442274266,
+          "ibkr_return": 0.02873900293255116,
+          "yahoo_return": 0.028739102662345584
+        },
+        {
+          "date": "2022-03-28",
+          "return_difference_bps": -0.000995672294612504,
+          "ibkr_return": -0.009122006841505104,
+          "yahoo_return": -0.009122106408734565
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 41,
+        "splits": 2
+      }
+    },
+    {
+      "symbol": "INTC",
+      "ibkr_file": "INTC_daily.json",
+      "ibkr_contract_id": 270639,
+      "ibkr_description": "INTEL CORP",
+      "ibkr_known_at": "2026-10-04T03:13:46.062Z",
+      "yahoo_name": "Intel Corporation",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/INTC?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:13.750760+00:00",
+      "yahoo_sha256": "09763bae5c2a8ebf03e0b2146cb6dfbdd3fe70dce48816a0b631ede159fcdc3b",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00020139184875311855,
+        "p99_absolute": 0.0005129720096475054,
+        "maximum_absolute": 0.0005707776473684589,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.999999999999494,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.00028575672531488527,
+        "p99_absolute": 0.0008200418708192994,
+        "maximum_absolute": 0.0010104190339976782,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2023-04-05",
+          "return_difference_bps": 0.0010104190339976782,
+          "ibkr_return": -0.00815709969788525,
+          "yahoo_return": -0.00815699865598185
+        },
+        {
+          "date": "2025-04-09",
+          "return_difference_bps": 0.00092844135268777,
+          "ibkr_return": 0.18753447324875916,
+          "yahoo_return": 0.18753456609289443
+        },
+        {
+          "date": "2024-08-30",
+          "return_difference_bps": 0.0009112717425097117,
+          "ibkr_return": 0.09488325881768511,
+          "yahoo_return": 0.09488334994485936
+        },
+        {
+          "date": "2026-06-26",
+          "return_difference_bps": 0.0009061356731621117,
+          "ibkr_return": -0.03424399789267718,
+          "yahoo_return": -0.034243907279109864
+        },
+        {
+          "date": "2025-02-04",
+          "return_difference_bps": 0.0009034383119388423,
+          "ibkr_return": -0.004643962848297156,
+          "yahoo_return": -0.004643872504465962
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 32
+      }
+    },
+    {
+      "symbol": "KLAC",
+      "ibkr_file": "KLAC_daily.json",
+      "ibkr_contract_id": 270957,
+      "ibkr_description": "KLA CORP",
+      "ibkr_known_at": "2026-10-04T03:14:05.368Z",
+      "yahoo_name": "KLA Corporation",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/KLAC?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:28.002960+00:00",
+      "yahoo_sha256": "1f3222c3a9faa9d9ec4e5ec35f120f043866538d501c6eb5389850177502b555",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.000217402061908345,
+        "p99_absolute": 0.0005341214018628195,
+        "maximum_absolute": 0.08686635588617264,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.9999999999263242,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0004386264679573956,
+        "p99_absolute": 0.000936713470045536,
+        "maximum_absolute": 0.09045988240030667,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2025-10-20",
+          "return_difference_bps": 0.09045988240030667,
+          "ibkr_return": 0.04176531183922805,
+          "yahoo_return": 0.04177435782746808
+        },
+        {
+          "date": "2025-10-21",
+          "return_difference_bps": -0.08678319651789224,
+          "ibkr_return": -0.004727291652210086,
+          "yahoo_return": -0.004735969971861875
+        },
+        {
+          "date": "2024-08-08",
+          "return_difference_bps": -0.0010240789172222264,
+          "ibkr_return": 0.07821189015650964,
+          "yahoo_return": 0.07821178774861792
+        },
+        {
+          "date": "2022-04-20",
+          "return_difference_bps": -0.0010129195882058184,
+          "ibkr_return": 0.02300041442188161,
+          "yahoo_return": 0.02300031312992279
+        },
+        {
+          "date": "2024-05-08",
+          "return_difference_bps": -0.0010100891034703352,
+          "ibkr_return": 0.003877488171561305,
+          "yahoo_return": 0.003877387162650958
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 40,
+        "splits": 1
+      }
+    },
+    {
+      "symbol": "LITE",
+      "ibkr_file": "LITE_daily.json",
+      "ibkr_contract_id": 201113895,
+      "ibkr_description": "LUMENTUM HOLDINGS INC",
+      "ibkr_known_at": "2026-10-04T03:14:19.204Z",
+      "yahoo_name": "Lumentum Holdings Inc.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/LITE?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:46.080905+00:00",
+      "yahoo_sha256": "c4a46c76722a4a2c1cad6d143ab098c27b1443ff046d0b89080e36a0703938b7",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 1,
+      "ibkr_invalid_common_yahoo_valid": 1,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0001999404553032491,
+        "p99_absolute": 0.0005482855085503505,
+        "maximum_absolute": 1.0969325569964994,
+        "above1bps": 1,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999787547007,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.00628542377179799,
+        "p99_absolute": 0.0277489951904254,
+        "maximum_absolute": 2.3052391580269394,
+        "above1bps": 1,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2024-02-09",
+          "return_difference_bps": 2.3052391580269394,
+          "ibkr_return": 0.10111866637420475,
+          "yahoo_return": 0.10134919029000744
+        },
+        {
+          "date": "2024-02-12",
+          "return_difference_bps": -0.9990295017425765,
+          "ibkr_return": 0.002788844621513853,
+          "yahoo_return": 0.0026889416713395953
+        },
+        {
+          "date": "2024-02-08",
+          "return_difference_bps": -0.8509904019249337,
+          "ibkr_return": -0.22426408031308487,
+          "yahoo_return": -0.22434917935327736
+        },
+        {
+          "date": "2025-06-16",
+          "return_difference_bps": 0.6309667924364604,
+          "ibkr_return": 0.04013580696010677,
+          "yahoo_return": 0.040198903639350414
+        },
+        {
+          "date": "2025-06-18",
+          "return_difference_bps": -0.5935417886027139,
+          "ibkr_return": 0.024554088487375392,
+          "yahoo_return": 0.02449473430851512
+        }
+      ],
+      "yahoo_actions": {}
+    },
+    {
+      "symbol": "LRCX",
+      "ibkr_file": "LRCX_daily.json",
+      "ibkr_contract_id": 732440574,
+      "ibkr_description": "LAM RESEARCH CORP",
+      "ibkr_known_at": "2026-10-04T03:14:00.644Z",
+      "yahoo_name": "Lam Research Corporation",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/LRCX?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:27.994485+00:00",
+      "yahoo_sha256": "609180caa0b4a7d4be6faddec265f4ec2275b7a41b84eb020d90eda8f38b20ce",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0002224043105236717,
+        "p99_absolute": 0.0005400256264387339,
+        "maximum_absolute": 1.233120881820593,
+        "above1bps": 1,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.9999999872948258,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.002560924229293076,
+        "p99_absolute": 0.0009039463635618362,
+        "maximum_absolute": 1.2395453171465398,
+        "above1bps": 2,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2024-10-04",
+          "return_difference_bps": -1.2395453171465398,
+          "ibkr_return": 0.005425400739827557,
+          "yahoo_return": 0.005301446208112903
+        },
+        {
+          "date": "2024-10-03",
+          "return_difference_bps": 1.22885869706435,
+          "ibkr_return": -0.0037956491297032047,
+          "yahoo_return": -0.0036727632599967697
+        },
+        {
+          "date": "2023-05-17",
+          "return_difference_bps": 0.18335750240128235,
+          "ibkr_return": 0.027140659104733844,
+          "yahoo_return": 0.027158994854973972
+        },
+        {
+          "date": "2023-05-16",
+          "return_difference_bps": -0.18100714177959887,
+          "ibkr_return": 0.012077425896753535,
+          "yahoo_return": 0.012059325182575575
+        },
+        {
+          "date": "2023-08-29",
+          "return_difference_bps": -0.001133147553566971,
+          "ibkr_return": 0.02750930483851599,
+          "yahoo_return": 0.027509191523760634
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 40,
+        "splits": 1
+      }
+    },
+    {
+      "symbol": "MCHP",
+      "ibkr_file": "MCHP_daily.json",
+      "ibkr_contract_id": 271568,
+      "ibkr_description": "MICROCHIP TECHNOLOGY INC",
+      "ibkr_known_at": "2026-10-04T03:14:23.922Z",
+      "yahoo_name": "Microchip Technology Incorporated",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/MCHP?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:50.408026+00:00",
+      "yahoo_sha256": "dd72aa4d503709172259fdeee638e459c3eb33d131cc4ae101a6a205221b923a",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00022472443239607287,
+        "p99_absolute": 0.0005332980710370806,
+        "maximum_absolute": 0.0005691808169228096,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.9999999999990904,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0003168306596312736,
+        "p99_absolute": 0.000903668124552226,
+        "maximum_absolute": 0.0010220861101917222,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2026-03-26",
+          "return_difference_bps": -0.0010220861101917222,
+          "ibkr_return": -0.014732965009207954,
+          "yahoo_return": -0.014733067217818974
+        },
+        {
+          "date": "2022-08-02",
+          "return_difference_bps": -0.0010157413576905583,
+          "ibkr_return": 0.0015905147484094329,
+          "yahoo_return": 0.0015904131742736638
+        },
+        {
+          "date": "2022-07-20",
+          "return_difference_bps": 0.001001593610272522,
+          "ibkr_return": 0.015964042157470493,
+          "yahoo_return": 0.01596414231683152
+        },
+        {
+          "date": "2024-09-09",
+          "return_difference_bps": 0.0009973631920345838,
+          "ibkr_return": 0.01781616952355236,
+          "yahoo_return": 0.017816269259871564
+        },
+        {
+          "date": "2025-06-10",
+          "return_difference_bps": -0.000996756714943814,
+          "ibkr_return": 0.02263041880969885,
+          "yahoo_return": 0.022630319134027355
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 40,
+        "splits": 1
+      }
+    },
+    {
+      "symbol": "META",
+      "ibkr_file": "META_daily.json",
+      "ibkr_contract_id": 107113386,
+      "ibkr_description": "META PLATFORMS INC-CLASS A",
+      "ibkr_known_at": "2026-10-04T03:13:35.655Z",
+      "yahoo_name": "Meta Platforms, Inc.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/META?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:18.788995+00:00",
+      "yahoo_sha256": "0fd9be0e87278e2c3f50e94e1ea9feaa54591853b821b977e35a309b7ff7ba8a",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1083,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00021766742852591392,
+        "p99_absolute": 0.0005377752307467177,
+        "maximum_absolute": 0.1575720680824233,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1082,
+      "return_correlation": 0.9999999994229505,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0008719191626673677,
+        "p99_absolute": 0.0009221888149002495,
+        "maximum_absolute": 0.16301245961303223,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2026-05-27",
+          "return_difference_bps": 0.16301245961303223,
+          "ibkr_return": 0.03741385504784911,
+          "yahoo_return": 0.03743015629381041
+        },
+        {
+          "date": "2026-05-28",
+          "return_difference_bps": -0.1579253914174572,
+          "ibkr_return": 6.296733569444157e-05,
+          "yahoo_return": 4.717479655269585e-05
+        },
+        {
+          "date": "2025-10-20",
+          "return_difference_bps": -0.14244956804576603,
+          "ibkr_return": 0.021285795985549028,
+          "yahoo_return": 0.02127155102874445
+        },
+        {
+          "date": "2025-10-17",
+          "return_difference_bps": 0.14009207032650295,
+          "ibkr_return": 0.0067970845562934645,
+          "yahoo_return": 0.006811093763326115
+        },
+        {
+          "date": "2024-08-29",
+          "return_difference_bps": -0.0011354035001076568,
+          "ibkr_return": 0.0027864855451062986,
+          "yahoo_return": 0.002786372004756288
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 11
+      }
+    },
+    {
+      "symbol": "MPWR",
+      "ibkr_file": "MPWR_daily.json",
+      "ibkr_contract_id": 32106121,
+      "ibkr_description": "MONOLITHIC POWER SYSTEMS INC",
+      "ibkr_known_at": "2026-10-04T03:14:23.922Z",
+      "yahoo_name": "Monolithic Power Systems, Inc.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/MPWR?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:50.550733+00:00",
+      "yahoo_sha256": "88cd4c4bdd17282af88cb1957e025454f375fabd8c14912f5761b299606276e1",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0001930881254885719,
+        "p99_absolute": 0.0005419655314309325,
+        "maximum_absolute": 0.10411719325809088,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999998887574,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0005675362375768101,
+        "p99_absolute": 0.0009233293575383606,
+        "maximum_absolute": 0.10613392512848208,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2025-12-08",
+          "return_difference_bps": -0.10613392512848208,
+          "ibkr_return": 0.021084431156373595,
+          "yahoo_return": 0.021073817763860747
+        },
+        {
+          "date": "2025-12-05",
+          "return_difference_bps": 0.10537156554635274,
+          "ibkr_return": 0.01105233327035715,
+          "yahoo_return": 0.011062870426911786
+        },
+        {
+          "date": "2026-08-06",
+          "return_difference_bps": -0.07511031009377334,
+          "ibkr_return": 0.010130439629863597,
+          "yahoo_return": 0.01012292859885422
+        },
+        {
+          "date": "2026-08-05",
+          "return_difference_bps": 0.07439092561956073,
+          "ibkr_return": 0.007805068050905195,
+          "yahoo_return": 0.007812507143467151
+        },
+        {
+          "date": "2023-07-25",
+          "return_difference_bps": 0.0011177331193934492,
+          "ibkr_return": 0.03433854694122496,
+          "yahoo_return": 0.034338658714536896
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 40
+      }
+    },
+    {
+      "symbol": "MRVL",
+      "ibkr_file": "MRVL_daily.json",
+      "ibkr_contract_id": 483492393,
+      "ibkr_description": "MARVELL TECHNOLOGY INC",
+      "ibkr_known_at": "2026-10-04T03:13:50.537Z",
+      "yahoo_name": "Marvell Technology, Inc.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/MRVL?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:18.918345+00:00",
+      "yahoo_sha256": "3314ad622f97ba7015d0c145f583cfa33e314c39d05765b1cc10d08ec8903e98",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 2,
+      "ibkr_invalid_common_yahoo_valid": 2,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00021777529557454045,
+        "p99_absolute": 0.0005464821834610946,
+        "maximum_absolute": 2.435385977646032,
+        "above1bps": 3,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999518715709,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.009820810599911498,
+        "p99_absolute": 0.0009907707360312656,
+        "maximum_absolute": 2.4439106929152743,
+        "above1bps": 7,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2023-03-27",
+          "return_difference_bps": -2.4439106929152743,
+          "ibkr_return": 0.003653190452995503,
+          "yahoo_return": 0.0034087993837039754
+        },
+        {
+          "date": "2023-03-24",
+          "return_difference_bps": 2.365392760735885,
+          "ibkr_return": -0.028855250709555302,
+          "yahoo_return": -0.028618711433481714
+        },
+        {
+          "date": "2024-07-18",
+          "return_difference_bps": 1.471923750770987,
+          "ibkr_return": 0.003974679817459137,
+          "yahoo_return": 0.004121872192536236
+        },
+        {
+          "date": "2024-07-19",
+          "return_difference_bps": -1.4292875638988178,
+          "ibkr_return": -0.024780058651026393,
+          "yahoo_return": -0.024922987407416275
+        },
+        {
+          "date": "2025-12-15",
+          "return_difference_bps": -1.1819513770083834,
+          "ibkr_return": -0.0018952854773749417,
+          "yahoo_return": -0.00201348061507578
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 39
+      }
+    },
+    {
+      "symbol": "MSFT",
+      "ibkr_file": "MSFT_daily.json",
+      "ibkr_contract_id": 272093,
+      "ibkr_description": "MICROSOFT CORP",
+      "ibkr_known_at": "2026-10-04T03:14:09.420Z",
+      "yahoo_name": "Microsoft Corporation",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/MSFT?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:31.721240+00:00",
+      "yahoo_sha256": "d873789146718d611ee6dbbf311f5f192154e8c1441593c89f34edd9e0a1c5fa",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 1,
+      "ibkr_invalid_common_yahoo_valid": 1,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0001963229090407026,
+        "p99_absolute": 0.0005163859273737971,
+        "maximum_absolute": 0.31326085838223605,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999974670154,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0007683897672755241,
+        "p99_absolute": 0.0008732442780323701,
+        "maximum_absolute": 0.3183428408504163,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2023-10-04",
+          "return_difference_bps": 0.3183428408504163,
+          "ibkr_return": 0.017741472286926907,
+          "yahoo_return": 0.01777330657101195
+        },
+        {
+          "date": "2023-10-05",
+          "return_difference_bps": -0.31411297589878373,
+          "ibkr_return": 0.0012854679416838266,
+          "yahoo_return": 0.0012540566440939482
+        },
+        {
+          "date": "2022-06-24",
+          "return_difference_bps": 0.0010567762731561459,
+          "ibkr_return": 0.03414973344665051,
+          "yahoo_return": 0.034149839124277825
+        },
+        {
+          "date": "2022-06-02",
+          "return_difference_bps": -0.000989719366462083,
+          "ibkr_return": 0.007928933264811588,
+          "yahoo_return": 0.007928834292874942
+        },
+        {
+          "date": "2023-04-11",
+          "return_difference_bps": -0.000958710192344725,
+          "ibkr_return": -0.022668371401914356,
+          "yahoo_return": -0.02266846727293359
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 40
+      }
+    },
+    {
+      "symbol": "MSTR",
+      "ibkr_file": "MSTR_daily.json",
+      "ibkr_contract_id": 272110,
+      "ibkr_description": "STRATEGY INC",
+      "ibkr_known_at": "2026-10-04T03:13:46.062Z",
+      "yahoo_name": "Strategy Inc",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/MSTR?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:40.396868+00:00",
+      "yahoo_sha256": "07a56eeb9677bd6df689de48f9fda3209daa431f8505ebc60756509b49cac048",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 3,
+      "ibkr_invalid_common_yahoo_valid": 3,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00018814782953846532,
+        "p99_absolute": 0.0005357727284938109,
+        "maximum_absolute": 0.29418855620910733,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.999999999704443,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0010391958131361872,
+        "p99_absolute": 0.0009335290690914989,
+        "maximum_absolute": 0.30715135138192906,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2023-06-29",
+          "return_difference_bps": 0.30715135138192906,
+          "ibkr_return": 0.044961764073584876,
+          "yahoo_return": 0.04499247920872307
+        },
+        {
+          "date": "2023-06-30",
+          "return_difference_bps": -0.29588567310279146,
+          "ibkr_return": 0.006377663482733498,
+          "yahoo_return": 0.0063480749154232186
+        },
+        {
+          "date": "2023-12-07",
+          "return_difference_bps": -0.17624916718084194,
+          "ibkr_return": 0.003884826325411428,
+          "yahoo_return": 0.0038672014086933437
+        },
+        {
+          "date": "2023-12-06",
+          "return_difference_bps": 0.17314960430225845,
+          "ibkr_return": -0.01492640692640701,
+          "yahoo_return": -0.014909091965976784
+        },
+        {
+          "date": "2025-10-29",
+          "return_difference_bps": -0.0010124823146551165,
+          "ibkr_return": -0.03260258572231578,
+          "yahoo_return": -0.032602686970547246
+        }
+      ],
+      "yahoo_actions": {
+        "splits": 1
+      }
+    },
+    {
+      "symbol": "MU",
+      "ibkr_file": "MU_daily.json",
+      "ibkr_contract_id": 9939,
+      "ibkr_description": "MICRON TECHNOLOGY INC",
+      "ibkr_known_at": "2026-10-04T03:13:50.537Z",
+      "yahoo_name": "Micron Technology, Inc.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/MU?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:13.810449+00:00",
+      "yahoo_sha256": "3580e43dce415edb6f1f1e2b81589c241e846f6e753b21920e123092c9e6c9d7",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 2,
+      "ibkr_invalid_common_yahoo_valid": 2,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00018534014101234675,
+        "p99_absolute": 0.0005218232508319433,
+        "maximum_absolute": 0.0005630982369275728,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999999995812,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0002601599781625838,
+        "p99_absolute": 0.0008641122531516389,
+        "maximum_absolute": 0.0009693120617271234,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2026-05-01",
+          "return_difference_bps": 0.0009693120617271234,
+          "ibkr_return": 0.048437620852347596,
+          "yahoo_return": 0.04843771778355377
+        },
+        {
+          "date": "2021-11-10",
+          "return_difference_bps": 0.0009549682011833482,
+          "ibkr_return": -0.028839793623495313,
+          "yahoo_return": -0.028839698126675195
+        },
+        {
+          "date": "2026-04-30",
+          "return_difference_bps": -0.0009407288525942192,
+          "ibkr_return": -0.002507425838058963,
+          "yahoo_return": -0.0025075199109442226
+        },
+        {
+          "date": "2025-04-14",
+          "return_difference_bps": -0.0009307250459222871,
+          "ibkr_return": 0.021135873472322153,
+          "yahoo_return": 0.02113578039981756
+        },
+        {
+          "date": "2023-08-07",
+          "return_difference_bps": -0.0009127346556336846,
+          "ibkr_return": -0.007581175797453876,
+          "yahoo_return": -0.00758126707091944
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 20
+      }
+    },
+    {
+      "symbol": "NVDA",
+      "ibkr_file": "NVDA_daily.json",
+      "ibkr_contract_id": 4815747,
+      "ibkr_description": "NVIDIA CORP",
+      "ibkr_known_at": "2026-10-04T03:13:55.675Z",
+      "yahoo_name": "NVIDIA Corporation",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/NVDA?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:22.879740+00:00",
+      "yahoo_sha256": "231130acd56c020366936e07f0b82a585c242757fa61fb9ec70fc07b7568e87a",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 3,
+      "ibkr_invalid_common_yahoo_valid": 3,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0001869949628474643,
+        "p99_absolute": 0.0005412136038884796,
+        "maximum_absolute": 0.0005740809405629932,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.9999999999994725,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0002711658186288331,
+        "p99_absolute": 0.0008203027738185044,
+        "maximum_absolute": 0.000992274606925747,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2025-05-19",
+          "return_difference_bps": 0.000992274606925747,
+          "ibkr_return": 0.0012555391432791385,
+          "yahoo_return": 0.001255638370739831
+        },
+        {
+          "date": "2025-02-14",
+          "return_difference_bps": 0.0009604590944789493,
+          "ibkr_return": 0.026313844334392877,
+          "yahoo_return": 0.026313940380302325
+        },
+        {
+          "date": "2022-07-28",
+          "return_difference_bps": -0.000940523752213096,
+          "ibkr_return": 0.010905002810567943,
+          "yahoo_return": 0.010904908758192722
+        },
+        {
+          "date": "2022-08-18",
+          "return_difference_bps": 0.0009024059499651571,
+          "ibkr_return": 0.023888737387510073,
+          "yahoo_return": 0.02388882762810507
+        },
+        {
+          "date": "2025-02-18",
+          "return_difference_bps": -0.0008808935847426369,
+          "ibkr_return": 0.003961109110551142,
+          "yahoo_return": 0.003961021021192668
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 40,
+        "splits": 2
+      }
+    },
+    {
+      "symbol": "NXPI",
+      "ibkr_file": "NXPI_daily.json",
+      "ibkr_contract_id": 77791077,
+      "ibkr_description": "NXP SEMICONDUCTORS NV",
+      "ibkr_known_at": "2026-10-04T03:13:40.726Z",
+      "yahoo_name": "NXP Semiconductors N.V.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/NXPI?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:50.466319+00:00",
+      "yahoo_sha256": "c9461276ad4aafc4c48f5d80a33b30811d00faf58c411b5e6e93e8804f7bcf47",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0001890636747159391,
+        "p99_absolute": 0.0004904307127961971,
+        "maximum_absolute": 0.5360501710227616,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999947088061,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.001796094010181565,
+        "p99_absolute": 0.0008475444875255533,
+        "maximum_absolute": 0.5506409542777035,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2023-03-31",
+          "return_difference_bps": 0.5506409542777035,
+          "ibkr_return": 0.02670410747715013,
+          "yahoo_return": 0.0267591715725779
+        },
+        {
+          "date": "2023-04-03",
+          "return_difference_bps": -0.5233437203344682,
+          "ibkr_return": -0.02407894031211455,
+          "yahoo_return": -0.024131274684147996
+        },
+        {
+          "date": "2026-01-26",
+          "return_difference_bps": -0.4272031534247045,
+          "ibkr_return": -0.0061083150514044116,
+          "yahoo_return": -0.006151035366746882
+        },
+        {
+          "date": "2026-01-23",
+          "return_difference_bps": 0.4222060206582334,
+          "ibkr_return": -0.018078141499472067,
+          "yahoo_return": -0.018035920897406243
+        },
+        {
+          "date": "2024-05-22",
+          "return_difference_bps": -0.000986489852028427,
+          "ibkr_return": 0.016070257269878097,
+          "yahoo_return": 0.016070158620892894
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 33
+      }
+    },
+    {
+      "symbol": "ORCL",
+      "ibkr_file": "ORCL_daily.json",
+      "ibkr_contract_id": 272800,
+      "ibkr_description": "ORACLE CORP",
+      "ibkr_known_at": "2026-10-04T03:14:09.420Z",
+      "yahoo_name": "Oracle Corporation",
+      "yahoo_exchange": "NYQ",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/ORCL?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:31.713173+00:00",
+      "yahoo_sha256": "d62221eab5c148894e5057d7bd873f24afc61e6c263bb78d62cdf7cffbfc2f2e",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 2,
+      "ibkr_invalid_common_yahoo_valid": 2,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00019726941191677838,
+        "p99_absolute": 0.0005155359161790329,
+        "maximum_absolute": 0.0005702221783643324,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999999991758,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.00028974009943011386,
+        "p99_absolute": 0.0008632399758901066,
+        "maximum_absolute": 0.0011531410493148542,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2025-10-31",
+          "return_difference_bps": -0.0011531410493148542,
+          "ibkr_return": 0.0222663396784617,
+          "yahoo_return": 0.022266224364356768
+        },
+        {
+          "date": "2024-07-10",
+          "return_difference_bps": 0.001046403597104728,
+          "ibkr_return": 0.009880580039806519,
+          "yahoo_return": 0.00988068468016623
+        },
+        {
+          "date": "2024-08-15",
+          "return_difference_bps": -0.0009946606671640268,
+          "ibkr_return": 0.009808259587020807,
+          "yahoo_return": 0.00980816012095409
+        },
+        {
+          "date": "2026-09-29",
+          "return_difference_bps": -0.0009846361592735775,
+          "ibkr_return": 0.03914027149321275,
+          "yahoo_return": 0.039140173029596825
+        },
+        {
+          "date": "2022-06-27",
+          "return_difference_bps": 0.0009478570961451993,
+          "ibkr_return": -0.004101838755304232,
+          "yahoo_return": -0.004101743969594618
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 40
+      }
+    },
+    {
+      "symbol": "P",
+      "ibkr_file": "P_daily.json",
+      "ibkr_contract_id": 208813725,
+      "ibkr_description": "EVERPURE INC-A",
+      "ibkr_known_at": "2026-10-04T03:16:12.451Z",
+      "yahoo_name": "Everpure, Inc.",
+      "yahoo_exchange": "NYQ",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/P?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:59.999896+00:00",
+      "yahoo_sha256": "f5dfa56eb081c0d42193b8785e42737dcb003614a2d6ef5b81308ba272f51814",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00018990403360952257,
+        "p99_absolute": 0.0005195706765270813,
+        "maximum_absolute": 0.0005707776473684589,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.9999999999995389,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.00026542715152430714,
+        "p99_absolute": 0.0008109291002256214,
+        "maximum_absolute": 0.0009921108223842623,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2026-05-11",
+          "return_difference_bps": -0.0009921108223842623,
+          "ibkr_return": 0.11745138178096215,
+          "yahoo_return": 0.11745128256987991
+        },
+        {
+          "date": "2026-01-09",
+          "return_difference_bps": 0.0009844973458683626,
+          "ibkr_return": 0.019482496194825005,
+          "yahoo_return": 0.019482594644559592
+        },
+        {
+          "date": "2023-12-11",
+          "return_difference_bps": 0.000920867677667303,
+          "ibkr_return": 0.0015073861923424747,
+          "yahoo_return": 0.0015074782791102415
+        },
+        {
+          "date": "2026-02-03",
+          "return_difference_bps": 0.0008965208531108715,
+          "ibkr_return": -0.02800682399772536,
+          "yahoo_return": -0.02800673434564005
+        },
+        {
+          "date": "2026-02-04",
+          "return_difference_bps": -0.0008862550548993653,
+          "ibkr_return": -0.016088927892350613,
+          "yahoo_return": -0.016089016517856103
+        }
+      ],
+      "yahoo_actions": {}
+    },
+    {
+      "symbol": "QCOM",
+      "ibkr_file": "QCOM_daily.json",
+      "ibkr_contract_id": 273544,
+      "ibkr_description": "QUALCOMM INC",
+      "ibkr_known_at": "2026-10-04T03:14:23.922Z",
+      "yahoo_name": "QUALCOMM Incorporated",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/QCOM?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:50.511534+00:00",
+      "yahoo_sha256": "3c2c578a67aa3a9044e504f5a1305cab4ffd27ca01e0feef97045da1fee7d022",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00021017615758900376,
+        "p99_absolute": 0.000515370793885417,
+        "maximum_absolute": 0.8971811998792489,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.999999991342184,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0017111928890188861,
+        "p99_absolute": 0.0009090615950668739,
+        "maximum_absolute": 0.8995976860015631,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2023-10-12",
+          "return_difference_bps": 0.8995976860015631,
+          "ibkr_return": 0.002969762419006372,
+          "yahoo_return": 0.0030597221876065284
+        },
+        {
+          "date": "2023-10-13",
+          "return_difference_bps": -0.87431445258912,
+          "ibkr_return": -0.02503364737550473,
+          "yahoo_return": -0.025121078820763643
+        },
+        {
+          "date": "2024-01-18",
+          "return_difference_bps": -0.0010301417741054308,
+          "ibkr_return": 0.04285099052540908,
+          "yahoo_return": 0.04285088751123167
+        },
+        {
+          "date": "2026-03-13",
+          "return_difference_bps": 0.0010191261068381863,
+          "ibkr_return": -0.01014105985512781,
+          "yahoo_return": -0.010140957942517126
+        },
+        {
+          "date": "2023-12-12",
+          "return_difference_bps": -0.0009885190577207936,
+          "ibkr_return": 0.004261572373255085,
+          "yahoo_return": 0.004261473521349313
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 40
+      }
+    },
+    {
+      "symbol": "QQQ",
+      "ibkr_file": "QQQ_daily.json",
+      "ibkr_contract_id": 320227571,
+      "ibkr_description": "INVESCO QQQ TRUST SERIES 1",
+      "ibkr_known_at": "2026-10-04T03:13:34.946Z",
+      "yahoo_name": "Invesco QQQ Trust",
+      "yahoo_exchange": "NGM",
+      "yahoo_type": "ETF",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/QQQ?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:26:00.015703+00:00",
+      "yahoo_sha256": "f29957411eded59a28100ee8d4c88d0990f212a3ee6813ae59c5250a625f9124",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 4,
+      "ibkr_invalid_common_yahoo_valid": 4,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0002164175383345679,
+        "p99_absolute": 0.0005264583530895095,
+        "maximum_absolute": 0.0005672522129795965,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.999999999996768,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0002919042057369943,
+        "p99_absolute": 0.0009188962216244436,
+        "maximum_absolute": 0.0010560605345766305,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2022-10-21",
+          "return_difference_bps": 0.0010560605345766305,
+          "ibkr_return": 0.023447660807847992,
+          "yahoo_return": 0.02344776641390145
+        },
+        {
+          "date": "2025-07-07",
+          "return_difference_bps": 0.0010494599267385496,
+          "ibkr_return": -0.007532990543310247,
+          "yahoo_return": -0.0075328855973175735
+        },
+        {
+          "date": "2025-08-22",
+          "return_difference_bps": -0.00104824819491256,
+          "ibkr_return": 0.015427496094304827,
+          "yahoo_return": 0.015427391269485335
+        },
+        {
+          "date": "2024-11-12",
+          "return_difference_bps": -0.0010443392672865315,
+          "ibkr_return": -0.001809901914993084,
+          "yahoo_return": -0.0018100063489198126
+        },
+        {
+          "date": "2025-06-25",
+          "return_difference_bps": -0.001041669588364158,
+          "ibkr_return": 0.0025565971321650505,
+          "yahoo_return": 0.002556492965206214
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 40
+      }
+    },
+    {
+      "symbol": "SMCI",
+      "ibkr_file": "SMCI_daily.json",
+      "ibkr_contract_id": 731466419,
+      "ibkr_description": "SUPER MICRO COMPUTER INC",
+      "ibkr_known_at": "2026-10-04T03:14:14.636Z",
+      "yahoo_name": "Super Micro Computer, Inc.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/SMCI?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:40.444488+00:00",
+      "yahoo_sha256": "fee5a1376e77b4acb2da2ad4e6850c2b9c5fecf65e3fabc467f26cc1467c5e5a",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.0001940648397535938,
+        "p99_absolute": 0.0005493713439719272,
+        "maximum_absolute": 3.174675835504459,
+        "above1bps": 1,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.9999999763253204,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.005337521777819217,
+        "p99_absolute": 0.000934713152589417,
+        "maximum_absolute": 3.1360401255842163,
+        "above1bps": 2,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2025-04-17",
+          "return_difference_bps": 3.1360401255842163,
+          "ibkr_return": -0.012229539040451542,
+          "yahoo_return": -0.011915935027893121
+        },
+        {
+          "date": "2025-04-21",
+          "return_difference_bps": -2.9731004254807125,
+          "ibkr_return": -0.0631746031746031,
+          "yahoo_return": -0.06347191321715118
+        },
+        {
+          "date": "2024-06-20",
+          "return_difference_bps": 0.10874739037380898,
+          "ibkr_return": -0.00258692840295216,
+          "yahoo_return": -0.002576053663914779
+        },
+        {
+          "date": "2024-06-21",
+          "return_difference_bps": -0.10739318762942318,
+          "ibkr_return": -0.013480378801913773,
+          "yahoo_return": -0.013491118120676715
+        },
+        {
+          "date": "2023-05-25",
+          "return_difference_bps": 0.0011319265058595818,
+          "ibkr_return": 0.23410094260828052,
+          "yahoo_return": 0.2341010558009311
+        }
+      ],
+      "yahoo_actions": {
+        "splits": 1
+      }
+    },
+    {
+      "symbol": "SNDK",
+      "ibkr_file": "SNDK_daily.json",
+      "ibkr_contract_id": 760250490,
+      "ibkr_description": "SANDISK CORP",
+      "ibkr_known_at": "2026-10-04T03:13:46.062Z",
+      "yahoo_name": "Sandisk Corporation",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/SNDK?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:13.728701+00:00",
+      "yahoo_sha256": "14f22cad404a9788da9a93e6afca63397609f8cf394db2eeff507ccb62ef2642",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 411,
+      "yahoo_first": "2025-02-13",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 411,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 1,
+      "ibkr_invalid_common_yahoo_valid": 1,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00021148702789020035,
+        "p99_absolute": 0.0005624377045210233,
+        "maximum_absolute": 351.39994557849997,
+        "above1bps": 2,
+        "above10bps": 1,
+        "above100bps": 1
+      },
+      "common_adjacent_return_pairs": 410,
+      "return_correlation": 0.9993172068866337,
+      "close_return_diff_bps": {
+        "mean_absolute": 1.717718069341658,
+        "p99_absolute": 0.7276366642113612,
+        "maximum_absolute": 351.3997409762182,
+        "above1bps": 4,
+        "above10bps": 2,
+        "above100bps": 2
+      },
+      "worst_return_differences": [
+        {
+          "date": "2025-02-24",
+          "return_difference_bps": -351.3997409762182,
+          "ibkr_return": 0.0,
+          "yahoo_return": -0.03513997409762182
+        },
+        {
+          "date": "2025-02-25",
+          "return_difference_bps": 348.2185264304727,
+          "ibkr_return": -0.043875322612666245,
+          "yahoo_return": -0.009053469969618977
+        },
+        {
+          "date": "2025-04-11",
+          "return_difference_bps": -1.6560919722663492,
+          "ibkr_return": 0.02896684905053104,
+          "yahoo_return": 0.028801239853304406
+        },
+        {
+          "date": "2025-04-10",
+          "return_difference_bps": 1.366650476767317,
+          "ibkr_return": -0.15062875888463634,
+          "yahoo_return": -0.1504920938369596
+        },
+        {
+          "date": "2025-09-08",
+          "return_difference_bps": -0.7294517526856836,
+          "ibkr_return": 0.02844638949671774,
+          "yahoo_return": 0.02837344432144917
+        }
+      ],
+      "yahoo_actions": {}
+    },
+    {
+      "symbol": "SOXX",
+      "ibkr_file": "SOXX_daily.json",
+      "ibkr_contract_id": 12658194,
+      "ibkr_description": "ISHARES SEMICONDUCTOR ETF",
+      "ibkr_known_at": "2026-10-04T03:13:40.726Z",
+      "yahoo_name": "iShares Semiconductor ETF",
+      "yahoo_exchange": "NGM",
+      "yahoo_type": "ETF",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/SOXX?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:26:04.221029+00:00",
+      "yahoo_sha256": "e561ba95b5b4e4a89ef61abea46b9296004b35df79619b7493ebd5ab6e1dedc4",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 18,
+      "ibkr_invalid_common_yahoo_valid": 18,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00020745262840904388,
+        "p99_absolute": 0.000522260711566247,
+        "maximum_absolute": 0.0005636399058595032,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.9999999999989153,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.00028696161851169007,
+        "p99_absolute": 0.000909969459372828,
+        "maximum_absolute": 0.0010456217114374056,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2022-08-03",
+          "return_difference_bps": 0.0010456217114374056,
+          "ibkr_return": 0.027785945310202953,
+          "yahoo_return": 0.027786049872374097
+        },
+        {
+          "date": "2023-04-18",
+          "return_difference_bps": -0.001040834480825481,
+          "ibkr_return": 0.004325218624438687,
+          "yahoo_return": 0.0043251145409906044
+        },
+        {
+          "date": "2023-05-25",
+          "return_difference_bps": 0.0010263533112286893,
+          "ibkr_return": 0.06660014387487534,
+          "yahoo_return": 0.06660024651020646
+        },
+        {
+          "date": "2026-09-23",
+          "return_difference_bps": -0.0010166667518962669,
+          "ibkr_return": -0.012325849366248698,
+          "yahoo_return": -0.012325951032923887
+        },
+        {
+          "date": "2025-11-26",
+          "return_difference_bps": 0.0010031025743373334,
+          "ibkr_return": 0.027540729247478746,
+          "yahoo_return": 0.02754082955773618
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 41,
+        "splits": 1
+      }
+    },
+    {
+      "symbol": "SPCX",
+      "ibkr_file": "SPCX_daily.json",
+      "ibkr_contract_id": 890493863,
+      "ibkr_description": "SPACE EXPLORATION TECHN-CL A",
+      "ibkr_known_at": "2026-10-04T03:14:38.991Z",
+      "yahoo_name": "Space Exploration Technologies Corp.",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/SPCX?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:40.342619+00:00",
+      "yahoo_sha256": "7f64a06dcd8173fbd8d891a5aa2863664ea010f9043aa4081b12cd3211813c83",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 78,
+      "yahoo_first": "2026-06-12",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 78,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00020654913002182695,
+        "p99_absolute": 109.30166929980889,
+        "maximum_absolute": 475.22296281706787,
+        "above1bps": 1,
+        "above10bps": 1,
+        "above100bps": 1
+      },
+      "common_adjacent_return_pairs": 77,
+      "return_correlation": 0.9905229935189442,
+      "close_return_diff_bps": {
+        "mean_absolute": 12.070558052438544,
+        "p99_absolute": 447.2965809699755,
+        "maximum_absolute": 498.18178647524246,
+        "above1bps": 2,
+        "above10bps": 2,
+        "above100bps": 2
+      },
+      "worst_return_differences": [
+        {
+          "date": "2026-06-16",
+          "return_difference_bps": 498.18178647524246,
+          "ibkr_return": 0.048311688311688306,
+          "yahoo_return": 0.09812986695921255
+        },
+        {
+          "date": "2026-06-17",
+          "return_difference_bps": -431.2275687051548,
+          "ibkr_return": -0.049454905847373776,
+          "yahoo_return": -0.09257766271788925
+        },
+        {
+          "date": "2026-09-11",
+          "return_difference_bps": 0.0009574742221296617,
+          "ibkr_return": 0.020448103657713546,
+          "yahoo_return": 0.02044819940513576
+        },
+        {
+          "date": "2026-08-11",
+          "return_difference_bps": -0.0008642963578164853,
+          "ibkr_return": -0.03928211042237295,
+          "yahoo_return": -0.03928219685200873
+        },
+        {
+          "date": "2026-09-14",
+          "return_difference_bps": -0.0008386690930617391,
+          "ibkr_return": -0.0202367568282521,
+          "yahoo_return": -0.020236840695161407
+        }
+      ],
+      "yahoo_actions": {}
+    },
+    {
+      "symbol": "STX",
+      "ibkr_file": "STX_daily.json",
+      "ibkr_contract_id": 491932113,
+      "ibkr_description": "SEAGATE TECHNOLOGY HOLDINGS",
+      "ibkr_known_at": "2026-10-04T03:14:33.781Z",
+      "yahoo_name": "Seagate Technology Holdings plc",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/STX?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:26:00.083172+00:00",
+      "yahoo_sha256": "8f40d23cab2a8a6a41f00da2c30f107f3be4195f3fa77f2ea4cf57ab39a6ad14",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 1,
+      "ibkr_invalid_common_yahoo_valid": 1,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00019974415677026514,
+        "p99_absolute": 0.0005260496143355555,
+        "maximum_absolute": 1.5137291589795154,
+        "above1bps": 1,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.999999973414375,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.004997158070297974,
+        "p99_absolute": 0.0009219467827836789,
+        "maximum_absolute": 1.55255709066493,
+        "above1bps": 2,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2023-08-28",
+          "return_difference_bps": 1.55255709066493,
+          "ibkr_return": 0.025457932319155496,
+          "yahoo_return": 0.02561318802822199
+        },
+        {
+          "date": "2023-08-29",
+          "return_difference_bps": -1.5210588441272321,
+          "ibkr_return": 0.005146836209506622,
+          "yahoo_return": 0.004994730325093899
+        },
+        {
+          "date": "2025-07-18",
+          "return_difference_bps": -0.6811556731411983,
+          "ibkr_return": 0.016085059978189875,
+          "yahoo_return": 0.016016944410875755
+        },
+        {
+          "date": "2025-07-21",
+          "return_difference_bps": 0.6731350387689794,
+          "ibkr_return": 0.003689294338609983,
+          "yahoo_return": 0.003756607842486881
+        },
+        {
+          "date": "2025-11-19",
+          "return_difference_bps": 0.39447039278606155,
+          "ibkr_return": 0.020759473725675548,
+          "yahoo_return": 0.020798920764954154
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 40
+      }
+    },
+    {
+      "symbol": "TSM",
+      "ibkr_file": "TSM_daily.json",
+      "ibkr_contract_id": 6223250,
+      "ibkr_description": "TAIWAN SEMICONDUCTOR-SP ADR",
+      "ibkr_known_at": "2026-10-04T03:14:00.644Z",
+      "yahoo_name": "Taiwan Semiconductor Manufacturing Company Limited",
+      "yahoo_exchange": "NYQ",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/TSM?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:22.893423+00:00",
+      "yahoo_sha256": "c7ade64e40fb363701c2b00007c920a5fd58c2d79f5b0e0e54522f65eb3f4d86",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 14,
+      "ibkr_invalid_common_yahoo_valid": 14,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00020440440895441725,
+        "p99_absolute": 0.00048321774215320806,
+        "maximum_absolute": 0.0005674609715455858,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999999989699,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.0002816228436524198,
+        "p99_absolute": 0.0008227442486630211,
+        "maximum_absolute": 0.000988996879947024,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2026-01-02",
+          "return_difference_bps": -0.000988996879947024,
+          "ibkr_return": 0.05172924413439084,
+          "yahoo_return": 0.051729145234702845
+        },
+        {
+          "date": "2025-12-31",
+          "return_difference_bps": 0.0009436329340140048,
+          "ibkr_return": 0.014386808198143974,
+          "yahoo_return": 0.014386902561437376
+        },
+        {
+          "date": "2025-09-29",
+          "return_difference_bps": 0.0009375110021636601,
+          "ibkr_return": -0.0004755633596722486,
+          "yahoo_return": -0.00047546960857203224
+        },
+        {
+          "date": "2026-01-15",
+          "return_difference_bps": 0.0009155192404186607,
+          "ibkr_return": 0.04441930848949882,
+          "yahoo_return": 0.04441940004142286
+        },
+        {
+          "date": "2025-11-05",
+          "return_difference_bps": 0.0009127172040379605,
+          "ibkr_return": -0.0013943206937596653,
+          "yahoo_return": -0.0013942294220392615
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 32
+      }
+    },
+    {
+      "symbol": "VRT",
+      "ibkr_file": "VRT_daily.json",
+      "ibkr_contract_id": 402783527,
+      "ibkr_description": "VERTIV HOLDINGS CO-A",
+      "ibkr_known_at": "2026-10-04T03:14:05.368Z",
+      "yahoo_name": "Vertiv Holdings Co",
+      "yahoo_exchange": "NYQ",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/VRT?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:31.550818+00:00",
+      "yahoo_sha256": "0ec8a89ba7e1b12cb562f0ab90e7d2423a9af6c8f9f2b91f27249cd80a131d1c",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2053,
+      "yahoo_first": "2018-08-02",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 3,
+      "ibkr_invalid_common_yahoo_valid": 3,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00020139184875311855,
+        "p99_absolute": 0.000508354329031846,
+        "maximum_absolute": 74.85940020603321,
+        "above1bps": 1,
+        "above10bps": 1,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999727781825313,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.1191999241508442,
+        "p99_absolute": 0.0008885132710800829,
+        "maximum_absolute": 74.67325776309042,
+        "above1bps": 2,
+        "above10bps": 2,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2023-02-16",
+          "return_difference_bps": 74.67325776309042,
+          "ibkr_return": -0.002489110143123807,
+          "yahoo_return": 0.0049782156331852345
+        },
+        {
+          "date": "2023-02-17",
+          "return_difference_bps": -74.4425595221443,
+          "ibkr_return": 0.0018714909544601532,
+          "yahoo_return": -0.005572764997754276
+        },
+        {
+          "date": "2023-08-14",
+          "return_difference_bps": 0.001063299430725806,
+          "ibkr_return": 0.03193076693524333,
+          "yahoo_return": 0.0319308732651864
+        },
+        {
+          "date": "2026-04-10",
+          "return_difference_bps": -0.0010317512488811076,
+          "ibkr_return": 0.025969962453066486,
+          "yahoo_return": 0.025969859277941598
+        },
+        {
+          "date": "2026-09-03",
+          "return_difference_bps": -0.0010210981904457128,
+          "ibkr_return": 0.04725360342812612,
+          "yahoo_return": 0.04725350131830708
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 15
+      }
+    },
+    {
+      "symbol": "VST",
+      "ibkr_file": "VST_daily.json",
+      "ibkr_contract_id": 254457731,
+      "ibkr_description": "VISTRA CORP",
+      "ibkr_known_at": "2026-10-04T03:14:28.392Z",
+      "yahoo_name": "Vistra Corp.",
+      "yahoo_exchange": "NYQ",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/VST?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:55.259692+00:00",
+      "yahoo_sha256": "3283b1600f8b6b65b902922ac42111f415d4c7a20084658c9c76ebdf67a2a253",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2512,
+      "yahoo_first": "2016-10-05",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1255,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 1,
+      "ibkr_invalid_common_yahoo_valid": 1,
+      "common_close_diff_bps": {
+        "median_absolute": 0.00020440440895441725,
+        "p99_absolute": 0.0005001847623864465,
+        "maximum_absolute": 0.0005647916989648394,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1254,
+      "return_correlation": 0.9999999999993348,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.00028508967039038614,
+        "p99_absolute": 0.0008355423429917685,
+        "maximum_absolute": 0.0009713903637020849,
+        "above1bps": 0,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2024-04-19",
+          "return_difference_bps": 0.0009713903637020849,
+          "ibkr_return": -0.003339404978749183,
+          "yahoo_return": -0.003339307839712813
+        },
+        {
+          "date": "2026-02-06",
+          "return_difference_bps": -0.000962087460809613,
+          "ibkr_return": 0.04599147270566872,
+          "yahoo_return": 0.04599137649692264
+        },
+        {
+          "date": "2025-03-20",
+          "return_difference_bps": -0.0009475078655007962,
+          "ibkr_return": 0.01578744705429358,
+          "yahoo_return": 0.01578735230350703
+        },
+        {
+          "date": "2024-03-22",
+          "return_difference_bps": -0.0009415847923577303,
+          "ibkr_return": 0.01053093462044763,
+          "yahoo_return": 0.010530840461968394
+        },
+        {
+          "date": "2024-11-15",
+          "return_difference_bps": -0.0009386327270988204,
+          "ibkr_return": 0.026650296114401284,
+          "yahoo_return": 0.026650202251128574
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 32
+      }
+    },
+    {
+      "symbol": "WDC",
+      "ibkr_file": "WDC_daily.json",
+      "ibkr_contract_id": 13681,
+      "ibkr_description": "WESTERN DIGITAL CORP",
+      "ibkr_known_at": "2026-10-04T03:14:33.781Z",
+      "yahoo_name": "Western Digital Corporation",
+      "yahoo_exchange": "NMS",
+      "yahoo_type": "EQUITY",
+      "yahoo_currency": "USD",
+      "yahoo_source": "https://query1.finance.yahoo.com/v8/finance/chart/WDC?range=10y&interval=1d&events=div%2Csplits",
+      "yahoo_known_at": "2026-10-04T05:25:59.984761+00:00",
+      "yahoo_sha256": "b020140a82caa27d5dff7dc9015bbc26f121236e697568b46be486e461c7df21",
+      "manifest_hash_match": true,
+      "identity_diagnostics": [],
+      "identity_scope": "Metadata and observed path corroboration; not a CUSIP/ISIN security-master certification",
+      "yahoo_rows": 2514,
+      "yahoo_first": "2016-10-03",
+      "yahoo_last": "2026-10-02",
+      "yahoo_missing_internal_sessions": 0,
+      "yahoo_non_session_dates": [],
+      "yahoo_duplicate_dates": 0,
+      "common_rows": 1253,
+      "ibkr_only_rows": 0,
+      "yahoo_invalid_rows": 0,
+      "ibkr_invalid_common_rows": 0,
+      "ibkr_invalid_common_yahoo_valid": 0,
+      "common_close_diff_bps": {
+        "median_absolute": 3.4129992276432652,
+        "p99_absolute": 3.413731724486535,
+        "maximum_absolute": 4.869523201771475,
+        "above1bps": 849,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "common_adjacent_return_pairs": 1252,
+      "return_correlation": 0.9999998861720582,
+      "close_return_diff_bps": {
+        "mean_absolute": 0.009838629380448749,
+        "p99_absolute": 0.0010054793242453288,
+        "maximum_absolute": 4.59611939799931,
+        "above1bps": 6,
+        "above10bps": 0,
+        "above100bps": 0
+      },
+      "worst_return_differences": [
+        {
+          "date": "2025-02-24",
+          "return_difference_bps": -4.59611939799931,
+          "ibkr_return": -0.0556681869985044,
+          "yahoo_return": -0.05612779893830433
+        },
+        {
+          "date": "2024-11-26",
+          "return_difference_bps": -1.5146770239837792,
+          "ibkr_return": 0.05185825410544487,
+          "yahoo_return": 0.05170678640304649
+        },
+        {
+          "date": "2024-11-25",
+          "return_difference_bps": 1.5054735461328406,
+          "ibkr_return": 0.045009784735811964,
+          "yahoo_return": 0.04516033209042525
+        },
+        {
+          "date": "2025-07-29",
+          "return_difference_bps": -1.483331444056546,
+          "ibkr_return": 0.023630037692084604,
+          "yahoo_return": 0.02348170454767895
+        },
+        {
+          "date": "2025-07-28",
+          "return_difference_bps": 1.4528000144053976,
+          "ibkr_return": 0.0023249055507121863,
+          "yahoo_return": 0.002470185552152726
+        }
+      ],
+      "yahoo_actions": {
+        "dividends": 20,
+        "splits": 1
+      }
+    }
+  ],
+  "ibkr_invalid_row_counterparts": [
+    {
+      "symbol": "AAOI",
+      "date": "2022-03-22",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00014449610841182903,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "AAPL",
+      "date": "2023-12-20",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 9.39821731549273e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "open"
+      ]
+    },
+    {
+      "symbol": "AAPL",
+      "date": "2024-01-31",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.0003309932550266126,
+      "yahoo_changed_fields_over_1cent": [
+        "open",
+        "high",
+        "low"
+      ]
+    },
+    {
+      "symbol": "AAPL",
+      "date": "2024-03-15",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.0002828648193453631,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "AAPL",
+      "date": "2024-04-04",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0004338478110099686,
+      "yahoo_changed_fields_over_1cent": [
+        "open"
+      ]
+    },
+    {
+      "symbol": "ALAB",
+      "date": "2025-11-04",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.0001361556101198147,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "AMZN",
+      "date": "2022-01-05",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.0003267943404772211,
+      "yahoo_changed_fields_over_1cent": [
+        "open"
+      ]
+    },
+    {
+      "symbol": "AMZN",
+      "date": "2025-06-27",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0001366662694124443,
+      "yahoo_changed_fields_over_1cent": [
+        "open",
+        "high"
+      ]
+    },
+    {
+      "symbol": "ANET",
+      "date": "2024-07-03",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00036746030218637316,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "ASML",
+      "date": "2022-11-25",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0004537623121692036,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "ASML",
+      "date": "2023-04-25",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00016121277424119285,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "ASML",
+      "date": "2025-02-13",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00012568533658274816,
+      "yahoo_changed_fields_over_1cent": [
+        "open",
+        "high"
+      ]
+    },
+    {
+      "symbol": "AVGO",
+      "date": "2024-07-03",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00016942248493023726,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "COHR",
+      "date": "2022-03-28",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.0001246293679368904,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "COHR",
+      "date": "2022-09-08",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.0003879950982721425,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "COHR",
+      "date": "2023-04-19",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00022639152774672766,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "CRCL",
+      "date": "2025-11-25",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 8.705627774219238e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "CRCL",
+      "date": "2026-04-13",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 3.0925797478431605e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "CRCL",
+      "date": "2026-06-03",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00030473560674870726,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "CRDO",
+      "date": "2025-12-01",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00028532767482047916,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "DELL",
+      "date": "2023-03-06",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -7.81100029101367e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "DELL",
+      "date": "2026-03-20",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00011613209061067664,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "DELL",
+      "date": "2026-04-02",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.000280025951315821,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "DELL",
+      "date": "2026-08-31",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00021415374584776714,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "DELL",
+      "date": "2026-09-18",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -4.2977963410351094e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "ETN",
+      "date": "2025-10-10",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00036381636370208525,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "ETN",
+      "date": "2026-06-23",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -3.0119993166266568e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "GLW",
+      "date": "2024-12-20",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0002902749973721086,
+      "yahoo_changed_fields_over_1cent": [
+        "high",
+        "low"
+      ]
+    },
+    {
+      "symbol": "GLW",
+      "date": "2026-05-15",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00012728253229177255,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "HPE",
+      "date": "2025-12-24",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0002185178460401005,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "HPE",
+      "date": "2025-12-30",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.0001267867810739176,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "HPE",
+      "date": "2026-05-08",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00012168093199704799,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "LITE",
+      "date": "2022-01-03",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.000256378420715464,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "MRVL",
+      "date": "2022-11-09",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.0002493945372439299,
+      "yahoo_changed_fields_over_1cent": [
+        "open",
+        "low"
+      ]
+    },
+    {
+      "symbol": "MRVL",
+      "date": "2025-04-11",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00011431945390327769,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "MSFT",
+      "date": "2024-01-19",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00033681326394585653,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "MSTR",
+      "date": "2022-02-09",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -3.41665684633341e-05,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "MSTR",
+      "date": "2023-09-08",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00046254328589512284,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "MSTR",
+      "date": "2023-12-13",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00026038889155977074,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "MU",
+      "date": "2024-07-03",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0005353178456068974,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "MU",
+      "date": "2026-03-31",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00010839774300386296,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "NVDA",
+      "date": "2025-04-30",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00016811005254524503,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "NVDA",
+      "date": "2026-04-14",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00027953610759468006,
+      "yahoo_changed_fields_over_1cent": [
+        "open"
+      ]
+    },
+    {
+      "symbol": "NVDA",
+      "date": "2026-05-29",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -2.8907433113900538e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "open",
+        "low"
+      ]
+    },
+    {
+      "symbol": "ORCL",
+      "date": "2024-11-25",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00029220512010041944,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "ORCL",
+      "date": "2026-07-01",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "QQQ",
+      "date": "2025-04-04",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00031768837116530335,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "QQQ",
+      "date": "2025-11-28",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "QQQ",
+      "date": "2026-05-08",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.000274612291795151,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "QQQ",
+      "date": "2026-05-20",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00034234119761222814,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "SNDK",
+      "date": "2025-02-18",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00032362224899884495,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2021-10-14",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.000500532112424068,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2021-10-19",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00018437236959378822,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2021-12-22",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 9.116017718469038e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2022-01-28",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -2.682686961463787e-05,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2022-02-25",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0002686744382529582,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2022-03-17",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00019682411034338543,
+      "yahoo_changed_fields_over_1cent": [
+        "open",
+        "high"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2022-03-28",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -7.48759809710009e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2022-06-24",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0002455155123648467,
+      "yahoo_changed_fields_over_1cent": [
+        "open",
+        "high"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2022-07-05",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0002693519696173041,
+      "yahoo_changed_fields_over_1cent": [
+        "open",
+        "high"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2022-09-21",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00021939308592067164,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2022-11-25",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00010525815663520177,
+      "yahoo_changed_fields_over_1cent": [
+        "open",
+        "low"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2023-12-20",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 7.729183737481549e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "open",
+        "low"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2024-01-29",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 9.094792918773464e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2024-05-07",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00030697577590999003,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2025-07-21",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00012357796341788685,
+      "yahoo_changed_fields_over_1cent": [
+        "open",
+        "low"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2025-10-06",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.0005079913134586889,
+      "yahoo_changed_fields_over_1cent": [
+        "open",
+        "low"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2026-01-15",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 3.6199012676263465e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "SOXX",
+      "date": "2026-08-10",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00027670408409008473,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "STX",
+      "date": "2022-10-25",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "TSM",
+      "date": "2022-04-12",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0002505548279962966,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "TSM",
+      "date": "2022-04-26",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00036185551222089885,
+      "yahoo_changed_fields_over_1cent": [
+        "high",
+        "low"
+      ]
+    },
+    {
+      "symbol": "TSM",
+      "date": "2022-08-04",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00020708603165608963,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "TSM",
+      "date": "2022-08-10",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00020650216425721624,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "TSM",
+      "date": "2022-09-21",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -7.912257737885398e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "TSM",
+      "date": "2022-10-07",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "TSM",
+      "date": "2022-11-02",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 7.563841109003988e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "TSM",
+      "date": "2022-12-09",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00030256614769186285,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "TSM",
+      "date": "2022-12-12",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 3.7943028718956384e-05,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "TSM",
+      "date": "2023-09-20",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00010488341528613887,
+      "yahoo_changed_fields_over_1cent": []
+    },
+    {
+      "symbol": "TSM",
+      "date": "2024-02-27",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.0002847895930191413,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "TSM",
+      "date": "2024-07-03",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.0003010117843871285,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "TSM",
+      "date": "2024-08-19",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00017393888884775777,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "TSM",
+      "date": "2025-09-29",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00040209084284370533,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "VRT",
+      "date": "2024-03-04",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": 0.00034055046116421295,
+      "yahoo_changed_fields_over_1cent": [
+        "open",
+        "low"
+      ]
+    },
+    {
+      "symbol": "VRT",
+      "date": "2024-07-03",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00019600242873174523,
+      "yahoo_changed_fields_over_1cent": [
+        "high"
+      ]
+    },
+    {
+      "symbol": "VRT",
+      "date": "2026-03-26",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00024181916136178927,
+      "yahoo_changed_fields_over_1cent": [
+        "low"
+      ]
+    },
+    {
+      "symbol": "VST",
+      "date": "2022-06-07",
+      "has_yahoo_row": true,
+      "yahoo_bar_valid": true,
+      "close_difference_bps": -0.00022283737188821817,
+      "yahoo_changed_fields_over_1cent": []
+    }
+  ],
+  "yahoo_invalid_rows": [],
+  "primary_signal_reproduction_2022_onward": {
+    "counts": {
+      "ibkr_primary_eligible": 2198,
+      "yahoo_primary_eligible": 2221,
+      "both_feature_ready_symbol_sessions": 46822,
+      "differing_signals_both_ready": 22,
+      "primary_both_ready_ibkr": 2198,
+      "primary_both_ready_yahoo": 2190,
+      "yahoo_signal_only_when_ibkr_features_missing": 31,
+      "ibkr_signal_only_when_yahoo_features_missing": 0
+    },
+    "per_symbol": [
+      {
+        "symbol": "AAOI",
+        "ibkr_primary_eligible": 54,
+        "yahoo_primary_eligible": 55,
+        "both_feature_ready_symbol_sessions": 1184,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 54,
+        "primary_both_ready_yahoo": 54,
+        "yahoo_signal_only_when_ibkr_features_missing": 1,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "AAPL",
+        "ibkr_primary_eligible": 59,
+        "yahoo_primary_eligible": 61,
+        "both_feature_ready_symbol_sessions": 1160,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 59,
+        "primary_both_ready_yahoo": 59,
+        "yahoo_signal_only_when_ibkr_features_missing": 2,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "ALAB",
+        "ibkr_primary_eligible": 34,
+        "yahoo_primary_eligible": 34,
+        "both_feature_ready_symbol_sessions": 622,
+        "differing_signals_both_ready": 1,
+        "primary_both_ready_ibkr": 34,
+        "primary_both_ready_yahoo": 33,
+        "yahoo_signal_only_when_ibkr_features_missing": 1,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "AMAT",
+        "ibkr_primary_eligible": 41,
+        "yahoo_primary_eligible": 39,
+        "both_feature_ready_symbol_sessions": 1192,
+        "differing_signals_both_ready": 2,
+        "primary_both_ready_ibkr": 41,
+        "primary_both_ready_yahoo": 39,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "AMD",
+        "ibkr_primary_eligible": 51,
+        "yahoo_primary_eligible": 51,
+        "both_feature_ready_symbol_sessions": 1192,
+        "differing_signals_both_ready": 2,
+        "primary_both_ready_ibkr": 51,
+        "primary_both_ready_yahoo": 51,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "AMZN",
+        "ibkr_primary_eligible": 64,
+        "yahoo_primary_eligible": 64,
+        "both_feature_ready_symbol_sessions": 1176,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 64,
+        "primary_both_ready_yahoo": 64,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "ANET",
+        "ibkr_primary_eligible": 61,
+        "yahoo_primary_eligible": 60,
+        "both_feature_ready_symbol_sessions": 1184,
+        "differing_signals_both_ready": 1,
+        "primary_both_ready_ibkr": 61,
+        "primary_both_ready_yahoo": 60,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "ARM",
+        "ibkr_primary_eligible": 28,
+        "yahoo_primary_eligible": 27,
+        "both_feature_ready_symbol_sessions": 759,
+        "differing_signals_both_ready": 1,
+        "primary_both_ready_ibkr": 28,
+        "primary_both_ready_yahoo": 27,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "ASML",
+        "ibkr_primary_eligible": 57,
+        "yahoo_primary_eligible": 61,
+        "both_feature_ready_symbol_sessions": 1168,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 57,
+        "primary_both_ready_yahoo": 57,
+        "yahoo_signal_only_when_ibkr_features_missing": 4,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "AVGO",
+        "ibkr_primary_eligible": 51,
+        "yahoo_primary_eligible": 50,
+        "both_feature_ready_symbol_sessions": 1184,
+        "differing_signals_both_ready": 1,
+        "primary_both_ready_ibkr": 51,
+        "primary_both_ready_yahoo": 50,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "CEG",
+        "ibkr_primary_eligible": 68,
+        "yahoo_primary_eligible": 68,
+        "both_feature_ready_symbol_sessions": 1174,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 68,
+        "primary_both_ready_yahoo": 68,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "COHR",
+        "ibkr_primary_eligible": 65,
+        "yahoo_primary_eligible": 64,
+        "both_feature_ready_symbol_sessions": 1168,
+        "differing_signals_both_ready": 1,
+        "primary_both_ready_ibkr": 65,
+        "primary_both_ready_yahoo": 64,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "CRCL",
+        "ibkr_primary_eligible": 13,
+        "yahoo_primary_eligible": 14,
+        "both_feature_ready_symbol_sessions": 303,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 13,
+        "primary_both_ready_yahoo": 13,
+        "yahoo_signal_only_when_ibkr_features_missing": 1,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "CRDO",
+        "ibkr_primary_eligible": 64,
+        "yahoo_primary_eligible": 64,
+        "both_feature_ready_symbol_sessions": 1160,
+        "differing_signals_both_ready": 1,
+        "primary_both_ready_ibkr": 64,
+        "primary_both_ready_yahoo": 63,
+        "yahoo_signal_only_when_ibkr_features_missing": 1,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "DELL",
+        "ibkr_primary_eligible": 57,
+        "yahoo_primary_eligible": 60,
+        "both_feature_ready_symbol_sessions": 1152,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 57,
+        "primary_both_ready_yahoo": 57,
+        "yahoo_signal_only_when_ibkr_features_missing": 3,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "ETN",
+        "ibkr_primary_eligible": 57,
+        "yahoo_primary_eligible": 59,
+        "both_feature_ready_symbol_sessions": 1176,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 57,
+        "primary_both_ready_yahoo": 57,
+        "yahoo_signal_only_when_ibkr_features_missing": 2,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "GLW",
+        "ibkr_primary_eligible": 58,
+        "yahoo_primary_eligible": 58,
+        "both_feature_ready_symbol_sessions": 1176,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 58,
+        "primary_both_ready_yahoo": 58,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "GOOG",
+        "ibkr_primary_eligible": 42,
+        "yahoo_primary_eligible": 43,
+        "both_feature_ready_symbol_sessions": 1192,
+        "differing_signals_both_ready": 1,
+        "primary_both_ready_ibkr": 42,
+        "primary_both_ready_yahoo": 43,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "HPE",
+        "ibkr_primary_eligible": 65,
+        "yahoo_primary_eligible": 68,
+        "both_feature_ready_symbol_sessions": 1173,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 65,
+        "primary_both_ready_yahoo": 65,
+        "yahoo_signal_only_when_ibkr_features_missing": 3,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "INTC",
+        "ibkr_primary_eligible": 56,
+        "yahoo_primary_eligible": 56,
+        "both_feature_ready_symbol_sessions": 1192,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 56,
+        "primary_both_ready_yahoo": 56,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "KLAC",
+        "ibkr_primary_eligible": 48,
+        "yahoo_primary_eligible": 47,
+        "both_feature_ready_symbol_sessions": 1192,
+        "differing_signals_both_ready": 1,
+        "primary_both_ready_ibkr": 48,
+        "primary_both_ready_yahoo": 47,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "LITE",
+        "ibkr_primary_eligible": 50,
+        "yahoo_primary_eligible": 48,
+        "both_feature_ready_symbol_sessions": 1184,
+        "differing_signals_both_ready": 2,
+        "primary_both_ready_ibkr": 50,
+        "primary_both_ready_yahoo": 48,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "LRCX",
+        "ibkr_primary_eligible": 44,
+        "yahoo_primary_eligible": 43,
+        "both_feature_ready_symbol_sessions": 1192,
+        "differing_signals_both_ready": 1,
+        "primary_both_ready_ibkr": 44,
+        "primary_both_ready_yahoo": 43,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "MCHP",
+        "ibkr_primary_eligible": 55,
+        "yahoo_primary_eligible": 56,
+        "both_feature_ready_symbol_sessions": 1192,
+        "differing_signals_both_ready": 3,
+        "primary_both_ready_ibkr": 55,
+        "primary_both_ready_yahoo": 56,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "META",
+        "ibkr_primary_eligible": 53,
+        "yahoo_primary_eligible": 55,
+        "both_feature_ready_symbol_sessions": 1076,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 53,
+        "primary_both_ready_yahoo": 53,
+        "yahoo_signal_only_when_ibkr_features_missing": 2,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "MPWR",
+        "ibkr_primary_eligible": 58,
+        "yahoo_primary_eligible": 58,
+        "both_feature_ready_symbol_sessions": 1192,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 58,
+        "primary_both_ready_yahoo": 58,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "MRVL",
+        "ibkr_primary_eligible": 49,
+        "yahoo_primary_eligible": 51,
+        "both_feature_ready_symbol_sessions": 1176,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 49,
+        "primary_both_ready_yahoo": 49,
+        "yahoo_signal_only_when_ibkr_features_missing": 2,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "MSFT",
+        "ibkr_primary_eligible": 50,
+        "yahoo_primary_eligible": 50,
+        "both_feature_ready_symbol_sessions": 1184,
+        "differing_signals_both_ready": 2,
+        "primary_both_ready_ibkr": 50,
+        "primary_both_ready_yahoo": 50,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "MSTR",
+        "ibkr_primary_eligible": 55,
+        "yahoo_primary_eligible": 55,
+        "both_feature_ready_symbol_sessions": 1168,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 55,
+        "primary_both_ready_yahoo": 55,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "MU",
+        "ibkr_primary_eligible": 41,
+        "yahoo_primary_eligible": 41,
+        "both_feature_ready_symbol_sessions": 1176,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 41,
+        "primary_both_ready_yahoo": 41,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "NVDA",
+        "ibkr_primary_eligible": 61,
+        "yahoo_primary_eligible": 65,
+        "both_feature_ready_symbol_sessions": 1168,
+        "differing_signals_both_ready": 2,
+        "primary_both_ready_ibkr": 61,
+        "primary_both_ready_yahoo": 63,
+        "yahoo_signal_only_when_ibkr_features_missing": 2,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "NXPI",
+        "ibkr_primary_eligible": 51,
+        "yahoo_primary_eligible": 51,
+        "both_feature_ready_symbol_sessions": 1192,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 51,
+        "primary_both_ready_yahoo": 51,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "ORCL",
+        "ibkr_primary_eligible": 45,
+        "yahoo_primary_eligible": 46,
+        "both_feature_ready_symbol_sessions": 1176,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 45,
+        "primary_both_ready_yahoo": 45,
+        "yahoo_signal_only_when_ibkr_features_missing": 1,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "P",
+        "ibkr_primary_eligible": 59,
+        "yahoo_primary_eligible": 59,
+        "both_feature_ready_symbol_sessions": 1192,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 59,
+        "primary_both_ready_yahoo": 59,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "QCOM",
+        "ibkr_primary_eligible": 47,
+        "yahoo_primary_eligible": 47,
+        "both_feature_ready_symbol_sessions": 1192,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 47,
+        "primary_both_ready_yahoo": 47,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "SMCI",
+        "ibkr_primary_eligible": 65,
+        "yahoo_primary_eligible": 65,
+        "both_feature_ready_symbol_sessions": 1192,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 65,
+        "primary_both_ready_yahoo": 65,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "SNDK",
+        "ibkr_primary_eligible": 25,
+        "yahoo_primary_eligible": 26,
+        "both_feature_ready_symbol_sessions": 401,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 25,
+        "primary_both_ready_yahoo": 25,
+        "yahoo_signal_only_when_ibkr_features_missing": 1,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "SPCX",
+        "ibkr_primary_eligible": 5,
+        "yahoo_primary_eligible": 5,
+        "both_feature_ready_symbol_sessions": 71,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 5,
+        "primary_both_ready_yahoo": 5,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "STX",
+        "ibkr_primary_eligible": 52,
+        "yahoo_primary_eligible": 52,
+        "both_feature_ready_symbol_sessions": 1184,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 52,
+        "primary_both_ready_yahoo": 52,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "TSM",
+        "ibkr_primary_eligible": 46,
+        "yahoo_primary_eligible": 50,
+        "both_feature_ready_symbol_sessions": 1091,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 46,
+        "primary_both_ready_yahoo": 46,
+        "yahoo_signal_only_when_ibkr_features_missing": 4,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "VRT",
+        "ibkr_primary_eligible": 65,
+        "yahoo_primary_eligible": 66,
+        "both_feature_ready_symbol_sessions": 1168,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 65,
+        "primary_both_ready_yahoo": 65,
+        "yahoo_signal_only_when_ibkr_features_missing": 1,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "VST",
+        "ibkr_primary_eligible": 68,
+        "yahoo_primary_eligible": 68,
+        "both_feature_ready_symbol_sessions": 1184,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 68,
+        "primary_both_ready_yahoo": 68,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      },
+      {
+        "symbol": "WDC",
+        "ibkr_primary_eligible": 61,
+        "yahoo_primary_eligible": 61,
+        "both_feature_ready_symbol_sessions": 1192,
+        "differing_signals_both_ready": 0,
+        "primary_both_ready_ibkr": 61,
+        "primary_both_ready_yahoo": 61,
+        "yahoo_signal_only_when_ibkr_features_missing": 0,
+        "ibkr_signal_only_when_yahoo_features_missing": 0
+      }
+    ],
+    "scope": "No optimization. Independent recreation of the old lagged-MA5 expression on each intact source. Not portfolio results."
+  }
+}

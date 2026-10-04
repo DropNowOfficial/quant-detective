@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quant Watch · 选股工作台</title>
+<style>
+:root{--bg:#f4f6f8;--paper:#fff;--ink:#152634;--muted:#60717f;--line:#dfe6eb;--green:#087d6b;--mint:#e5f4ef;--amber:#8a5c0e;--red:#a34436;--blue:#245798}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}button,input,select{font:inherit}button,a,input,select{outline-offset:4px}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.5}button{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:white;color:var(--ink)}button:hover:not(:disabled){background:#edf3f5}a{color:var(--blue)}.shell{max-width:1520px;margin:auto;padding:0 32px 48px}.top{height:76px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:11px;font-weight:750;letter-spacing:.3px}.mark{width:34px;height:34px;border-radius:10px;background:var(--ink);color:white;display:grid;place-items:center;font-size:21px}.top small{color:var(--muted);font-weight:400}.status{font-size:12px;border:1px solid var(--line);border-radius:30px;padding:5px 12px;color:var(--muted);background:white}.hero{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:30px 0 22px}.eyebrow{font-size:11px;letter-spacing:2px;color:var(--green);font-weight:750}.hero h1{font-size:30px;line-height:1.35;letter-spacing:-.6px;margin:7px 0}.hero p{margin:0;color:var(--muted)}.stamp{text-align:right;flex-shrink:0}.stamp strong{font-size:22px;display:block;font-variant-numeric:tabular-nums}.stamp span{font-size:12px;color:var(--muted)}.notice{border:1px solid #d1e5df;background:#edf7f3;border-radius:10px;padding:12px 16px;display:flex;gap:12px;align-items:start;font-size:13px}.notice b{color:var(--green);white-space:nowrap}.notice span{color:#35594e}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:20px 0}.card{background:white;border:1px solid var(--line);border-radius:12px;padding:16px 20px;text-align:left}.card span{color:var(--muted);display:block;font-size:12px}.card strong{font-size:29px;line-height:1.5;font-variant-numeric:tabular-nums}.card .sub{font-size:11px}.card:first-child{border-top:3px solid var(--green)}.card:last-child{border-top:3px solid #d0a775}.layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(330px,1fr);gap:20px;align-items:start}.panel{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden}.panel-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.panel-head h2{font-size:16px;margin:0}.panel-head small{display:block;color:var(--muted);font-weight:400;font-size:11px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--line)}.tabs{display:flex;gap:4px;flex-wrap:wrap}.tabs button{border:none;padding:6px 9px;color:var(--muted);font-size:12px}.tabs button.active{background:var(--mint);color:var(--green);font-weight:700}.search{margin-left:auto;min-width:135px;width:155px;max-width:100%;padding:6px 10px;border:1px solid var(--line);border-radius:7px}.table-wrap{overflow:auto;max-height:640px}table{width:100%;border-collapse:collapse;white-space:nowrap;font-variant-numeric:tabular-nums}th{text-align:right;font-size:11px;color:var(--muted);font-weight:550;padding:10px 12px;background:#f8fafb;position:sticky;top:0}td{border-top:1px solid #edf0f2;text-align:right;padding:13px 12px;font-size:13px}th:first-child,td:first-child{text-align:left;padding-left:20px}tbody tr:hover{background:#f5f9f9}tbody tr.selected{background:#edf6f3}.ticker{border:0;background:none;font-weight:750;font-size:14px;padding:0;color:var(--ink)}.ticker:hover:not(:disabled){background:none;color:var(--green)}.table-name{font-size:10px;color:var(--muted);white-space:normal;max-width:160px}.badge{font-size:11px;display:inline-block;padding:2px 7px;border-radius:5px;background:#edf0f3;color:#566775}.CANDIDATE{background:var(--mint);color:var(--green)}.WATCH{background:#fff4d9;color:var(--amber)}.DATA_BLOCKED{background:#faeae5;color:var(--red)}.pos{color:var(--green)}.neg{color:var(--red)}.empty{padding:36px 24px;color:var(--muted);text-align:center}.table-foot{padding:12px 20px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}.detail{padding:20px}.detail h3{font-size:25px;margin:0;line-height:1.2}.detail-top{display:flex;justify-content:space-between;align-items:start;gap:8px}.detail-name{font-size:11px;color:var(--muted);margin:5px 0 15px}.price{font-size:22px;text-align:right;font-variant-numeric:tabular-nums}.price small{font-size:10px;color:var(--muted);display:block}.chart{width:100%;height:100px;display:block;background:linear-gradient(#f3faf7,white);border-bottom:1px solid var(--line);margin:10px 0}.chart-caption{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}.factor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 8px;margin:20px 0}.factor-grid span{display:block;font-size:10px;color:var(--muted)}.factor-grid strong{font-size:15px;font-weight:650}.section-label{font-size:11px;color:var(--muted);margin:18px 0 8px;font-weight:650}.check{display:flex;justify-content:space-between;align-items:start;gap:12px;border-top:1px solid #edf0f2;padding:8px 0;font-size:12px}.check small{font-size:10px;color:var(--muted);display:block}.check .pass{color:var(--green);white-space:nowrap}.check .fail{color:var(--red);white-space:nowrap}.info{border-radius:8px;background:#f5f7f9;font-size:11px;color:var(--muted);padding:12px;margin-top:14px}.info strong{color:var(--ink)}details summary{cursor:pointer;font-size:13px;font-weight:650}details{border-top:1px solid var(--line);padding:14px 20px}details p,details li{font-size:12px;color:var(--muted)}.rule-panel{margin-top:20px}.rule-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;padding:18px 20px 10px}.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}.field input{width:100%;padding:9px;border:1px solid var(--line);border-radius:7px;background:white;color:var(--ink)}.rule-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 20px 18px}.primary{background:var(--green);border-color:var(--green);color:white;font-weight:650}.primary:hover:not(:disabled){background:#066756}.hint{font-size:11px;color:var(--muted)}.error{color:var(--red);font-size:12px;white-space:pre-wrap}.history-select{width:100%;max-width:440px;padding:7px;border:1px solid var(--line);border-radius:7px}.evidence{margin-top:20px}.evidence-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:14px 0}.evidence-grid strong{font-size:21px}.evidence-grid span{display:block;font-size:11px;color:var(--muted)}.foot{font-size:11px;color:var(--muted);margin-top:20px;display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap}.mono{font:11px/1.7 ui-monospace,Consolas,monospace;overflow-wrap:anywhere}.source-list{font-size:11px;color:var(--muted);overflow-wrap:anywhere}.hidden{display:none!important}noscript{display:block;padding:24px;background:#fff2db}#message{padding:0 20px 12px}#stale-banner{margin-bottom:16px;background:#fff4dd;border-color:#ead4a2;color:#6d511a}.rules-date{display:flex;align-items:center;gap:10px}.rules-date input[type=date]{padding:6px;border:1px solid var(--line);border-radius:6px}.rules-date label{font-size:12px}.bench{color:var(--red)}@media(max-width:1100px){.shell{padding:0 18px 32px}.layout{grid-template-columns:minmax(0,1fr) minmax(300px,.8fr)}.rule-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:820px){.layout{grid-template-columns:1fr}.hero h1{font-size:25px}.cards{gap:8px}.card{padding:12px}.card strong{font-size:24px}.stamp strong{font-size:18px}.notice{display:block}.notice b{display:block;margin-bottom:4px}.table-wrap{max-height:470px}}@media(max-width:480px){.shell{padding:0 12px 26px}.top{height:66px}.top small{display:none}.status{font-size:10px;padding:4px 8px}.hero{align-items:start;gap:10px}.hero h1{font-size:23px}.hero p{font-size:11px}.stamp strong{font-size:15px}.stamp span{font-size:10px}.eyebrow{font-size:9px}.cards{grid-template-columns:repeat(2,1fr)}.toolbar{padding:12px}.search{margin-left:0;width:100%}.panel-head{padding:14px}.rule-grid{padding:14px}.evidence-grid{grid-template-columns:1fr;gap:8px}.evidence-grid strong{font-size:19px}.detail{padding:16px}.foot{font-size:10px}}
+#rows tr{cursor:pointer}#rows tr:focus-within{outline:2px solid #8bc4b5;outline-offset:-2px}.ticker:focus-visible{outline:2px solid var(--green);border-radius:3px}
+</style></head>
+<body><noscript>本工作台需要 JavaScript 展示筛选依据。完整结果也保存在 result.json 和 screen.csv。</noscript>
+<div class="shell"><header class="top"><div class="brand"><span class="mark">Q</span> Quant Watch <small>研究 · 筛选 · 证据</small></div><span class="status" id="connection">行情快照 · 无自动更新</span></header>
+<section class="hero"><div><div class="eyebrow">END OF DAY / STOCK SCREENING</div><h1>收盘选股工作台</h1><p id="subtitle">真实行情，每次入选都有依据。</p></div><div class="stamp"><span>行情所属交易日 · 美东</span><strong id="session">—</strong><span id="mode">—</span></div></section>
+<div id="stale-banner" class="notice hidden"></div>
+<div class="notice"><b>当前用途：缩小观察范围</b><span>“日线候选”表示通过本次筛选；盘中确认尚未评估，排序也不是胜率预测。每次计算独立保留规则与数据来源。</span></div>
+<div class="cards" id="cards"></div>
+<div class="layout"><section class="panel"><div class="panel-head"><div><h2>筛选结果</h2><small>组内按 RS20 相对 QQQ → 成交额排序</small></div><button id="export">导出当前列表</button></div><div class="toolbar"><div class="tabs" id="tabs"></div><input class="search" id="search" type="search" aria-label="搜索股票代码或名称" placeholder="搜索代码 / 名称"></div><div class="table-wrap"><table><thead><tr><th>股票</th><th>状态</th><th>收盘价</th><th>RS20 / QQQ</th><th>距 MA5 / ATR</th><th>成交额 / 日</th></tr></thead><tbody id="rows"></tbody></table><div class="empty hidden" id="empty">当前条件下没有结果。可切换分类或清除搜索。</div></div><div class="table-foot" id="count"></div></section>
+<aside class="panel"><div class="panel-head"><h2>个股依据</h2><span class="hint">点击整行 · ↑↓ 切换</span></div><div id="detail" class="detail"></div></aside></div>
+<section class="panel rule-panel"><div class="panel-head"><div><h2>筛选规则</h2><small>门槛可调整；未用历史收益优化，改动后会产生新的筛选留档。</small></div><button id="reset">恢复默认</button></div><div class="rule-grid"><div class="field"><label for="minPrice">最低价格 / USD</label><input id="minPrice" type="number" min="0" step="1"></div><div class="field"><label for="minAdv">前 20 日平均成交额 / 百万 USD</label><input id="minAdv" type="number" min="0" step="1"></div><div class="field"><label for="maxAtr">最大 ATR5 / 收盘价 / %</label><input id="maxAtr" type="number" min="0.01" max="100" step="0.01"></div><div class="field"><label for="minRs">最低 RS20 相对 QQQ / 百分点</label><input id="minRs" type="number" step="1" placeholder="留空：不设门槛"></div></div><div class="rule-actions"><div class="rules-date"><label><input type="checkbox" id="latest" checked> 最新完整交易日</label><input type="date" id="date" aria-label="历史交易日" disabled></div><button id="calculate" class="primary">重新计算并留档</button><span class="hint" id="computeHint"></span></div><div id="message" role="status" aria-live="polite"></div><details><summary>规则定义与数据更新方式</summary><p>候选：MA5 一阶变化 &gt; 0，三点 OLS 斜率 ≥ 0，绝对跳空 ≤ 0.5 ATR，收盘距上一日 MA5 位于 [−0.10,+0.20] ATR。观察：相同趋势，绝对跳空 ≤ 0.8 ATR，距离位于 [−0.35,+0.40] ATR。MA5、ATR5 及跳空分母均来自上一完成交易日。展示的价位用于本次日线筛选，下一交易日需要重算。</p><p>个股需要最近 61 个交易日完整合法；QQQ/SOXX 因 RS5/20 需要最近 21 日。股票池是目前重建的 43 股观察池，历史重算不代表当时股票池。基本面价值、财报时间和复权口径尚未核实。</p><p>本地服务读取行情文件，不会自行联网拉取新报价。“重新计算”会重新读取这些文件。更新行情需先导入新的、合约匹配的 RTH 日线响应。源文件格式和运行步骤见完整工具包中的使用说明。</p><p>交易日历：XNYS，收盘后 30 分钟方可使用当日日线。该缓冲是操作约定，最终行情完整性仍依赖供应商。盘中 VWAP / 同时间 RVOL 未评估。</p></details><details id="historyBox"><summary>筛选留档</summary><p>相同输入得到相同编号，历史结果独立保存。</p><select class="history-select" id="history" aria-label="选择筛选留档"><option value="">选择已保存的筛选</option></select><p><button id="downloadJson">下载本次完整依据 JSON</button></p><div class="mono" id="runInfo"></div></details></section>
+<section class="panel evidence"><details open><summary>研究证据：尚未证明稳定增量优势</summary><div class="evidence-grid"><div><strong>1,196</strong><span>原日线代理 · 三日非重叠事件</span></div><div><strong>+0.1364 个百分点</strong><span>相对同股无筛选基线的均值差</span></div><div><strong>−0.3185 ~ +0.5871</strong><span>均值差 95% 区间 / 百分点，跨零</span></div></div><p>原研究假定往返成本 0.10%，条件均值 +0.6467%，同股无条件均值 +0.5103%。这些数值属于原规则的历史事件研究，不是账户回报，也不适用于本页新增门槛或排序；所有当前结果仍为待验证筛选。当前股票池存在选择偏差，历史数据版本不等同当时已知数据。</p><p>采用的方法参考：<a href="https://docs.freqtrade.io/en/stable/lookahead-analysis/" target="_blank" rel="noopener">Freqtrade 未来数据泄漏检查</a> · <a href="https://www.quantconnect.com/docs/v2/writing-algorithms/universes/key-concepts" target="_blank" rel="noopener">QuantConnect 股票池分层</a> · <a href="https://github.com/gerrymanoim/exchange_calendars" target="_blank" rel="noopener">交易日历</a>。这些是设计借鉴，未声称完成跨引擎回测。</p></details></section>
+<footer class="foot"><span>Quant Watch 0.1.1 · 本地研究与人工复核</span><span id="footAsOf"></span></footer></div>
+<script type="application/json" id="screen-data">__SCREEN_DATA__</script>
+<script>
+'use strict';
+const initial=JSON.parse(document.getElementById('screen-data').textContent);
+let result=initial.result, live=initial.live, active='CANDIDATE', selected=null;
+let operationId=0,historyListId=0,busy=false;
+const $=id=>document.getElementById(id);
+const labels={ALL:'全部',CANDIDATE:'日线候选',WATCH:'观察',NOT_MATCHED:'未匹配',DATA_BLOCKED:'数据阻断'};
+const reasons={SOURCE_NOT_FINAL:'源快照取得时，该交易日尚未完成收盘缓冲',INVALID_OHLCV:'近期日线的价格或成交量不合法',MISSING_SESSIONS:'所需交易日缺失',STALE:'缺少最新应有的完整日线',MISSING_FILE:'缺少源文件',IDENTITY_MISMATCH:'行情与指定合约身份不一致',SOURCE_CONTRACT:'来源未满足 RTH / 日线 / 股票约定',SESSION_TIMESTAMP:'时间戳与美股交易日开盘不一致',TIME_ORDER:'时间倒序或重复',DATA_SCHEMA:'行情结构有误',PRICE_SOURCE:'不是成交价来源',BENCHMARK_UNAVAILABLE:'基准数据缺失或未通过校验',SPLIT_ADJUSTMENT_UNKNOWN:'窗口内有拆股，复权口径未知',ZERO_ATR:'ATR 为零，无法判断价格距离',ZERO_VOLUME:'前 20 日均量为零',NONFINITE_FACTOR:'因子计算出现无效数值'};
+const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=(v,d=2)=>v==null?'—':Number(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pct=v=>v==null?'—':`${v>0?'+':''}${num(v*100)}%`;
+const pp=v=>v==null?'—':`${v>0?'+':''}${num(v*100)} pp`;
+const color=v=>v==null?'':v>=0?'pos':'neg';
+function filtered(){const q=$('search').value.trim().toLowerCase();return result.rows.filter(r=>(active==='ALL'||r.state===active)&&(!q||`${r.symbol} ${r.name}`.toLowerCase().includes(q)));}
+function fillRules(){const p=result.policy;$('minPrice').value=p.min_price;$('minAdv').value=p.min_adv20/1e6;$('maxAtr').value=p.max_atr_fraction*100;$('minRs').value=p.min_rs20==null?'':p.min_rs20*100;$('date').value=result.session;}
+function render(){
+ $('subtitle').textContent=`${result.count} 只观察池 · 真实日线 · 所有候选均待进一步验证`;
+ $('session').textContent=result.session;$('mode').textContent=result.mode==='LATEST_SNAPSHOT'?'计算截止时的最新日线':'历史重算 · 当前数据版本';
+ $('cards').innerHTML=['CANDIDATE','WATCH','NOT_MATCHED','DATA_BLOCKED'].map((k,i)=>`<button class="card" data-card="${k}"><span>${labels[k]}</span><strong>${result.counts[k]}</strong><span class="sub">${['满足日线与操作门槛','接近区间，继续观察','未达到本次筛选条件','需要先处理数据问题'][i]}</span></button>`).join('');
+ document.querySelectorAll('[data-card]').forEach(b=>b.onclick=()=>{active=b.dataset.card;renderTable();});
+ $('footAsOf').textContent=`计算截止：${result.as_of} · USD`;
+ $('runInfo').textContent=`筛选编号：${result.run_id}\n引擎：${result.engine_version}\n数据版本：当前下载版本，非历史逐时版本`;
+ $('connection').textContent=live?'本地计算已连接 · 行情需导入':'独立结果快照 · 无自动更新';
+ const old=(Date.now()-Date.parse(result.as_of))>72*3600*1000;
+ $('stale-banner').classList.toggle('hidden',!old);
+ $('stale-banner').textContent=`这是保存于 ${result.as_of} 的结果。请导入最新行情并重新计算后，再判断当前市场。`;
+ renderTable();
+}
+function renderTable(){
+ if(!$('tabs').children.length)$('tabs').innerHTML=Object.keys(labels).map(k=>`<button data-tab="${k}"></button>`).join('');
+ document.querySelectorAll('[data-tab]').forEach(b=>{const k=b.dataset.tab;b.classList.toggle('active',active===k);b.setAttribute('aria-pressed',String(active===k));b.textContent=labels[k]+(k==='ALL'?'':` ${result.counts[k]}`);b.onclick=()=>{active=k;renderTable();};});
+ const rows=filtered();if(!rows.some(r=>r.symbol===selected))selected=rows[0]?.symbol??null;
+ $('rows').innerHTML=rows.map(r=>{const f=r.factors;return `<tr data-row-symbol="${esc(r.symbol)}" class="${r.symbol===selected?'selected':''}"><td><button class="ticker" data-symbol="${esc(r.symbol)}" aria-label="查看 ${esc(r.symbol)} 筛选依据" aria-pressed="${r.symbol===selected}">${esc(r.symbol)}${r.rank?` <small class="hint">#${r.rank}</small>`:''}</button><div class="table-name">${esc(r.name)}</div></td><td><span class="badge ${r.state}">${labels[r.state]}</span></td><td>${num(f.close)}</td><td class="${color(f.rs20_qqq)}">${pp(f.rs20_qqq)}</td><td>${num(f.d5)}</td><td>${f.adv20==null?'—':`${num(f.adv20/1e6,1)}M`}</td></tr>`;}).join('');
+ $('empty').classList.toggle('hidden',rows.length>0);$('count').textContent=`显示 ${rows.length} / ${result.count} 只 · RS 为同期收益差，pp 为百分点 · 名次不代表胜率`;
+ renderDetail();
+}
+function selectSymbol(symbol,scroll=false){
+ const button=[...$('rows').querySelectorAll('[data-symbol]')].find(b=>b.dataset.symbol===symbol);
+ if(!button)return;
+ selected=symbol;
+ for(const row of $('rows').querySelectorAll('tr')){
+  const isSelected=row.dataset.rowSymbol===symbol;
+  row.classList.toggle('selected',isSelected);row.querySelector('[data-symbol]').setAttribute('aria-pressed',String(isSelected));
+ }
+ button.focus({preventScroll:!scroll});renderDetail();
+}
+$('rows').onclick=event=>{const row=event.target.closest('tr[data-row-symbol]');if(row&&$('rows').contains(row))selectSymbol(row.dataset.rowSymbol);};
+$('rows').onkeydown=event=>{
+ const button=event.target.closest('[data-symbol]');if(!button)return;
+ const buttons=[...$('rows').querySelectorAll('[data-symbol]')],i=buttons.indexOf(button);
+ const indices={ArrowDown:Math.min(i+1,buttons.length-1),ArrowUp:Math.max(i-1,0),Home:0,End:buttons.length-1};
+ if(Object.hasOwn(indices,event.key)){event.preventDefault();selectSymbol(buttons[indices[event.key]].dataset.symbol,true);}
+};
+function chart(history){if(!history.length)return '';const a=history.map(x=>x.close),lo=Math.min(...a),hi=Math.max(...a),range=hi-lo||1;const points=a.map((v,i)=>`${(i/(a.length-1)*380+10).toFixed(2)},${(88-(v-lo)/range*74).toFixed(2)}`).join(' ');return `<svg class="chart" viewBox="0 0 400 100" role="img" aria-label="最近 61 个交易日收盘价"><polyline points="${points}" fill="none" stroke="#087d6b" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><div class="chart-caption"><span>${history[0].date}</span><span>收盘价 · 复权口径待核实</span><span>${history.at(-1).date}</span></div>`;}
+function renderDetail(){
+ const r=result.rows.find(x=>x.symbol===selected);if(!r){$('detail').innerHTML='<div class="empty">选择一只股票，查看筛选依据。</div>';return;}const f=r.factors;
+ const relevant=r.checks.filter(c=>c.scope==='common'||c.scope===(r.state==='WATCH'?'watch':'candidate'));
+ let html=`<div class="detail-top"><div><h3>${esc(r.symbol)}</h3><span class="badge ${r.state}">${labels[r.state]}</span></div><div class="price">${num(f.close)}<small>USD · ${result.session} 收盘</small></div></div><div class="detail-name">${esc(r.name)} · ${esc(r.exchange)} · ${esc(r.contract_id)}</div>`;
+ if(r.state==='DATA_BLOCKED'){
+  html+=`<div class="info"><strong>数据尚不支持本次判断</strong>${r.block_codes.map(c=>`<p>${esc(reasons[c]||c)}</p>`).join('')}<p>缺失日期：${esc(r.source.missing_dates.join(', ')||'无')}</p><p>异常日期：${esc(r.source.invalid_dates.join(', ')||'无')}</p>${r.block_codes.includes('BENCHMARK_UNAVAILABLE')?Object.entries(result.benchmarks).filter(([s,b])=>b.block_codes.length).map(([s,b])=>`<p class="bench">${s}：${esc(b.block_codes.map(c=>reasons[c]||c).join('；'))}</p>`).join(''):''}</div>`;
+ }else{
+  html+=chart(r.history)+`<div class="factor-grid"><div><span>RS5 / QQQ</span><strong class="${color(f.rs5_qqq)}">${pp(f.rs5_qqq)}</strong></div><div><span>RS5 / SOXX</span><strong class="${color(f.rs5_soxx)}">${pp(f.rs5_soxx)}</strong></div><div><span>RS20 / SOXX</span><strong class="${color(f.rs20_soxx)}">${pp(f.rs20_soxx)}</strong></div><div><span>60 日收益</span><strong>${pct(f.return60)}</strong></div><div><span>ATR5 / 收盘价</span><strong>${pct(f.atr_fraction)}</strong></div><div><span>日量 / 前 20 日均量</span><strong>${num(f.volume_ratio)}×</strong></div><div><span>跳空 / ATR</span><strong>${num(f.gap)}</strong></div></div><div class="info"><strong>本次日线候选区间 ${num(f.candidate_low)}–${num(f.candidate_high)}</strong><br>观察区间 ${num(f.watch_low)}–${num(f.watch_high)} · MA5 ${num(f.ma5)} · ATR5 ${num(f.atr5)}<br>以上为本次计算参考，下一交易日需要重算。${f.d5>.35?'<br>价格距 MA5 超过 +0.35 ATR，已有偏离。':''}</div><div class="section-label">${r.state==='WATCH'?'观察条件':'候选条件'} · 实际值与门槛</div>`;
+  html+=relevant.map(c=>`<div class="check"><div>${esc(c.label)}<small>${esc(c.threshold)}</small></div><span class="${c.passed?'pass':'fail'}">${num(c.value,c.key==='min_adv20'?0:3)} ${c.passed?'✓':'×'}</span></div>`).join('');
+ }
+ html+='<div class="info"><strong>盘中确认：未评估</strong><br>需要新鲜的盘中报价、VWAP 及至少 20 个先前完整交易日的同时间 RVOL。基本面价值与财报时间尚未接入。</div>';
+ html+=`<div class="section-label">数据来源</div><div class="source-list">IBKR / ${esc(r.source.source||'未知')} · 获取时间 ${esc(r.source.retrieved_at||'未知')}<br>最后日线 ${esc(r.source.last_session||'无')} · 复权口径未明确返回<br>SHA256 <span class="mono">${esc(r.source.sha256||'无')}</span></div>`;
+ $('detail').innerHTML=html;
+}
+function download(text,name,type){const u=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
+function csvCell(v){let s=String(v??'');if(typeof v==='string'&&/^[\s]*[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}
+$('export').onclick=()=>{const cols=['session','symbol','name','state','rank','close','rs5_qqq','rs20_qqq','rs5_soxx','rs20_soxx','d5','adv20','run_id'];const lines=[cols,...filtered().map(r=>{const v={...r,...r.factors,session:result.session,run_id:result.run_id};return cols.map(k=>v[k]);})];download('\ufeff'+lines.map(r=>r.map(csvCell).join(',')).join('\r\n'),`screen-${result.session}.csv`,'text/csv;charset=utf-8');};
+$('downloadJson').onclick=()=>download(JSON.stringify(result,null,2),`screen-${result.run_id}.json`,'application/json');
+$('search').oninput=renderTable;
+$('latest').onchange=()=>{$('date').disabled=!live||$('latest').checked;};
+$('reset').onclick=()=>{$('minPrice').value=5;$('minAdv').value=20;$('maxAtr').value=12;$('minRs').value='';};
+function setBusy(value){
+ busy=value;
+ for(const id of ['minPrice','minAdv','maxAtr','minRs','latest','calculate','reset'])$(id).disabled=!live||busy;
+ $('date').disabled=!live||busy||$('latest').checked;
+}
+function checkedResult(next){
+ const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x),finite=x=>typeof x==='number'&&Number.isFinite(x);
+ const invalid=()=>{throw Error('筛选记录格式不完整或无效');};
+ const states=['CANDIDATE','WATCH','NOT_MATCHED','DATA_BLOCKED'];
+ if(!object(next)||next.schema_version!==1||typeof next.run_id!=='string'||! /^[a-f0-9]{24}$/.test(next.run_id)||!Array.isArray(next.rows)||next.count!==next.rows.length||!object(next.policy)||!object(next.counts)||!object(next.benchmarks))invalid();
+ if(typeof next.session!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(next.session)||typeof next.as_of!=='string'||!Number.isFinite(Date.parse(next.as_of))||!['LATEST_SNAPSHOT','HISTORICAL_RECONSTRUCTION'].includes(next.mode)||typeof next.engine_version!=='string')invalid();
+ for(const key of ['min_price','min_adv20','max_atr_fraction'])if(!finite(next.policy[key]))invalid();
+ if(next.policy.min_rs20!==null&&!finite(next.policy.min_rs20))invalid();
+ const symbols=new Set();
+ for(const r of next.rows){
+  if(!object(r)||typeof r.symbol!=='string'||symbols.has(r.symbol)||!states.includes(r.state)||!object(r.factors)||!object(r.source)||!Array.isArray(r.checks)||!Array.isArray(r.history)||!Array.isArray(r.block_codes)||!Array.isArray(r.source.missing_dates)||!Array.isArray(r.source.invalid_dates))invalid();
+  symbols.add(r.symbol);
+  if(r.state!=='DATA_BLOCKED')for(const key of ['close','ma5','atr5','d5','adv20','rs5_qqq','rs20_qqq','rs5_soxx','rs20_soxx','return60','atr_fraction','volume_ratio','gap','candidate_low','candidate_high','watch_low','watch_high'])if(!finite(r.factors[key]))invalid();
+  if(r.history.length===1||r.history.some(h=>!object(h)||typeof h.date!=='string'||!finite(h.close)||h.close<=0))invalid();
+  if(r.checks.some(c=>!object(c)||typeof c.label!=='string'||typeof c.threshold!=='string'||typeof c.passed!=='boolean'||!finite(c.value)))invalid();
+ }
+ for(const state of states)if(next.counts[state]!==next.rows.filter(r=>r.state===state).length)invalid();
+ for(const b of ['QQQ','SOXX'])if(!object(next.benchmarks[b])||!Array.isArray(next.benchmarks[b].block_codes))invalid();
+ return next;
+}
+async function loadHistory(preferred){
+ if(!live)return;const listId=++historyListId,owner=operationId;
+ try{
+  const response=await fetch('/api/runs');if(!response.ok)throw Error('读取留档失败');const list=await response.json();
+  if(listId!==historyListId||owner!==operationId)return;
+  const chosen=preferred||$('history').value||result.run_id;
+  $('history').innerHTML='<option value="">选择已保存的筛选</option>'+list.map(x=>`<option value="${esc(x.run_id)}">${esc(x.session)} · ${esc(x.as_of)} · 候选 ${x.counts.CANDIDATE}</option>`).join('');
+  $('history').value=list.some(x=>x.run_id===chosen)?chosen:'';
+ }catch(e){if(listId===historyListId&&owner===operationId)$('message').textContent=e.message;}
+}
+$('history').onchange=async()=>{
+ if(!live)return;const requested=$('history').value,ticket=++operationId;
+ if(!requested){$('history').value=result.run_id;setBusy(false);$('message').textContent='已保留当前结果';return;}
+ setBusy(true);$('message').className='hint';$('message').textContent='正在读取筛选记录…';
+ try{
+  const response=await fetch('/api/runs/'+encodeURIComponent(requested));if(!response.ok)throw Error('无法读取筛选记录');const next=await response.json();
+  if(ticket!==operationId)return;
+  result=checkedResult(next);fillRules();$('latest').checked=false;render();$('history').value=result.run_id;$('message').textContent=`已载入筛选记录 ${result.run_id}`;
+ }catch(e){if(ticket===operationId){$('history').value=result.run_id;$('message').className='error';$('message').textContent=e.message+'；已保留当前结果';}}
+ finally{if(ticket===operationId)setBusy(false);}
+};
+$('calculate').onclick=async()=>{
+ if(!live||busy)return;let ticket;
+ try{
+  for(const id of ['minPrice','minAdv','maxAtr'])if($(id).value.trim()===''||!$(id).checkValidity())throw Error('请填写有效的筛选门槛');
+  if(!$('latest').checked&&!$('date').value)throw Error('请选择历史交易日');
+  const policy={min_price:Number($('minPrice').value),min_adv20:Number($('minAdv').value)*1e6,max_atr_fraction:Number($('maxAtr').value)/100,min_rs20:$('minRs').value===''?null:Number($('minRs').value)/100};
+  const request={session:$('latest').checked?null:$('date').value,policy};
+  ticket=++operationId;setBusy(true);$('message').className='hint';$('message').textContent='正在校验行情并计算…';
+  const response=await fetch('/api/screen',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)});const next=await response.json();if(!response.ok)throw Error(next.error||'计算失败');
+  if(ticket!==operationId)return;
+  result=checkedResult(next);fillRules();render();$('message').textContent=`已保存本次结果 ${result.run_id}。行情日期 ${result.session}；源数据未自动联网更新。`;await loadHistory(result.run_id);
+ }catch(e){if(ticket===undefined||ticket===operationId){$('message').className='error';$('message').textContent=e.message;}}
+ finally{if(ticket===operationId)setBusy(false);}
+};
+fillRules();render();
+setBusy(false);
+$('computeHint').textContent=live?'读取本地行情文件后重算；不会自动获取新报价。':'独立快照支持查看、搜索与导出；调整规则需启动完整工具包的本地服务。';
+$('history').disabled=!live;loadHistory();
+</script></body></html>

@@ -1,0 +1,1112 @@
+{
+  "known_at": "2026-10-04T07:07:54.666609+00:00",
+  "scope": "Public read-only multi-market directories and native minute OHLCV; no signals, keys, accounts or trade actions. Probe success is not comprehensive coverage or an uptime guarantee.",
+  "source_research_sha256": {
+    "public-markets-research.json": "b1bd33fa368021561e26423565ee83363d40d0629bbd76ae306f155cb8832b0c",
+    "public-equities-review.json": "b932840866da907ca0ba3ab5d9515864a3646c7d756874cb9ade565ea5660b2a"
+  },
+  "primary_sources": {
+    "crypto": [
+      {
+        "market": "okx_swap",
+        "urls": [
+          "https://www.okx.com/docs-v5/en/#public-data-rest-api-get-instruments",
+          "https://www.okx.com/docs-v5/en/#order-book-trading-market-data-get-candlesticks",
+          "https://www.okx.com/docs-v5/en/#order-book-trading-market-data-get-candlesticks-history"
+        ]
+      },
+      {
+        "market": "okx_futures",
+        "urls": [
+          "https://www.okx.com/docs-v5/en/#public-data-rest-api-get-instruments",
+          "https://www.okx.com/docs-v5/en/#order-book-trading-market-data-get-candlesticks",
+          "https://www.okx.com/docs-v5/en/#order-book-trading-market-data-get-candlesticks-history"
+        ]
+      },
+      {
+        "market": "binance_usdm",
+        "urls": [
+          "https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Exchange-Information",
+          "https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Kline-Candlestick-Data"
+        ]
+      },
+      {
+        "market": "binance_coinm",
+        "urls": [
+          "https://developers.binance.com/docs/derivatives/coin-margined-futures/market-data/rest-api/Exchange-Information",
+          "https://developers.binance.com/docs/derivatives/coin-margined-futures/market-data/rest-api/Kline-Candlestick-Data"
+        ]
+      },
+      {
+        "market": "gate_usdt_futures",
+        "urls": [
+          "https://www.gate.com/docs/developers/apiv4/en/futures/",
+          "https://www.gate.com/announcements/article/33995",
+          "https://www.gate.com/help/guide/faq/17521/how-to-utilize-api"
+        ]
+      },
+      {
+        "market": "binance_spot",
+        "urls": [
+          "https://github.com/binance/binance-spot-api-docs/blob/master/rest-api.md",
+          "https://github.com/binance/binance-spot-api-docs/blob/master/market_data_only.md"
+        ],
+        "verified_parameter": "showPermissionSets=false reduces exchangeInfo size while retaining all symbols; observed1372 active spot symbols"
+      }
+    ],
+    "equity": [
+      {
+        "id": "nasdaq_directory_definition",
+        "url": "https://www.nasdaqtrader.com/trader.aspx?id=symboldirdefs",
+        "claim": "Official directory schema, Test Issue, ETF and source exchange fields, creation-time footer. Current listings, not all financial instrument classes."
+      },
+      {
+        "id": "yahoo_delay_licensing",
+        "url": "https://help.yahoo.com/kb/SLN2352.html",
+        "claim": "Yahoo information purposes and redistribution restriction; public HTTP is not exchange licensing approval."
+      },
+      {
+        "id": "yahoo_market_delays",
+        "url": "https://help.yahoo.com/kb/finance/article-exchanges-data-delays-sln2310.html",
+        "claim": "Yahoo lists .SS and .SZ with 30-minute delay; US Nasdaq is described as real time but no chart-endpoint latency SLA has been verified. Beijing is not in retrieved table."
+      },
+      {
+        "id": "akshare_primary_implementation",
+        "url": "https://github.com/akfamily/akshare/blob/main/akshare/stock/stock_info.py",
+        "claim": "Upstream project code documents official SSE, SZSE and BSE directory routes; BSE implementation uses read-only query POST, which was not executed in this GET-only review."
+      }
+    ]
+  },
+  "adapter_observations": [
+    {
+      "probe": "gate_catalog",
+      "ok": true,
+      "count": 1027,
+      "partial": false,
+      "http_status": 200,
+      "error": null,
+      "request_count": 1,
+      "request_receipts": [
+        {
+          "url": "https://api.gateio.ws/api/v4/futures/usdt/contracts",
+          "requested_at_utc": "2026-10-04T06:53:25.886815+00:00",
+          "received_at_utc": "2026-10-04T06:53:34.005529+00:00",
+          "http_status": 200,
+          "ok": true,
+          "error": null,
+          "error_code": null,
+          "timeout_seconds": 12
+        }
+      ],
+      "warnings": [
+        "全部条目均为 Gate USDT 永续衍生合约；股票、指数等标的合约不是现金股票或原市场行情。"
+      ]
+    },
+    {
+      "probe": "cn_catalog",
+      "ok": true,
+      "count": 6179,
+      "partial": true,
+      "http_status": 200,
+      "error": null,
+      "request_count": 1,
+      "request_receipts": [
+        {
+          "url": "https://www.cninfo.com.cn/new/data/szse_stock.json",
+          "requested_at_utc": "2026-10-04T06:53:25.887282+00:00",
+          "received_at_utc": "2026-10-04T06:53:35.185716+00:00",
+          "http_status": 200,
+          "ok": true,
+          "error": null,
+          "error_code": null,
+          "timeout_seconds": 12
+        }
+      ],
+      "warnings": [
+        "巨潮资讯 A 股披露搜索目录包含历史、退市、改码或别名，上市状态未经核实；这不是当前可交易股票池，不能据此认证全市场活跃证券覆盖。",
+        "北交所目录可搜索，但 Yahoo 北交所分钟行情未认证；目录存在不代表该来源有 K 线，404 / 超时会原样报告。"
+      ]
+    },
+    {
+      "probe": "us_catalog",
+      "ok": true,
+      "count": 13258,
+      "partial": false,
+      "http_status": 200,
+      "error": null,
+      "request_count": 2,
+      "request_receipts": [
+        {
+          "url": "https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt",
+          "requested_at_utc": "2026-10-04T06:53:25.887585+00:00",
+          "received_at_utc": "2026-10-04T06:53:33.225169+00:00",
+          "http_status": 200,
+          "ok": true,
+          "error": null,
+          "error_code": null,
+          "timeout_seconds": 12
+        },
+        {
+          "url": "https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt",
+          "requested_at_utc": "2026-10-04T06:53:33.237899+00:00",
+          "received_at_utc": "2026-10-04T06:53:40.115408+00:00",
+          "http_status": 200,
+          "ok": true,
+          "error": null,
+          "error_code": null,
+          "timeout_seconds": 12
+        }
+      ],
+      "warnings": [
+        "目录含美国交易所上市股票及 ETF 等证券，不含全部 OTC；列出不代表 Yahoo 分钟数据必定可用。特殊证券符号映射失败会保留错误。"
+      ]
+    },
+    {
+      "probe": "gate_btc",
+      "ok": true,
+      "count": 5,
+      "partial": false,
+      "http_status": 200,
+      "error": null,
+      "request_count": 1,
+      "request_receipts": [
+        {
+          "url": "https://api.gateio.ws/api/v4/futures/usdt/candlesticks?contract=BTC_USDT&interval=1m&limit=1000&to=1791096805",
+          "requested_at_utc": "2026-10-04T06:53:25.888283+00:00",
+          "received_at_utc": "2026-10-04T06:53:33.278033+00:00",
+          "http_status": 200,
+          "ok": true,
+          "error": null,
+          "error_code": null,
+          "timeout_seconds": 12
+        }
+      ],
+      "warnings": [
+        "公开来源一次批量读取；不代表实时行情。未收盘状态按来源标志或请求时间推断。",
+        "来源 B 没有主动买量。"
+      ]
+    },
+    {
+      "probe": "us_aapl",
+      "ok": false,
+      "count": 0,
+      "partial": false,
+      "http_status": 429,
+      "error": "HTTP 429；未补造K线，也未替换来源。",
+      "request_count": 1,
+      "request_receipts": [
+        {
+          "url": "https://query1.finance.yahoo.com/v8/finance/chart/AAPL?period1=1790911200&period2=1790971200&interval=1m&includePrePost=false&events=div%2Csplits",
+          "requested_at_utc": "2026-10-04T06:53:33.282835+00:00",
+          "received_at_utc": "2026-10-04T06:53:37.675461+00:00",
+          "http_status": 429,
+          "ok": false,
+          "error": "HTTP 429；未补造K线，也未替换来源。",
+          "error_code": "HTTP_ERROR",
+          "timeout_seconds": 12
+        }
+      ],
+      "warnings": [
+        "公开来源一次批量读取；不代表实时行情。未收盘状态按来源标志或请求时间推断。",
+        "本来源不提供本工具定义的主动买量，保留为空。",
+        "Yahoo 为第三方来源，分钟历史有保留期限制；不保证目录中每种证券可用，不把停市或旧成交写成当前行情。",
+        "仅保留正常交易时段的周期起点，排除午休及每日收盘时间的终值点；未认证逐日节假日 / 半日市日历。"
+      ]
+    },
+    {
+      "probe": "cn_moutai",
+      "ok": false,
+      "count": 0,
+      "partial": false,
+      "http_status": 429,
+      "error": "HTTP 429；未补造K线，也未替换来源。",
+      "request_count": 1,
+      "request_receipts": [
+        {
+          "url": "https://query1.finance.yahoo.com/v8/finance/chart/600519.SS?period1=1790864400&period2=1790924400&interval=1m&includePrePost=false&events=div%2Csplits",
+          "requested_at_utc": "2026-10-04T06:53:34.008433+00:00",
+          "received_at_utc": "2026-10-04T06:53:37.777229+00:00",
+          "http_status": 429,
+          "ok": false,
+          "error": "HTTP 429；未补造K线，也未替换来源。",
+          "error_code": "HTTP_ERROR",
+          "timeout_seconds": 12
+        }
+      ],
+      "warnings": [
+        "公开来源一次批量读取；不代表实时行情。未收盘状态按来源标志或请求时间推断。",
+        "本来源不提供本工具定义的主动买量，保留为空。",
+        "Yahoo 为第三方来源，分钟历史有保留期限制；不保证目录中每种证券可用，不把停市或旧成交写成当前行情。",
+        "仅保留正常交易时段的周期起点，排除午休及每日收盘时间的终值点；未认证逐日节假日 / 半日市日历。"
+      ]
+    },
+    {
+      "probe": "okx_btc",
+      "ok": false,
+      "count": 0,
+      "partial": false,
+      "http_status": 200,
+      "error": "HTTP 200，但响应不是可解析的JSON；不可作为行情。",
+      "request_count": 1,
+      "request_receipts": [
+        {
+          "url": "https://www.okx.com/api/v5/market/candles?instId=BTC-USDT-SWAP&bar=5m&limit=5",
+          "requested_at_utc": "2026-10-04T06:53:35.199811+00:00",
+          "received_at_utc": "2026-10-04T06:53:40.266846+00:00",
+          "http_status": 200,
+          "ok": false,
+          "error": "HTTP 200，但响应不是可解析的JSON；不可作为行情。",
+          "error_code": "UPSTREAM_NON_JSON",
+          "timeout_seconds": 12
+        }
+      ],
+      "warnings": [
+        "公开来源一次批量读取；不代表实时行情。未收盘状态按来源标志或请求时间推断。",
+        "本来源不提供本工具定义的主动买量，保留为空。"
+      ]
+    },
+    {
+      "probe": "binance_btc",
+      "ok": false,
+      "count": 0,
+      "partial": false,
+      "http_status": 451,
+      "error": "HTTP 451；未补造K线，也未替换来源。",
+      "request_count": 1,
+      "request_receipts": [
+        {
+          "url": "https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=15m&limit=5",
+          "requested_at_utc": "2026-10-04T06:53:37.675614+00:00",
+          "received_at_utc": "2026-10-04T06:53:44.845061+00:00",
+          "http_status": 451,
+          "ok": false,
+          "error": "HTTP 451；未补造K线，也未替换来源。",
+          "error_code": "HTTP_ERROR",
+          "timeout_seconds": 12
+        }
+      ],
+      "warnings": [
+        "公开来源一次批量读取；不代表实时行情。未收盘状态按来源标志或请求时间推断。",
+        "本来源不提供本工具定义的主动买量，保留为空。",
+        "volume 为接口原始字段；未用合约乘数转换基础币或名义金额。"
+      ]
+    }
+  ],
+  "equity_transport_observations": [
+    {
+      "id": "nasdaq_listed",
+      "url": "https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:38:57.734104+00:00",
+      "elapsed_seconds": 6.496,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "text/plain",
+      "bytes": 349780,
+      "sha256": "171f3d1a4ef7f6d5ebc2c8e64e77e02bcb661a7573b5f1ff0ff182cf68ca0ccd",
+      "error": "",
+      "format": "TEXT"
+    },
+    {
+      "id": "nasdaq_otherlisted",
+      "url": "https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:38:57.734519+00:00",
+      "elapsed_seconds": 5.613,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "text/plain",
+      "bytes": 542961,
+      "sha256": "858406d16b357c83a02d6c63b8b7a3ee21bde53b85c3a29d7b85d28cdcf07bec",
+      "error": "",
+      "format": "TEXT"
+    },
+    {
+      "id": "yahoo_AMD_1m",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/AMD?range=5d&interval=1m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:38:57.734809+00:00",
+      "elapsed_seconds": 5.015,
+      "http_status": 0,
+      "transport_exit": 28,
+      "content_type": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "error": "curl: (28) Proxy CONNECT aborted due to timeout",
+      "format": "TEXT"
+    },
+    {
+      "id": "yahoo_AMD_5m",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/AMD?range=5d&interval=5m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:38:57.735349+00:00",
+      "elapsed_seconds": 5.014,
+      "http_status": 0,
+      "transport_exit": 28,
+      "content_type": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "error": "curl: (28) Proxy CONNECT aborted due to timeout",
+      "format": "TEXT"
+    },
+    {
+      "id": "yahoo_AMD_15m",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/AMD?range=5d&interval=15m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:38:57.735606+00:00",
+      "elapsed_seconds": 5.016,
+      "http_status": 0,
+      "transport_exit": 28,
+      "content_type": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "error": "curl: (28) Proxy CONNECT aborted due to timeout",
+      "format": "TEXT"
+    },
+    {
+      "id": "eastmoney_a_catalog_page1",
+      "url": "https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=100&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A0%2Bt%3A6%2Cm%3A0%2Bt%3A80%2Cm%3A1%2Bt%3A2%2Cm%3A1%2Bt%3A23%2Cm%3A0%2Bt%3A81%2Bs%3A2048&fields=f12%2Cf13%2Cf14",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:38:57.735877+00:00",
+      "elapsed_seconds": 5.015,
+      "http_status": 0,
+      "transport_exit": 28,
+      "content_type": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "error": "curl: (28) Proxy CONNECT aborted due to timeout",
+      "format": "TEXT"
+    },
+    {
+      "id": "yahoo_600519SS_1m",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/600519.SS?range=5d&interval=1m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:39:02.749585+00:00",
+      "elapsed_seconds": 0.705,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "application/json;charset=utf-8",
+      "bytes": 118058,
+      "sha256": "72856a9df5b707ee792ea0f8a92ac0af5e9b763854cdcb955c90550041ae54fb",
+      "error": "",
+      "format": "JSON"
+    },
+    {
+      "id": "yahoo_000001SZ_1m",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/000001.SZ?range=5d&interval=1m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:39:02.750022+00:00",
+      "elapsed_seconds": 0.728,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "application/json;charset=utf-8",
+      "bytes": 151176,
+      "sha256": "4a45b236bc224f8178a29d69fa808876e2c58307d04e34ae7422f604fc014c33",
+      "error": "",
+      "format": "JSON"
+    },
+    {
+      "id": "yahoo_920799BJ_1m",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/920799.BJ?range=5d&interval=1m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:39:02.750781+00:00",
+      "elapsed_seconds": 0.581,
+      "http_status": 404,
+      "transport_exit": 0,
+      "content_type": "application/json;charset=utf-8",
+      "bytes": 108,
+      "sha256": "f0b5f9feeac9f1fc93c31b1edc03fbc1fda4acb3ec5e233ebb39d6f8b66e1769",
+      "error": "",
+      "format": "JSON"
+    },
+    {
+      "id": "yahoo_AMD_1m_retry",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/AMD?range=5d&interval=1m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:40:06.714619+00:00",
+      "elapsed_seconds": 5.012,
+      "http_status": 0,
+      "transport_exit": 28,
+      "content_type": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "error": "curl: (28) Proxy CONNECT aborted due to timeout",
+      "format": "TEXT"
+    },
+    {
+      "id": "yahoo_AMD_5m_retry",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/AMD?range=5d&interval=5m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:40:06.715070+00:00",
+      "elapsed_seconds": 5.009,
+      "http_status": 0,
+      "transport_exit": 28,
+      "content_type": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "error": "curl: (28) Proxy CONNECT aborted due to timeout",
+      "format": "TEXT"
+    },
+    {
+      "id": "yahoo_AMD_15m_retry",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/AMD?range=5d&interval=15m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:40:06.715411+00:00",
+      "elapsed_seconds": 5.011,
+      "http_status": 0,
+      "transport_exit": 28,
+      "content_type": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "error": "curl: (28) Proxy CONNECT aborted due to timeout",
+      "format": "TEXT"
+    },
+    {
+      "id": "yahoo_600519.SS_5m",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/600519.SS?range=5d&interval=5m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:40:06.715750+00:00",
+      "elapsed_seconds": 5.012,
+      "http_status": 0,
+      "transport_exit": 28,
+      "content_type": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "error": "curl: (28) Proxy CONNECT aborted due to timeout",
+      "format": "TEXT"
+    },
+    {
+      "id": "yahoo_600519.SS_15m",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/600519.SS?range=5d&interval=15m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:40:06.716280+00:00",
+      "elapsed_seconds": 5.011,
+      "http_status": 0,
+      "transport_exit": 28,
+      "content_type": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "error": "curl: (28) Proxy CONNECT aborted due to timeout",
+      "format": "TEXT"
+    },
+    {
+      "id": "yahoo_000001.SZ_5m",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/000001.SZ?range=5d&interval=5m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:40:06.716870+00:00",
+      "elapsed_seconds": 5.01,
+      "http_status": 0,
+      "transport_exit": 28,
+      "content_type": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "error": "curl: (28) Proxy CONNECT aborted due to timeout",
+      "format": "TEXT"
+    },
+    {
+      "id": "yahoo_000001.SZ_15m",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/000001.SZ?range=5d&interval=15m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:40:11.723968+00:00",
+      "elapsed_seconds": 0.689,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "application/json;charset=utf-8",
+      "bytes": 11770,
+      "sha256": "f9bf8cc6bf6f0874782ecf352cb5c955fe93faac99f9e564659f470a09333599",
+      "error": "",
+      "format": "JSON"
+    },
+    {
+      "id": "eastmoney_a_catalog_retry",
+      "url": "https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=100&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A0%2Bt%3A6%2Cm%3A0%2Bt%3A80%2Cm%3A1%2Bt%3A2%2Cm%3A1%2Bt%3A23%2Cm%3A0%2Bt%3A81%2Bs%3A2048&fields=f12%2Cf13%2Cf14",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:40:11.726701+00:00",
+      "elapsed_seconds": 5.312,
+      "http_status": 502,
+      "transport_exit": 0,
+      "content_type": "text/html",
+      "bytes": 157,
+      "sha256": "24fe03fdb26088bfff8b1363911c29c79a19614bca42cdcdb9fefdf52917aeb1",
+      "error": "",
+      "format": "TEXT"
+    },
+    {
+      "id": "yahoo_830799BJ_1m",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/830799.BJ?range=5d&interval=1m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:40:11.727428+00:00",
+      "elapsed_seconds": 0.663,
+      "http_status": 404,
+      "transport_exit": 0,
+      "content_type": "application/json;charset=utf-8",
+      "bytes": 108,
+      "sha256": "f0b5f9feeac9f1fc93c31b1edc03fbc1fda4acb3ec5e233ebb39d6f8b66e1769",
+      "error": "",
+      "format": "JSON"
+    },
+    {
+      "id": "eastmoney_bj_catalog",
+      "url": "https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=100&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A0%2Bt%3A81%2Bs%3A2048&fields=f12%2Cf13%2Cf14",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:40:11.727836+00:00",
+      "elapsed_seconds": 5.593,
+      "http_status": 502,
+      "transport_exit": 0,
+      "content_type": "text/html",
+      "bytes": 157,
+      "sha256": "24fe03fdb26088bfff8b1363911c29c79a19614bca42cdcdb9fefdf52917aeb1",
+      "error": "",
+      "format": "TEXT"
+    },
+    {
+      "id": "yahoo_AMD_1m_12s",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/AMD?range=5d&interval=1m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:41:33.787574+00:00",
+      "elapsed_seconds": 5.506,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "application/json;charset=utf-8",
+      "bytes": 166513,
+      "sha256": "dbdc0b3ba81f869f4927e1fd8b058bb7a492efe428fd5b9334fb16a4eea2b18a",
+      "error": "",
+      "format": "JSON"
+    },
+    {
+      "id": "yahoo_AMD_5m_12s",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/AMD?range=5d&interval=5m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:41:33.788368+00:00",
+      "elapsed_seconds": 5.3,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "application/json;charset=utf-8",
+      "bytes": 34774,
+      "sha256": "26315401688a31ee954e726db0e9a51bbc569a951ae4934fb378483e9c53d4e5",
+      "error": "",
+      "format": "JSON"
+    },
+    {
+      "id": "yahoo_AMD_15m_12s",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/AMD?range=5d&interval=15m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:41:33.788943+00:00",
+      "elapsed_seconds": 5.281,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "application/json;charset=utf-8",
+      "bytes": 12839,
+      "sha256": "b7bb9efad8d91ddecbeaa8647271320cc3ccf70cc37d47ed1c387ecd07f3d8d5",
+      "error": "",
+      "format": "JSON"
+    },
+    {
+      "id": "eastmoney_a_catalog_12s",
+      "url": "https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=100&po=1&np=1&fltt=2&invt=2&fid=f12&fs=m%3A0%2Bt%3A6%2Cm%3A0%2Bt%3A80%2Cm%3A1%2Bt%3A2%2Cm%3A1%2Bt%3A23%2Cm%3A0%2Bt%3A81%2Bs%3A2048&fields=f12%2Cf13%2Cf14",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:41:33.789398+00:00",
+      "elapsed_seconds": 6.654,
+      "http_status": 502,
+      "transport_exit": 0,
+      "content_type": "text/html",
+      "bytes": 157,
+      "sha256": "24fe03fdb26088bfff8b1363911c29c79a19614bca42cdcdb9fefdf52917aeb1",
+      "error": "",
+      "format": "TEXT"
+    },
+    {
+      "id": "sse_catalog_main",
+      "url": "https://query.sse.com.cn/sseQuery/commonQuery.do?sqlId=COMMON_SSE_CP_GPJCTPZ_GPLB_GP_L&isPagination=true&STOCK_TYPE=1&COMPANY_STATUS=2%2C4%2C5%2C7%2C8&type=inParams&pageHelp.cacheSize=1&pageHelp.beginPage=1&pageHelp.pageSize=10000&pageHelp.pageNo=1&pageHelp.endPage=1",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:41:33.789767+00:00",
+      "elapsed_seconds": 12.009,
+      "http_status": 0,
+      "transport_exit": "HARD_TIMEOUT_12S",
+      "content_type": null,
+      "bytes": 605583,
+      "sha256": "66f18f6f392472a7765cf6a71105028b4d1cb590311375084824b36491fd1219",
+      "error": "Per-request hard deadline reached",
+      "format": "TEXT"
+    },
+    {
+      "id": "szse_catalog_xlsx",
+      "url": "https://www.szse.cn/api/report/ShowReport?SHOWTYPE=xlsx&CATALOGID=1110x&TABKEY=tab1",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:41:33.790248+00:00",
+      "elapsed_seconds": 11.022,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=GBK",
+      "bytes": 524153,
+      "sha256": "f1c82d338a25bb4d7a219744641bf7f0b2eabc084a76be56f9e2c7b21d9aae9c",
+      "error": "",
+      "format": "TEXT"
+    },
+    {
+      "id": "akshare_primary_stock_info_code",
+      "url": "https://raw.githubusercontent.com/akfamily/akshare/main/akshare/stock/stock_info.py",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:41:39.070440+00:00",
+      "elapsed_seconds": 4.742,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "text/plain; charset=utf-8",
+      "bytes": 16398,
+      "sha256": "d3288903d1e8ce7796e051bfbe651cb15aad0b29d4043277b04984f3cec72892",
+      "error": "",
+      "format": "TEXT"
+    },
+    {
+      "id": "yahoo_600519SS_5m_12s",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/600519.SS?range=5d&interval=5m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:41:39.089118+00:00",
+      "elapsed_seconds": 6.27,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "application/json;charset=utf-8",
+      "bytes": 25184,
+      "sha256": "c4a8351ddeed325ec2953597e760236fbd093b54c21a6d344c15eba9eb77c1d7",
+      "error": "",
+      "format": "JSON"
+    },
+    {
+      "id": "yahoo_600519SS_15m_12s",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/600519.SS?range=5d&interval=15m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:41:39.295669+00:00",
+      "elapsed_seconds": 6.13,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "application/json;charset=utf-8",
+      "bytes": 9557,
+      "sha256": "ba9d87f056fd75fa38893cf220738437684b39669ecb2cf7894a8f30a44f4abd",
+      "error": "",
+      "format": "JSON"
+    },
+    {
+      "id": "yahoo_000001SZ_5m_12s",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/000001.SZ?range=5d&interval=5m&includePrePost=false",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:41:40.443751+00:00",
+      "elapsed_seconds": 4.934,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "application/json;charset=utf-8",
+      "bytes": 31687,
+      "sha256": "e235b123bff95555f29fc66d7e7487b428efaf0789bfa8c98cb586c3f9d4e2e2",
+      "error": "",
+      "format": "JSON"
+    },
+    {
+      "id": "sse_main_page100",
+      "url": "https://query.sse.com.cn/sseQuery/commonQuery.do?sqlId=COMMON_SSE_CP_GPJCTPZ_GPLB_GP_L&isPagination=true&COMPANY_STATUS=2%2C4%2C5%2C7%2C8&type=inParams&pageHelp.cacheSize=1&pageHelp.beginPage=1&pageHelp.pageSize=100&pageHelp.pageNo=1&pageHelp.endPage=1&STOCK_TYPE=1",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:43:39.891797+00:00",
+      "elapsed_seconds": 7.812,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "application/json;charset=UTF-8",
+      "bytes": 114815,
+      "sha256": "f07f9416808d5cea4dd2c190ec72a525aa4b8e60067d0130671271eb753af6b1",
+      "error": "",
+      "format": "JSON"
+    },
+    {
+      "id": "sse_star_page100",
+      "url": "https://query.sse.com.cn/sseQuery/commonQuery.do?sqlId=COMMON_SSE_CP_GPJCTPZ_GPLB_GP_L&isPagination=true&COMPANY_STATUS=2%2C4%2C5%2C7%2C8&type=inParams&pageHelp.cacheSize=1&pageHelp.beginPage=1&pageHelp.pageSize=100&pageHelp.pageNo=1&pageHelp.endPage=1&STOCK_TYPE=8",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:43:39.892271+00:00",
+      "elapsed_seconds": 11.766,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "application/json;charset=UTF-8",
+      "bytes": 116781,
+      "sha256": "0ecc0409891b4f7b6bfd34b02c3ac20378784b6fe54f60a39c7d2c5ccbafc98e",
+      "error": "",
+      "format": "JSON"
+    },
+    {
+      "id": "szse_catalog_json",
+      "url": "https://www.szse.cn/api/report/ShowReport?SHOWTYPE=JSON&CATALOGID=1110x&TABKEY=tab1&PAGENO=1",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:43:39.898199+00:00",
+      "elapsed_seconds": 6.712,
+      "http_status": 500,
+      "transport_exit": 0,
+      "content_type": "text/html",
+      "bytes": 2226,
+      "sha256": "909a526f37ede9aad5fb563a8735ddde67db27e48ec4e0ff5871074118e4b710",
+      "error": "",
+      "format": "TEXT"
+    },
+    {
+      "id": "bse_catalog_get",
+      "url": "https://www.bse.cn/nqxxController/nqxxCnzq.do?page=0&typejb=T&xxfcbj%5B%5D=2&xxzqdm=&sortfield=xxzqdm&sorttype=asc",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:43:39.900710+00:00",
+      "elapsed_seconds": 12.012,
+      "http_status": 0,
+      "transport_exit": "HARD_TIMEOUT_12S",
+      "content_type": null,
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "error": "Per-request hard deadline reached",
+      "format": "TEXT"
+    },
+    {
+      "id": "bse_list_html",
+      "url": "https://www.bse.cn/nq/listedcompany.html",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:43:39.908227+00:00",
+      "elapsed_seconds": 12.017,
+      "http_status": 0,
+      "transport_exit": "HARD_TIMEOUT_12S",
+      "content_type": null,
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "error": "Per-request hard deadline reached",
+      "format": "TEXT"
+    },
+    {
+      "id": "cninfo_public_stock_directory",
+      "url": "https://www.cninfo.com.cn/new/data/szse_stock.json",
+      "method": "GET",
+      "sent_credentials": false,
+      "hard_deadline_seconds": 12,
+      "known_at": "2026-10-04T06:48:05.619734+00:00",
+      "elapsed_seconds": 10.05,
+      "http_status": 200,
+      "transport_exit": 0,
+      "content_type": "application/json",
+      "bytes": 592485,
+      "sha256": "5682733958a171c9084706da8d74b8b7f96d63cfd99b932c7c7edc58f8b32b72",
+      "error": "",
+      "format": "JSON"
+    }
+  ],
+  "boundaries": [
+    "Live success establishes these server-side sample requests only, not uptime/SLA, browser CORS, all instruments historical depth, or a historical complete universe.",
+    "OKX current docs were verified but API payloads were not usable in this environment; preserve DOCUMENTED versus LIVE_VERIFIED statuses.",
+    "Binance regional restrictions were explicit; code must surface them and preserve source identity.",
+    "Gate response field types differ from examples (v appeared as number); use tolerant numeric parsing with strict semantic validation.",
+    "Open candles and missing periods must not be mistaken for completed bars or zero activity.",
+    "Market labels must always include exchange plus futures/perpetual product; underlying category does not convert a derivative into its underlying asset.",
+    "CNINFO contains current and historical disclosure codes, listing status UNVERIFIED; not a point-in-time active universe.",
+    "Nasdaq directory includes listed securities, not all OTC; directory membership does not guarantee Yahoo minute coverage.",
+    "Earlier Yahoo native 1m/5m/15m equity samples succeeded; later adapter GETs returned HTTP429. Both observations are retained.",
+    "Every market remains separately identified. Gate stock or metal underlyings remain perpetual derivatives."
+  ],
+  "raw_market_rows_in_git": false,
+  "price_requests_after_signal_prohibition": "Observations only; no new trading signals computed.",
+  "actual_browser_integration": {
+    "observations": [
+      {
+        "market": "binance_spot",
+        "ok": false,
+        "http_status": 200,
+        "count": 0,
+        "partial": false,
+        "error": "网络请求失败（curl 63）：curl: (63) Maximum file size exceeded",
+        "request_receipts": [
+          {
+            "url": "https://data-api.binance.vision/api/v3/exchangeInfo",
+            "requested_at_utc": "2026-10-04T07:02:56.000225+00:00",
+            "received_at_utc": "2026-10-04T07:03:01.739765+00:00",
+            "http_status": 200,
+            "ok": false,
+            "error": "网络请求失败（curl 63）：curl: (63) Maximum file size exceeded",
+            "error_code": "NETWORK_ERROR",
+            "timeout_seconds": 12
+          }
+        ],
+        "response_sha256": "b3e39a5f4630b4607088fd56040f02cb00d298957d260b8ccfc9a10b68302dfe"
+      },
+      {
+        "market": "gate_usdt",
+        "ok": true,
+        "http_status": 200,
+        "count": 1027,
+        "partial": false,
+        "error": null,
+        "request_receipts": [
+          {
+            "url": "https://api.gateio.ws/api/v4/futures/usdt/contracts",
+            "requested_at_utc": "2026-10-04T07:03:03.745319+00:00",
+            "received_at_utc": "2026-10-04T07:03:08.558712+00:00",
+            "http_status": 200,
+            "ok": true,
+            "error": null,
+            "error_code": null,
+            "timeout_seconds": 12
+          }
+        ],
+        "response_sha256": "a8fd8d18c2ca614f10088e2f5df1fbc3c9e4aa2d956280a934943b6997ea3067"
+      },
+      {
+        "market": "gate_usdt",
+        "symbol": "BTC_USDT",
+        "interval": "1m",
+        "ok": true,
+        "http_status": 200,
+        "count": 5,
+        "partial": false,
+        "error": null,
+        "request_receipts": [
+          {
+            "url": "https://api.gateio.ws/api/v4/futures/usdt/candlesticks?contract=BTC_USDT&interval=1m&limit=1000&to=1791097388",
+            "requested_at_utc": "2026-10-04T07:03:08.663220+00:00",
+            "received_at_utc": "2026-10-04T07:03:12.599209+00:00",
+            "http_status": 200,
+            "ok": true,
+            "error": null,
+            "error_code": null,
+            "timeout_seconds": 12
+          }
+        ],
+        "response_sha256": "4d3d10b60c978b6c5153fe5b516924763f65334443960be063668923d1f59b7b"
+      },
+      {
+        "market": "gate_usdt",
+        "symbol": "XAU_USDT",
+        "interval": "15m",
+        "ok": true,
+        "http_status": 200,
+        "count": 5,
+        "partial": false,
+        "error": null,
+        "request_receipts": [
+          {
+            "url": "https://api.gateio.ws/api/v4/futures/usdt/candlesticks?contract=XAU_USDT&interval=15m&limit=1000&to=1791097392",
+            "requested_at_utc": "2026-10-04T07:03:12.694931+00:00",
+            "received_at_utc": "2026-10-04T07:03:16.956996+00:00",
+            "http_status": 200,
+            "ok": true,
+            "error": null,
+            "error_code": null,
+            "timeout_seconds": 12
+          }
+        ],
+        "response_sha256": "7ed8d3c245874e41ffff6ff29effcd7579ba8061b24c693898675f7fe96dab4f"
+      },
+      {
+        "market": "us_equity",
+        "ok": true,
+        "http_status": 200,
+        "count": 13258,
+        "partial": false,
+        "error": null,
+        "request_receipts": [
+          {
+            "url": "https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt",
+            "requested_at_utc": "2026-10-04T07:03:17.773497+00:00",
+            "received_at_utc": "2026-10-04T07:03:22.358812+00:00",
+            "http_status": 200,
+            "ok": true,
+            "error": null,
+            "error_code": null,
+            "timeout_seconds": 12
+          },
+          {
+            "url": "https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt",
+            "requested_at_utc": "2026-10-04T07:03:22.372579+00:00",
+            "received_at_utc": "2026-10-04T07:03:26.350077+00:00",
+            "http_status": 200,
+            "ok": true,
+            "error": null,
+            "error_code": null,
+            "timeout_seconds": 12
+          }
+        ],
+        "response_sha256": "51c3ea16397573c8b6c5a487f1bb66f411ae7ecfb74fd29d63824d89c0855b79"
+      },
+      {
+        "market": "cn_equity",
+        "ok": true,
+        "http_status": 200,
+        "count": 6179,
+        "partial": true,
+        "error": null,
+        "request_receipts": [
+          {
+            "url": "https://www.cninfo.com.cn/new/data/szse_stock.json",
+            "requested_at_utc": "2026-10-04T07:03:27.016739+00:00",
+            "received_at_utc": "2026-10-04T07:03:34.422417+00:00",
+            "http_status": 200,
+            "ok": true,
+            "error": null,
+            "error_code": null,
+            "timeout_seconds": 12
+          }
+        ],
+        "response_sha256": "ad99434e9707b9512f00afee38c01fb824892dd83f568ef83e6168031533b1cc"
+      },
+      {
+        "market": "okx_swap",
+        "ok": false,
+        "http_status": 200,
+        "count": 0,
+        "partial": false,
+        "error": "HTTP 200，但响应不是可解析的JSON；不可作为行情。",
+        "request_receipts": [
+          {
+            "url": "https://www.okx.com/api/v5/public/instruments?instType=SWAP",
+            "requested_at_utc": "2026-10-04T07:03:34.746991+00:00",
+            "received_at_utc": "2026-10-04T07:03:38.070403+00:00",
+            "http_status": 200,
+            "ok": false,
+            "error": "HTTP 200，但响应不是可解析的JSON；不可作为行情。",
+            "error_code": "UPSTREAM_NON_JSON",
+            "timeout_seconds": 12
+          }
+        ],
+        "response_sha256": "d5ae3878e0c333af375b18f3e5d4dbc5dd70f1714f9d09b6da4fdec40b76254d"
+      }
+    ],
+    "errors": [],
+    "viewports": [
+      1440,
+      390,
+      320
+    ],
+    "manual_gate_symbols": [
+      "BTC_USDT",
+      "XAU_USDT"
+    ],
+    "browser": "153.0.8010.0"
+  },
+  "spot_catalog_correction": {
+    "ok": true,
+    "market": "binance_spot",
+    "source": "来源 A · Binance 现货公开镜像",
+    "requested_at_utc": "2026-10-04T07:05:07.893110+00:00",
+    "received_at_utc": "2026-10-04T07:05:12.557744+00:00",
+    "http_status": 200,
+    "source_url": "https://data-api.binance.vision/api/v3/exchangeInfo?showPermissionSets=false",
+    "request_count": 1,
+    "partial": false,
+    "warnings": [],
+    "error": null,
+    "request_receipts": [
+      {
+        "url": "https://data-api.binance.vision/api/v3/exchangeInfo?showPermissionSets=false",
+        "requested_at_utc": "2026-10-04T07:05:07.893110+00:00",
+        "received_at_utc": "2026-10-04T07:05:12.557744+00:00",
+        "http_status": 200,
+        "ok": true,
+        "error": null,
+        "error_code": null,
+        "timeout_seconds": 12
+      }
+    ],
+    "count": 1372,
+    "sample_codes": [
+      "BNBUSDT",
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ]
+  },
+  "final_spot_browser_verification": {
+    "market": "binance_spot",
+    "symbol": "ETHUSDT",
+    "interval": "5m",
+    "requested_count": 5,
+    "actual_count": 5,
+    "catalog_count": 1372,
+    "ascending_table": true,
+    "http_status": 200,
+    "request_receipts": [
+      {
+        "url": "https://data-api.binance.vision/api/v3/exchangeInfo?showPermissionSets=false",
+        "requested_at_utc": "2026-10-04T07:07:03.483746+00:00",
+        "received_at_utc": "2026-10-04T07:07:08.807548+00:00",
+        "http_status": 200,
+        "ok": true,
+        "error": null,
+        "error_code": null,
+        "timeout_seconds": 12
+      },
+      {
+        "url": "https://data-api.binance.vision/api/v3/klines?symbol=ETHUSDT&interval=5m&limit=5",
+        "requested_at_utc": "2026-10-04T07:07:09.987700+00:00",
+        "received_at_utc": "2026-10-04T07:07:13.342973+00:00",
+        "http_status": 200,
+        "ok": true,
+        "error": null,
+        "error_code": null,
+        "timeout_seconds": 12
+      }
+    ],
+    "response_sha256": "b7b3147a2e5d6b6c666e57b31625310108ccbb234e1cb1b145835d32d6fffe98"
+  }
+}

@@ -1,0 +1,3028 @@
+[
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 0,
+    "file": "AAOI_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "exchange": "NASDAQ",
+      "symbol": "AAOI",
+      "underlying_contract_id": 135423662
+    },
+    "invalid_rows": 1,
+    "known_at": "2026-10-04T03:13:35.322Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "229e30f84fe5b5a66ae32927a554c2bf71d7ec9e4ab8891895424dcaf49ecae0",
+    "source": "IBKR saved price-history response",
+    "symbol": "AAOI"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 20,
+    "file": "AAPL_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "APPLE INC",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "AAPL",
+      "underlying_contract_id": 265598
+    },
+    "invalid_rows": 4,
+    "known_at": "2026-10-04T03:14:38.991Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "f7cbe5f245390cb4b2d2b3451901273541180122c96355beb95483603bac30cb",
+    "source": "IBKR saved price-history response",
+    "symbol": "AAPL"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 0,
+    "file": "ALAB_daily.json",
+    "first": "2024-03-20",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "ASTERA LABS INC",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "ALAB",
+      "underlying_contract_id": 692196414
+    },
+    "invalid_rows": 1,
+    "known_at": "2026-10-04T03:14:19.204Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 637,
+    "sha256": "c2c3ea5fc8ffa4d46f796b9dbd35be560758912dc8ae46aacb3cc5076d0639ac",
+    "source": "IBKR saved price-history response",
+    "symbol": "ALAB"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 20,
+    "file": "AMAT_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "APPLIED MATERIALS INC",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "AMAT",
+      "underlying_contract_id": 266093
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:14:00.644Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "6ef5187995cb9580ed2aed527936ce085dd6e9d0211adac8c608d9a59a4e0391",
+    "source": "IBKR saved price-history response",
+    "symbol": "AMAT"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 0,
+    "file": "AMD_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "ADVANCED MICRO DEVICES",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "AMD",
+      "underlying_contract_id": 4391
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:13:34.244Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "44f6540dc591da9fe58220ad09fbb6621934aaa368a16271fbe6ea0bc75348df",
+    "source": "IBKR saved price-history response",
+    "symbol": "AMD"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 1,
+    "file": "AMZN_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "AMAZON.COM INC",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "AMZN",
+      "underlying_contract_id": 3691937
+    },
+    "invalid_rows": 2,
+    "known_at": "2026-10-04T03:14:09.420Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "8d97da391b285ac3d4508d5ea69363f6cb5c9155b132e2f05f29be8ab02b20da",
+    "source": "IBKR saved price-history response",
+    "symbol": "AMZN"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 2,
+    "file": "ANET_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "ARISTA NETWORKS INC",
+      "exchange": "NYSE",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "ANET",
+      "underlying_contract_id": 740948854
+    },
+    "invalid_rows": 1,
+    "known_at": "2026-10-04T03:14:05.368Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "f76eabce38f568fb387b3ab868fda2c487e3c4df90c4366f1697b391ee00ea3d",
+    "source": "IBKR saved price-history response",
+    "symbol": "ANET"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 0,
+    "file": "ARM_daily.json",
+    "first": "2023-09-14",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "ARM HOLDINGS PLC-ADR",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "ARM",
+      "underlying_contract_id": 653400472
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:13:55.675Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 766,
+    "sha256": "289603c279feaecbecfe87bb3b0fa0adb35036dbf3d23d5a117be5d148921673",
+    "source": "IBKR saved price-history response",
+    "symbol": "ARM"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 19,
+    "file": "ASML_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "ASML HOLDING NV-NY REG SHS",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "ASML",
+      "underlying_contract_id": 117902840
+    },
+    "invalid_rows": 3,
+    "known_at": "2026-10-04T03:13:35.655Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "63d7d33081e77f27c4c6a742dd869124a3d373d7b34f2c7f7a7ecdb7044822bf",
+    "source": "IBKR saved price-history response",
+    "symbol": "ASML"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 21,
+    "file": "AVGO_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "BROADCOM INC",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "AVGO",
+      "underlying_contract_id": 313130367
+    },
+    "invalid_rows": 1,
+    "known_at": "2026-10-04T03:13:55.675Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "13d0cfe474be41883acb133eb378ba488992ac757baf4c1662f70327c7ca3d6d",
+    "source": "IBKR saved price-history response",
+    "symbol": "AVGO"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 19,
+    "file": "CEG_daily.json",
+    "first": "2022-01-19",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "CONSTELLATION ENERGY",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "CEG",
+      "underlying_contract_id": 538132976
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:14:28.392Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1181,
+    "sha256": "b1ab8b15a288f684317e11d15cddb5f4ad5862dedc3d989a8937d1d577a3b995",
+    "source": "IBKR saved price-history response",
+    "symbol": "CEG"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 0,
+    "file": "COHR_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "COHERENT CORP",
+      "exchange": "NYSE",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "COHR",
+      "underlying_contract_id": 584127832
+    },
+    "invalid_rows": 3,
+    "known_at": "2026-10-04T03:14:19.204Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "392bd321fea311e15a2c65e7047bdb925d412497292e2923e11715006f363e45",
+    "source": "IBKR saved price-history response",
+    "symbol": "COHR"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 0,
+    "file": "CRCL_daily.json",
+    "first": "2025-06-05",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "CIRCLE INTERNET GROUP INC",
+      "exchange": "NYSE",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "CRCL",
+      "underlying_contract_id": 789044667
+    },
+    "invalid_rows": 3,
+    "known_at": "2026-10-04T03:13:40.726Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 334,
+    "sha256": "19be42ae8c91c5a0fec9f4c95c739cba80d86028c8e5c0041a7528a75b1f9861",
+    "source": "IBKR saved price-history response",
+    "symbol": "CRCL"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 0,
+    "file": "CRDO_daily.json",
+    "first": "2022-01-27",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "CREDO TECHNOLOGY GROUP HOLDI",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "CRDO",
+      "underlying_contract_id": 541265127
+    },
+    "invalid_rows": 1,
+    "known_at": "2026-10-04T03:14:14.636Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1175,
+    "sha256": "95ac995af59843a183904eb778e59596bf1a7ecef1130a9c3d04123f40b54b08",
+    "source": "IBKR saved price-history response",
+    "symbol": "CRDO"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 18,
+    "file": "DELL_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "DELL TECHNOLOGIES -C",
+      "exchange": "NYSE",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "DELL",
+      "underlying_contract_id": 346218218
+    },
+    "invalid_rows": 5,
+    "known_at": "2026-10-04T03:14:14.636Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "cb46019c0ebc51d1b64ca564e73f1a583a76d4b45cc8050bba2adf57a8af09f4",
+    "source": "IBKR saved price-history response",
+    "symbol": "DELL"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 20,
+    "file": "ETN_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "EATON CORP PLC",
+      "exchange": "NYSE",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "ETN",
+      "underlying_contract_id": 118017869
+    },
+    "invalid_rows": 2,
+    "known_at": "2026-10-04T03:14:28.392Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "24e6fe1c102f946569af7938ef3d9918ab67641cb5c594923e899105d2633be8",
+    "source": "IBKR saved price-history response",
+    "symbol": "ETN"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 20,
+    "file": "GLW_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "CORNING INC",
+      "exchange": "NYSE",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "GLW",
+      "underlying_contract_id": 7655
+    },
+    "invalid_rows": 2,
+    "known_at": "2026-10-04T03:13:50.537Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "c3aad56129ff6bc8482f5d4bf91b24d2e4863de10c7633bbe6f9e852c25bedec",
+    "source": "IBKR saved price-history response",
+    "symbol": "GLW"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 11,
+    "file": "GOOG_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "ALPHABET INC-CL C",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "GOOG",
+      "underlying_contract_id": 208813720
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:13:35.655Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "bf64d94f8ecb819417ce43d9395807c81fdd17e7efd4eb60d3c246f8996d3742",
+    "source": "IBKR saved price-history response",
+    "symbol": "GOOG"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 20,
+    "file": "HPE_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "HEWLETT PACKARD ENTERPRISE",
+      "exchange": "NYSE",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "HPE",
+      "underlying_contract_id": 209411798
+    },
+    "invalid_rows": 3,
+    "known_at": "2026-10-04T03:14:33.781Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "527ba02eecc0e4da4130a2b1f9d0fb113886bb0af7570e928574d7b6cd6b7078",
+    "source": "IBKR saved price-history response",
+    "symbol": "HPE"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 12,
+    "file": "INTC_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "INTEL CORP",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "INTC",
+      "underlying_contract_id": 270639
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:13:46.062Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "16f0f3f6ea278b2447d3c84c322640be1b8c03fe31a47d47394bb33da5d1c684",
+    "source": "IBKR saved price-history response",
+    "symbol": "INTC"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 21,
+    "file": "KLAC_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "KLA CORP",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "KLAC",
+      "underlying_contract_id": 270957
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:14:05.368Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "5f62f10d6de1d8fe7491cbef039a0397d737fbc67f38c201aa2d0270de1699ea",
+    "source": "IBKR saved price-history response",
+    "symbol": "KLAC"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 0,
+    "file": "LITE_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "LUMENTUM HOLDINGS INC",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        }
+      ],
+      "symbol": "LITE",
+      "underlying_contract_id": 201113895
+    },
+    "invalid_rows": 1,
+    "known_at": "2026-10-04T03:14:19.204Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "5e09eb2a31f3d65df6ee601fd1d6337726805f494b200fb11ca6a0ba65697183",
+    "source": "IBKR saved price-history response",
+    "symbol": "LITE"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 21,
+    "file": "LRCX_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "LAM RESEARCH CORP",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "LRCX",
+      "underlying_contract_id": 732440574
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:14:00.644Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "5ecd04d25f053d422c7f11b936ff11a26d4ebe3ca04299336ee49557a51b760d",
+    "source": "IBKR saved price-history response",
+    "symbol": "LRCX"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 21,
+    "file": "MCHP_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "MICROCHIP TECHNOLOGY INC",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "MCHP",
+      "underlying_contract_id": 271568
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:14:23.922Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "576bc4a25a3002a51e175412168be841d3eb93f321f21f0715385d9997bd54a9",
+    "source": "IBKR saved price-history response",
+    "symbol": "MCHP"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 11,
+    "file": "META_daily.json",
+    "first": "2022-06-09",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "META PLATFORMS INC-CLASS A",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "META",
+      "underlying_contract_id": 107113386
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:13:35.655Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1083,
+    "sha256": "f41b8c0226ba6df0ac2fc6e8112f57930540eb0a4116edc158d18cb1e7f218ad",
+    "source": "IBKR saved price-history response",
+    "symbol": "META"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 20,
+    "file": "MPWR_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "MONOLITHIC POWER SYSTEMS INC",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        }
+      ],
+      "symbol": "MPWR",
+      "underlying_contract_id": 32106121
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:14:23.922Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "293b6a3994c08078c42ab1ee7edd972bff9c805336dde11325c989d6b21d99a5",
+    "source": "IBKR saved price-history response",
+    "symbol": "MPWR"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 20,
+    "file": "MRVL_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "MARVELL TECHNOLOGY INC",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "MRVL",
+      "underlying_contract_id": 483492393
+    },
+    "invalid_rows": 2,
+    "known_at": "2026-10-04T03:13:50.537Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "6eaf937cce04aad3f5d330960e10a0ef5342dc65d81e07231ca8ed22a2f03b3b",
+    "source": "IBKR saved price-history response",
+    "symbol": "MRVL"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 20,
+    "file": "MSFT_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "MICROSOFT CORP",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "MSFT",
+      "underlying_contract_id": 272093
+    },
+    "invalid_rows": 1,
+    "known_at": "2026-10-04T03:14:09.420Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "c7f28f49febe6c2bef03bd3a0d28cc42c1a5a731f4ecfd30cc8004d05cc51206",
+    "source": "IBKR saved price-history response",
+    "symbol": "MSFT"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 1,
+    "file": "MSTR_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "STRATEGY INC",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "MSTR",
+      "underlying_contract_id": 272110
+    },
+    "invalid_rows": 3,
+    "known_at": "2026-10-04T03:13:46.062Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "4a26422cdc4ae86633316cb1c6fe926e40176b2cf623a61a35eea062b2c901c9",
+    "source": "IBKR saved price-history response",
+    "symbol": "MSTR"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 19,
+    "file": "MU_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "MICRON TECHNOLOGY INC",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "MU",
+      "underlying_contract_id": 9939
+    },
+    "invalid_rows": 2,
+    "known_at": "2026-10-04T03:13:50.537Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "9da8b8a1d2dc3af23d7a11ce30f8f240fe511c478885766389f43e6ead576a25",
+    "source": "IBKR saved price-history response",
+    "symbol": "MU"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 21,
+    "file": "NVDA_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "NVIDIA CORP",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "NVDA",
+      "underlying_contract_id": 4815747
+    },
+    "invalid_rows": 3,
+    "known_at": "2026-10-04T03:13:55.675Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "58bd90da46b3d128659ff987d11c11f59316817c7169e2a0bb9b5b2752dd3f43",
+    "source": "IBKR saved price-history response",
+    "symbol": "NVDA"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 20,
+    "file": "NXPI_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "NXP SEMICONDUCTORS NV",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "NXPI",
+      "underlying_contract_id": 77791077
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:13:40.726Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "8bfd3ed99fd3ce7b2dd37f179a47f8f43cf5344364d3807bc6a7c178870cc0eb",
+    "source": "IBKR saved price-history response",
+    "symbol": "NXPI"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 20,
+    "file": "ORCL_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "ORACLE CORP",
+      "exchange": "NYSE",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "ORCL",
+      "underlying_contract_id": 272800
+    },
+    "invalid_rows": 2,
+    "known_at": "2026-10-04T03:14:09.420Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "1b335770ab9b6e3b6e4cd2e1a6b38158484bf5bce9de027df3a4502755fb400e",
+    "source": "IBKR saved price-history response",
+    "symbol": "ORCL"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 0,
+    "file": "P_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "EVERPURE INC-A",
+      "exchange": "NYSE",
+      "mapping_source": "https://www.everpuredata.com/company/newsroom/press-releases/everpure-to-change-ticker-symbol.html",
+      "previous_symbol": "PSTG",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "P",
+      "underlying_contract_id": 208813725
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:16:12.451Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "a246b982f009d15425179bcec0dfa27b77d061946fe3cd9dc8fc51693e43e369",
+    "source": "IBKR saved price-history response",
+    "symbol": "P"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 20,
+    "file": "QCOM_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "QUALCOMM INC",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "QCOM",
+      "underlying_contract_id": 273544
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:14:23.922Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "f87948088fe0cb408ebfc1984c811a9129d950703d40d1bc78b99be1e1e0c07f",
+    "source": "IBKR saved price-history response",
+    "symbol": "QCOM"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 21,
+    "file": "QQQ_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "INVESCO QQQ TRUST SERIES 1",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "OPT"
+        }
+      ],
+      "symbol": "QQQ",
+      "underlying_contract_id": 320227571
+    },
+    "invalid_rows": 4,
+    "known_at": "2026-10-04T03:13:34.946Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "13a668bc40a5ec6bac837660bb8b795549670f88d7a397466b935b73df5fbf55",
+    "source": "IBKR saved price-history response",
+    "symbol": "QQQ"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 1,
+    "file": "SMCI_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "SUPER MICRO COMPUTER INC",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "SMCI",
+      "underlying_contract_id": 731466419
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:14:14.636Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "8f6786138318d4b7154438feb4f1a5270cdcdc9063bac0f528aaf1543f87da06",
+    "source": "IBKR saved price-history response",
+    "symbol": "SMCI"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 0,
+    "file": "SNDK_daily.json",
+    "first": "2025-02-13",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "SANDISK CORP",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "SNDK",
+      "underlying_contract_id": 760250490
+    },
+    "invalid_rows": 1,
+    "known_at": "2026-10-04T03:13:46.062Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 411,
+    "sha256": "8341e42e036c29e140c67acdd4795c5c5287c44afceacfc9371c46786d41c022",
+    "source": "IBKR saved price-history response",
+    "symbol": "SNDK"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 22,
+    "file": "SOXX_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "ISHARES SEMICONDUCTOR ETF",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "SOXX",
+      "underlying_contract_id": 12658194
+    },
+    "invalid_rows": 18,
+    "known_at": "2026-10-04T03:13:40.726Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "7ebf426b0f4f9c365811e54cb6a80dc57366196489223a6ef6cda94e6997029c",
+    "source": "IBKR saved price-history response",
+    "symbol": "SOXX"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 0,
+    "file": "SPCX_daily.json",
+    "first": "2026-06-12",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "SPACE EXPLORATION TECHN-CL A",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "SPCX",
+      "underlying_contract_id": 890493863
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:14:38.991Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 78,
+    "sha256": "b78b2c86401a4dd241a16140167cd0640136bacf6cdae210e729a332a00c5428",
+    "source": "IBKR saved price-history response",
+    "symbol": "SPCX"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 20,
+    "file": "STX_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "SEAGATE TECHNOLOGY HOLDINGS",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "STX",
+      "underlying_contract_id": 491932113
+    },
+    "invalid_rows": 1,
+    "known_at": "2026-10-04T03:14:33.781Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "2b0007469ccd691f5f3aa2aeda9ca5cfd092e54cffd960f10797f8ebfc1be1dd",
+    "source": "IBKR saved price-history response",
+    "symbol": "STX"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 20,
+    "file": "TSM_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "TAIWAN SEMICONDUCTOR-SP ADR",
+      "exchange": "NYSE",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "TSM",
+      "underlying_contract_id": 6223250
+    },
+    "invalid_rows": 14,
+    "known_at": "2026-10-04T03:14:00.644Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "007801a7467441ecbb769d2674e3828f338551d7b02d12366c495b36b8088804",
+    "source": "IBKR saved price-history response",
+    "symbol": "TSM"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 14,
+    "file": "VRT_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "VERTIV HOLDINGS CO-A",
+      "exchange": "NYSE",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "VRT",
+      "underlying_contract_id": 402783527
+    },
+    "invalid_rows": 3,
+    "known_at": "2026-10-04T03:14:05.368Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "54e3408d940dcd613b5bbd434f3e1f2377176ffaa894b24160e9c745c2b18d26",
+    "source": "IBKR saved price-history response",
+    "symbol": "VRT"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 20,
+    "file": "VST_daily.json",
+    "first": "2021-10-04",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "VISTRA CORP",
+      "exchange": "NYSE",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "VST",
+      "underlying_contract_id": 254457731
+    },
+    "invalid_rows": 1,
+    "known_at": "2026-10-04T03:14:28.392Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1255,
+    "sha256": "3882f79149e11cd20b053b101c95e24c4bef1ce472bd399ed29b351d7bc1cd26",
+    "source": "IBKR saved price-history response",
+    "symbol": "VST"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "UNVERIFIED_PROVIDER_CONVENTION",
+    "corporate_actions_count": 6,
+    "file": "WDC_daily.json",
+    "first": "2021-10-06",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "country_code": "US",
+      "description": "WESTERN DIGITAL CORP",
+      "exchange": "NASDAQ",
+      "sections": [
+        {
+          "security_type": "STK"
+        },
+        {
+          "security_type": "BAG"
+        },
+        {
+          "security_type": "CFD"
+        },
+        {
+          "security_type": "IOPT"
+        },
+        {
+          "security_type": "OPT"
+        },
+        {
+          "security_type": "WAR"
+        }
+      ],
+      "symbol": "WDC",
+      "underlying_contract_id": 13681
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T03:14:33.781Z",
+    "last": "2026-10-02",
+    "provider": "ibkr",
+    "rows": 1253,
+    "sha256": "71ed8e2c69f8aa3bd00fea6048dd4e71bcb408a0670a4806414c2c25aa5a1304",
+    "source": "IBKR saved price-history response",
+    "symbol": "WDC"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 0,
+    "file": "AAOI.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NGM",
+      "instrumentType": "EQUITY",
+      "longName": "Applied Optoelectronics, Inc.",
+      "symbol": "AAOI"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:46.131454+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "642196ce3c813beddc5f0570dc3576b2b8c9a5e08e544f1f889cdda8901fd747",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/AAOI?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "AAOI"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 41,
+    "file": "AAPL.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Apple Inc.",
+      "symbol": "AAPL"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:35.304859+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "b674a4626058f070b3b8d05f3e5303c2ceffa764de7f29d85be44df9cf1c703a",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/AAPL?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "AAPL"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 0,
+    "file": "ALAB.json",
+    "first": "2024-03-20",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Astera Labs, Inc.",
+      "symbol": "ALAB"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:46.001836+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 637,
+    "sha256": "3770b41e4149faf7415c4b2c13bd118a8ddac556466b182adeed155ef0dfb3c3",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/ALAB?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "ALAB"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 40,
+    "file": "AMAT.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Applied Materials, Inc.",
+      "symbol": "AMAT"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:28.016788+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "0e728526e87965d98927a54914568d6cb0f2f1b06743d0963b4d0bf4598c03dc",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/AMAT?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "AMAT"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 0,
+    "file": "AMD.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Advanced Micro Devices, Inc.",
+      "symbol": "AMD"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:13.770237+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "d5fc2c7fcc23bd8caa2c3a611850e2a6a44b6e87724d3c3449e2c5a52ecfc3e7",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/AMD?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "AMD"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 1,
+    "file": "AMZN.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Amazon.com, Inc.",
+      "symbol": "AMZN"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:35.256429+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "4785e6f2f5d6e2202a553b8aea10387af231a4ae9da913ae491aa19d77af8330",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/AMZN?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "AMZN"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 2,
+    "file": "ANET.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NYQ",
+      "instrumentType": "EQUITY",
+      "longName": "Arista Networks, Inc.",
+      "symbol": "ANET"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:31.596723+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "78c8f6b532fccf16c655b6a794cfe47ca4b8a21adf33c5562f1f4e1bbf70cbd7",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/ANET?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "ANET"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 0,
+    "file": "ARM.json",
+    "first": "2023-09-14",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Arm Holdings plc",
+      "symbol": "ARM"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:22.871594+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 766,
+    "sha256": "2bb17743850e2767e7ef7a447e30bb97029cfae775cc2ba81ce8668af2c47110",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/ARM?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "ARM"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 26,
+    "file": "ASML.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "ASML Holding N.V.",
+      "symbol": "ASML"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:27.913809+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "774f1a6d5b08a31b4e009bd6d1db09c48bc4d66523476aa9feb8ee0baec65446",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/ASML?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "ASML"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 41,
+    "file": "AVGO.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Broadcom Inc.",
+      "symbol": "AVGO"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:22.853636+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "b610412b70f46b00d8a9222aa36dafc42ea02b452678df3916fb98dbd21ad5ac",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/AVGO?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "AVGO"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 19,
+    "file": "CEG.json",
+    "first": "2022-01-19",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Constellation Energy Corporation",
+      "symbol": "CEG"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:55.243584+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 1181,
+    "sha256": "dd8788962192089f7a373e508a08e6a5efe40ac1e7f88b8277464af3bbf02d38",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/CEG?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "CEG"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 0,
+    "file": "COHR.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NYQ",
+      "instrumentType": "EQUITY",
+      "longName": "Coherent Corp.",
+      "symbol": "COHR"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:46.139538+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "125bfcbe7b2fddf2c285fcb2229b00fbeb4765174c3bc73558047be8edca16bf",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/COHR?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "COHR"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 0,
+    "file": "CRCL.json",
+    "first": "2025-06-05",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NYQ",
+      "instrumentType": "EQUITY",
+      "longName": "Circle Internet Group",
+      "symbol": "CRCL"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:35.222205+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 334,
+    "sha256": "2fbd4025c2d9a475a015c12b2d0fde2f4fa84f19ccd06466b4b9346209f0a3d8",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/CRCL?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "CRCL"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 0,
+    "file": "CRDO.json",
+    "first": "2022-01-27",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Credo Technology Group Holding Ltd",
+      "symbol": "CRDO"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:40.404750+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 1175,
+    "sha256": "01eb5309d3bc673188d48c4f257aa6422e81badb34feb347f4c94d8ff2b0de74",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/CRDO?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "CRDO"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 20,
+    "file": "DELL.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NYQ",
+      "instrumentType": "EQUITY",
+      "longName": "Dell Technologies Inc.",
+      "symbol": "DELL"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:35.316814+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "68a10e12168cf1affa9bba0b40b19947b4e4b2b2e180f23d906589fcc3fc5f86",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/DELL?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "DELL"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 38,
+    "file": "ETN.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NYQ",
+      "instrumentType": "EQUITY",
+      "longName": "Eaton Corporation plc",
+      "symbol": "ETN"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:55.248709+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "91587ff3c384523c6d15b3609355d3078a1592430c5bbe77fe5854507850a029",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/ETN?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "ETN"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 40,
+    "file": "GLW.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NYQ",
+      "instrumentType": "EQUITY",
+      "longName": "Corning Incorporated",
+      "symbol": "GLW"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:18.826177+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "c92086a7e629c7ee05ea6e9f1e93de9985c455d462676cf6f41d7bf994cfe4b0",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/GLW?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "GLW"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 11,
+    "file": "GOOG.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Alphabet Inc.",
+      "symbol": "GOOG"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:18.807123+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "e8af95077e3dfb063e43804fc5f103e23f40e212124721fc21e42bf55dba6ccb",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/GOOG?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "GOOG"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 43,
+    "file": "HPE.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NYQ",
+      "instrumentType": "EQUITY",
+      "longName": "Hewlett Packard Enterprise Company",
+      "symbol": "HPE"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:55.235794+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "77c548af54fa24d118759550682c0998f974e8d3188d6430d50fcbaadc4d1cd8",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/HPE?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "HPE"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 32,
+    "file": "INTC.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Intel Corporation",
+      "symbol": "INTC"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:13.750760+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "09763bae5c2a8ebf03e0b2146cb6dfbdd3fe70dce48816a0b631ede159fcdc3b",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/INTC?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "INTC"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 41,
+    "file": "KLAC.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "KLA Corporation",
+      "symbol": "KLAC"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:28.002960+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "1f3222c3a9faa9d9ec4e5ec35f120f043866538d501c6eb5389850177502b555",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/KLAC?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "KLAC"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 0,
+    "file": "LITE.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Lumentum Holdings Inc.",
+      "symbol": "LITE"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:46.080905+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "c4a46c76722a4a2c1cad6d143ab098c27b1443ff046d0b89080e36a0703938b7",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/LITE?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "LITE"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 41,
+    "file": "LRCX.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Lam Research Corporation",
+      "symbol": "LRCX"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:27.994485+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "609180caa0b4a7d4be6faddec265f4ec2275b7a41b84eb020d90eda8f38b20ce",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/LRCX?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "LRCX"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 41,
+    "file": "MCHP.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Microchip Technology Incorporated",
+      "symbol": "MCHP"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:50.408026+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "dd72aa4d503709172259fdeee638e459c3eb33d131cc4ae101a6a205221b923a",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/MCHP?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "MCHP"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 11,
+    "file": "META.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Meta Platforms, Inc.",
+      "symbol": "META"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:18.788995+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "0fd9be0e87278e2c3f50e94e1ea9feaa54591853b821b977e35a309b7ff7ba8a",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/META?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "META"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 40,
+    "file": "MPWR.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Monolithic Power Systems, Inc.",
+      "symbol": "MPWR"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:50.550733+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "88cd4c4bdd17282af88cb1957e025454f375fabd8c14912f5761b299606276e1",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/MPWR?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "MPWR"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 39,
+    "file": "MRVL.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Marvell Technology, Inc.",
+      "symbol": "MRVL"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:18.918345+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "3314ad622f97ba7015d0c145f583cfa33e314c39d05765b1cc10d08ec8903e98",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/MRVL?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "MRVL"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 40,
+    "file": "MSFT.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Microsoft Corporation",
+      "symbol": "MSFT"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:31.721240+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "d873789146718d611ee6dbbf311f5f192154e8c1441593c89f34edd9e0a1c5fa",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/MSFT?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "MSFT"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 1,
+    "file": "MSTR.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Strategy Inc",
+      "symbol": "MSTR"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:40.396868+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "07a56eeb9677bd6df689de48f9fda3209daa431f8505ebc60756509b49cac048",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/MSTR?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "MSTR"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 20,
+    "file": "MU.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Micron Technology, Inc.",
+      "symbol": "MU"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:13.810449+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "3580e43dce415edb6f1f1e2b81589c241e846f6e753b21920e123092c9e6c9d7",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/MU?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "MU"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 42,
+    "file": "NVDA.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "NVIDIA Corporation",
+      "symbol": "NVDA"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:22.879740+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "231130acd56c020366936e07f0b82a585c242757fa61fb9ec70fc07b7568e87a",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/NVDA?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "NVDA"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 33,
+    "file": "NXPI.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "NXP Semiconductors N.V.",
+      "symbol": "NXPI"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:50.466319+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "c9461276ad4aafc4c48f5d80a33b30811d00faf58c411b5e6e93e8804f7bcf47",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/NXPI?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "NXPI"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 40,
+    "file": "ORCL.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NYQ",
+      "instrumentType": "EQUITY",
+      "longName": "Oracle Corporation",
+      "symbol": "ORCL"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:31.713173+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "d62221eab5c148894e5057d7bd873f24afc61e6c263bb78d62cdf7cffbfc2f2e",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/ORCL?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "ORCL"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 0,
+    "file": "P.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NYQ",
+      "instrumentType": "EQUITY",
+      "longName": "Everpure, Inc.",
+      "symbol": "P"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:59.999896+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "f5dfa56eb081c0d42193b8785e42737dcb003614a2d6ef5b81308ba272f51814",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/P?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "P"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 40,
+    "file": "QCOM.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "QUALCOMM Incorporated",
+      "symbol": "QCOM"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:50.511534+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "3c2c578a67aa3a9044e504f5a1305cab4ffd27ca01e0feef97045da1fee7d022",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/QCOM?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "QCOM"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 40,
+    "file": "QQQ.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NGM",
+      "instrumentType": "ETF",
+      "longName": "Invesco QQQ Trust",
+      "symbol": "QQQ"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:26:00.015703+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "f29957411eded59a28100ee8d4c88d0990f212a3ee6813ae59c5250a625f9124",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/QQQ?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "QQQ"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 1,
+    "file": "SMCI.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Super Micro Computer, Inc.",
+      "symbol": "SMCI"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:40.444488+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "fee5a1376e77b4acb2da2ad4e6850c2b9c5fecf65e3fabc467f26cc1467c5e5a",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/SMCI?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "SMCI"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 0,
+    "file": "SNDK.json",
+    "first": "2025-02-13",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Sandisk Corporation",
+      "symbol": "SNDK"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:13.728701+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 411,
+    "sha256": "14f22cad404a9788da9a93e6afca63397609f8cf394db2eeff507ccb62ef2642",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/SNDK?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "SNDK"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 42,
+    "file": "SOXX.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NGM",
+      "instrumentType": "ETF",
+      "longName": "iShares Semiconductor ETF",
+      "symbol": "SOXX"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:26:04.221029+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "e561ba95b5b4e4a89ef61abea46b9296004b35df79619b7493ebd5ab6e1dedc4",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/SOXX?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "SOXX"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 0,
+    "file": "SPCX.json",
+    "first": "2026-06-12",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Space Exploration Technologies Corp.",
+      "symbol": "SPCX"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:40.342619+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 78,
+    "sha256": "7f64a06dcd8173fbd8d891a5aa2863664ea010f9043aa4081b12cd3211813c83",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/SPCX?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "SPCX"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 40,
+    "file": "STX.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Seagate Technology Holdings plc",
+      "symbol": "STX"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:26:00.083172+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "8f40d23cab2a8a6a41f00da2c30f107f3be4195f3fa77f2ea4cf57ab39a6ad14",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/STX?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "STX"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 32,
+    "file": "TSM.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NYQ",
+      "instrumentType": "EQUITY",
+      "longName": "Taiwan Semiconductor Manufacturing Company Limited",
+      "symbol": "TSM"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:22.893423+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "c7ade64e40fb363701c2b00007c920a5fd58c2d79f5b0e0e54522f65eb3f4d86",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/TSM?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "TSM"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 15,
+    "file": "VRT.json",
+    "first": "2018-08-02",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NYQ",
+      "instrumentType": "EQUITY",
+      "longName": "Vertiv Holdings Co",
+      "symbol": "VRT"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:31.550818+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2053,
+    "sha256": "0ec8a89ba7e1b12cb562f0ab90e7d2423a9af6c8f9f2b91f27249cd80a131d1c",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/VRT?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "VRT"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 32,
+    "file": "VST.json",
+    "first": "2016-10-05",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NYQ",
+      "instrumentType": "EQUITY",
+      "longName": "Vistra Corp.",
+      "symbol": "VST"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:55.259692+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2512,
+    "sha256": "3283b1600f8b6b65b902922ac42111f415d4c7a20084658c9c76ebdf67a2a253",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/VST?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "VST"
+  },
+  {
+    "action_coverage": "UNVERIFIED",
+    "adjustment": "PROVIDER_OHLC_PRICE_RETURN_NO_DIVIDEND_REINVESTMENT",
+    "corporate_actions_count": 21,
+    "file": "WDC.json",
+    "first": "2016-10-03",
+    "future_rows_excluded": 0,
+    "historical_pit": "UNAVAILABLE_CURRENT_VINTAGE",
+    "identity": {
+      "currency": "USD",
+      "exchangeName": "NMS",
+      "instrumentType": "EQUITY",
+      "longName": "Western Digital Corporation",
+      "symbol": "WDC"
+    },
+    "invalid_rows": 0,
+    "known_at": "2026-10-04T05:25:59.984761+00:00",
+    "last": "2026-10-02",
+    "provider": "yahoo",
+    "rows": 2514,
+    "sha256": "b020140a82caa27d5dff7dc9015bbc26f121236e697568b46be486e461c7df21",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/WDC?range=10y&interval=1d&events=div%2Csplits",
+    "symbol": "WDC"
+  }
+]

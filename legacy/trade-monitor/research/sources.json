@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Freqtrade — lookahead analysis",
+    "url": "https://docs.freqtrade.io/en/stable/lookahead-analysis/",
+    "principle": "改变未来数据、截断历史后重算，检查先前指标/信号是否变化。",
+    "application": "已借鉴：43个标的、每个两个截点，共86项未来数据扰动与前缀检查。未声称运行了Freqtrade自身命令。"
+  },
+  {
+    "name": "Freqtrade — recursive analysis",
+    "url": "https://docs.freqtrade.io/en/stable/recursive-analysis/",
+    "principle": "改变启动历史长度，检查指标初始化依赖。",
+    "application": "已借鉴：43个标的比较100根日线与完整历史的末端MA/ATR/主规则。VPR的历史分位数另有756观察值窗口，不能要求100根历史产生同样分位数。"
+  },
+  {
+    "name": "QuantConnect LEAN",
+    "url": "https://github.com/QuantConnect/LEAN",
+    "principle": "成熟的事件驱动、多资产回测框架；不是现成盈利策略。",
+    "application": "建议作为完整股票组合/成交模拟的候选引擎。本轮未安装或整合LEAN，也未伪造跨引擎验证。"
+  },
+  {
+    "name": "LEAN — reality models",
+    "url": "https://www.quantconnect.com/docs/v2/writing-algorithms/reality-modeling/key-concepts",
+    "principle": "区分成交、滑点、手续费、买方能力及组合层约束。",
+    "application": "本轮仅使用次日开盘研究入场与0/10/25/50bps往返成本压力；未模拟真实订单、冲击、排队或保证金。"
+  },
+  {
+    "name": "NautilusTrader — bar execution",
+    "url": "https://nautilustrader.io/docs/latest/concepts/backtesting/bar-execution/",
+    "principle": "完整K线只能在形成之后可见；OHLC不包含真实的盘内成交顺序。",
+    "application": "已将信号日与入场日分开；盘中VWAP只标作HLC3估计。未来精确盘中模拟可评估该引擎，当前未整合。"
+  },
+  {
+    "name": "vectorbt — open source",
+    "url": "https://github.com/polakowo/vectorbt",
+    "principle": "适合向量化批量研究、参数矩阵与可检查的组合计算；开源项目与收费PRO产品需区分。",
+    "application": "本轮保留三个预先定义的变体和全部结果，不只展示最好的一组。未安装vectorbt或借其名义认证结果。"
+  },
+  {
+    "name": "Bailey & López de Prado — Deflated Sharpe Ratio",
+    "url": "https://www.davidhbailey.com/dhbpapers/deflated-sharpe.pdf",
+    "principle": "多次尝试、只展示赢家，会夸大回测表现；非正态与选择偏差需要单独处理。",
+    "application": "记录129个标的×规则变体及5个期限，置信区间不作多重比较调整；不报告未经完整候选试验历史支持的DSR/PBO认证。"
+  },
+  {
+    "name": "Everpure — ticker change",
+    "url": "https://www.everpuredata.com/company/newsroom/press-releases/everpure-to-change-ticker-symbol.html",
+    "principle": "公司公告将NYSE代码由PSTG改为P，预计2026-04-17开始，CUSIP不变。",
+    "application": "当前美国主上市合约已解析为P；旧PSTG查到的墨西哥上市结果未被混用。"
+  }
+]

@@ -1,0 +1,720 @@
+{
+  "role": "SKEPTIC",
+  "known_at": "2026-10-04T05:40:46.292727+00:00",
+  "scope": "Read-only independent audit of existing v0.1.1 code, market snapshots and prior research; proposed portfolio contract review. No system completion certification.",
+  "decision": {
+    "educational_daily_proxy_research": "CONDITIONALLY_SUPPORTABLE",
+    "old_event_reproduction": "INDEPENDENTLY_RECONCILED",
+    "primary_ibkr_validated_portfolio_cagr": "BLOCKED_BY_DATA_AND_UNRESOLVED_ECONOMIC_CONTRACT",
+    "alpha_proven": false,
+    "full_intraday_harness_validated": false,
+    "trading_ready": false
+  },
+  "evidence_files": [
+    {
+      "file": "skeptic-data-counts.json",
+      "sha256": "0d3412cb6c8254c7a5e089c49d09639416c201cc7a1a2a49e62c5a9c02a57c5a"
+    },
+    {
+      "file": "skeptic-cross-source-counts.json",
+      "sha256": "dc4b36f42e53baacd228f2da40cbb5176e5364908a7820ab83743e8557f7f604"
+    },
+    {
+      "file": "skeptic_audit_checks.py",
+      "sha256": "dcabc070413bb403fc43aa4c734659b563e1b12a18fa0a55fdb338284613a898"
+    },
+    {
+      "file": "skeptic_cross_source_checks.py",
+      "sha256": "a460c3379b30bd9b402ce558a0532612752f14e2fd311a6ba818d5316689e115"
+    }
+  ],
+  "source_known_at": {
+    "ibkr_min": "2026-10-04T03:13:34.244Z",
+    "ibkr_max": "2026-10-04T03:16:12.451Z",
+    "yahoo_min": "2026-10-04T05:25:13.728701+00:00",
+    "yahoo_max": "2026-10-04T05:26:04.221029+00:00"
+  },
+  "findings": [
+    {
+      "id": "S01",
+      "severity": "critical",
+      "confidence": "high",
+      "claim": "旧事件收益不能作为五仓现金组合 CAGR。",
+      "evidence": {
+        "source": "skeptic-data-counts.json:old_event_reconciliation",
+        "events": 1196,
+        "old_754_sessions_over5_positions": 275,
+        "max_concurrent_positions": 20,
+        "max_same_day_entries": 11,
+        "new_1192_sessions_over5_positions": 405
+      },
+      "impact": "1,196个3session交易可以重叠使用资金；机会选择和现金占用改变可实现路径。将均值乘252/3或连乘全部事件会夸大资本回报。",
+      "required_action": "新增逐日现金/持仓/成交/费用账本；五仓、每仓20%应是预定配置上限，不是每个信号无限加20%。固定无未来收益参与的入选顺序。"
+    },
+    {
+      "id": "S02",
+      "severity": "critical",
+      "confidence": "high",
+      "claim": "主来源仍有85条样本内矛盾OHLC，QQQ不可绕过；二级来源给出可审计修复证据，但不能静默拼接。",
+      "evidence": {
+        "source": "skeptic-data-counts.json:periods.new_2022_onward; skeptic-cross-source-counts.json:ibkr_invalid_row_counterparts",
+        "primary_invalid_window": 85,
+        "strategy_invalid_window": 66,
+        "qqq_invalid": 4,
+        "soxx_invalid": 15,
+        "all_history_invalid": 88,
+        "all_invalid_have_valid_yahoo_counterpart": 88,
+        "all_invalid_close_cross_source_max_diff_bps": 0.0005353178456068974,
+        "qqq_invalid_dates": [
+          "2025-04-04",
+          "2025-11-28",
+          "2026-05-08",
+          "2026-05-20"
+        ]
+      },
+      "impact": "原先全部坏条都是close越出high/low；QQQ 2025-04-04含有大幅下跌，删除坏日后pct_change/复利会损害回撤与收益。Yahoo corroboration现在支持对原缺陷进行有来源的重建，不支持未核实前假定close可靠。",
+      "required_action": "IBKR strict模式对持仓/基准所需价格缺失拒绝validated metrics；保留诊断路径。Yahoo整个来源单独运行，不按有利结果挑来源。若另建reconciled版本，逐bar记录原值、替代整bar来源、理由及hash，保持原快照不可变。"
+    },
+    {
+      "id": "S03",
+      "severity": "high",
+      "confidence": "high",
+      "claim": "Yahoo内部一致性好，仍存在实质跨源价格冲突。",
+      "evidence": {
+        "source": "skeptic-cross-source-counts.json",
+        "yahoo_rows": 99651,
+        "common_rows": 52070,
+        "return_pairs": 52025,
+        "return_diff_above1bps": 43,
+        "return_diff_above10bps": 7,
+        "return_diff_above100bps": 4,
+        "major_events": [
+          {
+            "symbol": "SNDK",
+            "date": "2025-02-24",
+            "close_diff_bps": -351.39994557849997,
+            "return_diff_bps": -351.3997409762182
+          },
+          {
+            "symbol": "SPCX",
+            "date": "2026-06-16",
+            "close_diff_bps": 475.22296281706787,
+            "return_diff_bps": 498.18178647524246
+          },
+          {
+            "symbol": "VRT",
+            "date": "2023-02-16",
+            "close_diff_bps": 74.85940020603321,
+            "return_diff_bps": 74.67325776309042
+          }
+        ]
+      },
+      "impact": "同一天均能满足OHLC几何，却不同价格；单一供应商QA通过不能证明经济事实。SNDK/SPCX的异常在早期上市段；VRT异常位于2022起主样本。",
+      "required_action": "各来源独立结果并列、固定异常清单；在取得交易所或第三个有记录来源前，不声称这些冲突已修复。不得挑选更高CAGR的数据源。DELL 2021-11-02跨源收益差17.999bps在主2022窗口之外，仍应记录预热来源。"
+    },
+    {
+      "id": "S04",
+      "severity": "high",
+      "confidence": "high",
+      "claim": "价格调整契约和公司行动账本不足以认定真实股份/现金总回报。",
+      "evidence": {
+        "source": "skeptic-data-counts.json:corporate_actions; Yahoo WDC/DELL events; external_sources.wdc_separation",
+        "ibkr_actions": 562,
+        "cash_dividends": 550,
+        "reported_splits": 12,
+        "other_action_types": 0,
+        "all12_split_date_open_previous_close_near1": true,
+        "yahoo_wdc_2025_02_24_splitRatio": "1323:1000",
+        "wdc_common_closes_diff_above1bp": 849
+      },
+      "impact": "12次拆股附近价格连续，强烈提示源已回溯调整；再乘ratio将双调。现金分红尚未计入，WDC/SNDK分拆未在IBKR行动数组体现。Yahoo将分拆调整编码成split，不能当成真实新增股份。",
+      "required_action": "显式声明adjusted-price units、fractional shares及price-return模型，不冒称实际持股总回报；禁止混用Yahoo adjclose与未同步调整OHLC。要通过真实财富CAGR gate，需要完整复权说明和split/dividend/spinoff/rename ledger，或可信total-return输入的一致实现。"
+    },
+    {
+      "id": "S05",
+      "severity": "high",
+      "confidence": "high",
+      "claim": "缓存的first_bar不是上市日，也不是point-in-time股票池。",
+      "evidence": {
+        "source": "skeptic-data-counts.json:periods.new_2022_onward; external_sources.meta_ticker; external_sources.sndk_when_issued",
+        "strategy_symbols": 43,
+        "visible_symbols_range": [
+          35,
+          43
+        ],
+        "meta_missing_sessions_2022_before_ticker_rename": 109,
+        "sndk_when_issued_rows": 6,
+        "sndk_first_primary_signal": "2025-03-05"
+      },
+      "impact": "META始于2022-06-09恰逢FB改名；这109日缺口不能标作尚未上市。SNDK 2025-02-13至21为when-issued交易，regular-way于24日开始。现有43名为当前选出的存活/热门池。",
+      "required_action": "保留per-instrument contract_id、历史ticker有效期和source-history-start；对于Yahoo metadata只能标身份corroborated，不冒称CUSIP/ISIN核验。IPO/改名/数据截断分开。基准新成员资格须由前一已完成session决定，不能由当天有回报才加入。"
+    },
+    {
+      "id": "S06",
+      "severity": "high",
+      "confidence": "high",
+      "claim": "未来坏bar排除只适合已说明缺失的事件统计，不适合资金账本。",
+      "evidence": {
+        "source": "skeptic-data-counts.json:old_event_reconciliation.dropped_for_invalid_future_rows",
+        "events_excluded": 3,
+        "examples": [
+          "AAPL signal 2023-12-19",
+          "AAPL signal 2024-03-13",
+          "DELL signal 2026-08-28"
+        ]
+      },
+      "impact": "入场时不知道持有期间会出现源数据矛盾；先查看未来是否完整再决定做不做交易引入未来筛选。",
+      "required_action": "信号、排队和入场不预查未来持有期；遇持仓不可估值保留trade并将NAV标记invalid/stale。strict为默认。诊断carry-forward只能标未验证；不要用下个完整日OHLC合格性来决定该日开盘是否成交。"
+    },
+    {
+      "id": "S07",
+      "severity": "high",
+      "confidence": "high",
+      "claim": "独立复算确认旧收益，但同股对照增量未证明alpha。",
+      "evidence": {
+        "source": "skeptic-data-counts.json:old_event_reconciliation and supplemental_independent_checks",
+        "reconciled_events": 1196,
+        "max_event_return_abs_difference": 9.8879238130678e-17,
+        "net10_mean": 0.006467038876275232,
+        "same_stock_net10": 0.005103011558030051,
+        "increment": 0.0013640273182451805,
+        "increment_95ci": [
+          -0.003185405065253742,
+          0.005870644218873567
+        ]
+      },
+      "impact": "事件净均值正值主要可能反映所选高增长股票池；95%增量CI跨0。旧QQQ matched事件只有1,185，且与原事件均值的分母不同。",
+      "required_action": "不得宣称alpha或盈利已证实。新组合须用同日期、同成本定义的净日收益做成对区块重抽样，与QQQ、当前池EW和相同资金机制的简单趋势比较；年化只是路径描述。"
+    },
+    {
+      "id": "S08",
+      "severity": "high",
+      "confidence": "high",
+      "claim": "来源小差异仍改变MA5/ATR gate；v2 completed-day变体不能覆盖旧定义。",
+      "evidence": {
+        "source": "skeptic-cross-source-counts.json:primary_signal_reproduction_2022_onward",
+        "ibkr_eligible": 2198,
+        "yahoo_eligible": 2221,
+        "both_features_ready_symbol_sessions": 46822,
+        "different_signals_when_both_ready": 22,
+        "yahoo_only_signals_when_ibkr_features_missing": 31
+      },
+      "impact": "close高度吻合不等于ATR和阈值完全吻合。源H/L差异与完整性会改变候选及五仓竞争，足以改变组合路径。原primary用MA/ATR截至t-1，但d5用t收盘。",
+      "required_action": "冻结legacy_lagged_ma5作为主规则；completed_day_ma5为单独探索规则ID、独立结果、独立尝试计数。所有成本/数据源/变体均完整展示，不按结果切换主规则。"
+    },
+    {
+      "id": "S09",
+      "severity": "critical_for_intraday_claims",
+      "confidence": "high",
+      "claim": "45,000根5分钟bar不能支持多年完整VWAP/HARNESS验证。",
+      "evidence": {
+        "source": "skeptic-data-counts.json:intraday",
+        "files": 45,
+        "bars": 45000,
+        "calendar_sessions_per_symbol": 13,
+        "intact_sessions_per_symbol": 12,
+        "max_prior_intact_sessions": 11,
+        "symbols_with20_prior_intact_sessions": 0,
+        "first": "2026-09-16 14:40:00+00:00",
+        "last": "2026-10-02 19:55:00+00:00"
+      },
+      "impact": "缺20个先前完整RTH session；HLC3累计估值不是真实逐笔VWAP。没有历史盘中成交顺序/点差/可交易深度，不能补造过滤器。",
+      "required_action": "保持full_intraday_harness_validated=false。日线组合只能是命名清楚的proxy。完整盘中研究等待真实足量intraday数据和闭合执行契约，不挪用日线结果填补证据。"
+    },
+    {
+      "id": "S10",
+      "severity": "medium",
+      "confidence": "high",
+      "claim": "完整可复现性取决于原快照，不由测试或相对range=10y请求自动成立。",
+      "evidence": {
+        "source": "skeptic-data-counts.json:raw_manifest_checks; skeptic-cross-source-counts.json:summary",
+        "all45_ibkr_hash_checks_match": true,
+        "all45_yahoo_manifest_hashes_match": true,
+        "yahoo_request_uses_relative_range_10y": true
+      },
+      "impact": "当前原始数据被Git排除是正确的；未来重新下载10y边界会移动，供应商也可能重写历史，单靠fetch命令不保证复现这次数值。",
+      "required_action": "导出固定起止时间、来源URL、known_at、schema、identity、sha256和行数receipt；raw仅外部缓存。make verify要清晰区分synthetic invariant验证与缓存市场回放，缺原快照不能将真实数据回放标PASS/REMOTE_REPRODUCIBLE。"
+    }
+  ],
+  "required_portfolio_contract": [
+    {
+      "id": "C01",
+      "requirement": "信号在交易日t完成收盘且数据可得之后锁定，最早t+1 RTH open入场；3session表示entry=t+1、exit=t+3 close。预定收盘退出与当日开盘入场分阶段。"
+    },
+    {
+      "id": "C02",
+      "requirement": "主规则保持旧lagged MA5/ATR5和false→true transition去簇定义。若改成每个合格日尝试入场，必须新rule_id，不可复用旧1196事件口径。"
+    },
+    {
+      "id": "C03",
+      "requirement": "明确100%现金初始、零杠杆、零空头、最多5个不同symbol。建议每笔预算=min(20%预定参考NAV,当时可用现金)，预算含买入费；没有可用仓位就记录拒绝原因，不日后回填。"
+    },
+    {
+      "id": "C04",
+      "requirement": "每日开盘之前候选排序固定，例如symbol字典序；不以该日收益、开盘后成交量、未来数据完整性排序。可用现金不包含当日未来收盘卖出所得。"
+    },
+    {
+      "id": "C05",
+      "requirement": "现金+持仓估值=总NAV；持仓数量/成本/已实现未实现PnL/手续费能够逐笔对账。说明允许fractional adjusted-price units；真实股票整数份额与现金结算约束尚未模拟时需明确。"
+    },
+    {
+      "id": "C06",
+      "requirement": "10bps往返主成本拆成买卖各5bps，按各自成交名义额收费；0/25/50bps保持同一信号/队列契约做敏感性。基准使用同样费用语义，cash利息默认为0并统一注明。"
+    },
+    {
+      "id": "C07",
+      "requirement": "默认strict：持仓估值、成交或所需基准bar无效时，可信NAV/CAGR等指标返回缺失并带reason。可继续生成diagnostic ledger，stale持仓和受污染日期显式计数，禁止“缺失=0回报”。"
+    },
+    {
+      "id": "C08",
+      "requirement": "诊断carry-forward必须带stale标记和未验证状态；取消加仓。若定义风险退出，只能基于当时已知open quote状态，不能以未来完整OHLC决定“下个有效开盘”。不足独立open证据时只报告诊断，不声称可执行停损/退出。"
+    },
+    {
+      "id": "C09",
+      "requirement": "QQQ和selected-universe EW均以同一来源同一price/total-return口径比较；EW在前一session已知成员间再平衡并计费用，既有持仓遇坏价格不能从当天分母删除。"
+    },
+    {
+      "id": "C10",
+      "requirement": "增加与策略同样5槽/20%/3session/成本/候选冲突规则的简单趋势控制，否则100%满仓EW与稀疏信号的敞口差异不能等同选时alpha。"
+    },
+    {
+      "id": "C11",
+      "requirement": "2022-2024为development；2025称retrospective validation；2026截至10-02称retrospective holdout，非unseen。连续组合分年归因与独立重置实验分开。跨折事件按事前契约purge，指标可使用过去预热历史。"
+    },
+    {
+      "id": "C12",
+      "requirement": "期末未平仓不得删除；预先选定按末日mark计入或预定终止日清仓。CAGR=(末NAV/初NAV)^(365.2425/实际历日)-1，报告起止时刻/天数；2026是部分年度年化而非完整年实现。"
+    },
+    {
+      "id": "C13",
+      "requirement": "锁定主结果、参数、成本、数据来源、窗口、候选仲裁、缺陷处理和基准。新变体全入实验日志。任何2026历史回看都不能生成“真正未知样本”标签。"
+    }
+  ],
+  "failure_gates": [
+    {
+      "gate": "ENGINE_CAUSALITY",
+      "failure": "任一未来数据扰动改变之前信号、选择或已发生ledger状态；交易现金为负、仓数>5、未来收盘款被开盘使用、费账不平、未知未来完整性筛掉交易。",
+      "consequence": "拒绝整个实现的组合绩效发布，先修复。"
+    },
+    {
+      "gate": "DATA_TRUST",
+      "failure": "持仓/基准所需bar无效未解决，价格调整/身份冲突尚影响被用区间，或用fill/drop使未验证价格伪装为正常价格。",
+      "consequence": "可信CAGR/Sharpe/回撤status=UNVALIDATED；仅保留显著标识的诊断值。"
+    },
+    {
+      "gate": "ALPHA_EVIDENCE",
+      "failure": "预先指定paired净收益差的日期区块95%CI下界<=0，或primary在validation/retrospective holdout对指定控制无净增量。",
+      "consequence": "拒绝“alpha已证明”；正CAGR仍可作为有条件的描述统计。"
+    },
+    {
+      "gate": "ROBUSTNESS",
+      "failure": "正证据仅来自一个数据源/一个最佳标的/单一年份，源切换、逐标的leave-one-out或规定成本压力后结论翻转。",
+      "consequence": "不授予稳健/机构已验证标签；完整展示敏感性，不反向调参数。"
+    },
+    {
+      "gate": "INTRADAY_HARNESS",
+      "failure": "不足20 prior intact RTH sessions、trade-VWAP/相对量定义或盘内执行顺序无证据。",
+      "consequence": "full_intraday_harness_validated=false，日线proxy不得升格。"
+    },
+    {
+      "gate": "REPRODUCIBILITY",
+      "failure": "输入hash/manifest不符，或无原缓存却把真实历史回放称为通过。",
+      "consequence": "报告DATA_REQUIRED/INPUT_MISMATCH，与本地数学单测通过区分。"
+    },
+    {
+      "gate": "HURDLE_SEMANTICS",
+      "failure": "10%等目标阈值被写成预测或保证；未验证年化越过阈值被当作启动交易授权。",
+      "consequence": "拒绝该结论。REQUIRED/REPORTED/EXPECTED必须分开；研究运行不产生任何交易动作。"
+    }
+  ],
+  "external_sources": {
+    "meta_ticker": {
+      "url": "https://investor.atmeta.com/investor-news/press-release-details/2022/Meta-Platforms-Inc.-to-Change-Ticker-Symbol-to-META-on-June-9/default.aspx",
+      "published_at": "2022-05-31",
+      "accessed_at": "2026-10-04T05:40:46.292727+00:00",
+      "web_reference": "turn18search2",
+      "finding": "FB changed to META on 2022-06-09; CUSIP unchanged; not an IPO."
+    },
+    "sndk_when_issued": {
+      "url": "https://investor.sandisk.com/static-files/04f70eee-4588-4ee6-8b77-88f21efdc417",
+      "published_at": "2025-02-14",
+      "accessed_at": "2026-10-04T05:40:46.292727+00:00",
+      "web_reference": "turn18search37",
+      "finding": "SNDKV when-issued February 13-21; regular-way SNDK expected February 24."
+    },
+    "sndk_listing": {
+      "url": "https://investor.sandisk.com/news-releases/news-release-details/sandisk-celebrates-nasdaq-listing-after-completing-separation",
+      "published_at": "2025-02-24",
+      "accessed_at": "2026-10-04T05:40:46.292727+00:00",
+      "web_reference": "turn18search25",
+      "finding": "Regular-way SNDK listing announced for February 24 after separation."
+    },
+    "wdc_separation": {
+      "url": "https://investor.wdc.com/news-releases/news-release-details/western-digital-completes-planned-company-separation",
+      "published_at": "2025-02-24",
+      "accessed_at": "2026-10-04T05:40:46.292727+00:00",
+      "web_reference": "turn18search0",
+      "finding": "Western Digital completed separation of flash business; not represented by IBKR other corporate-action types."
+    }
+  },
+  "preferred_next_step": "先冻结新账本契约并完成因果/现金不变量验证；primary IBKR与完整Yahoo来源分别报告，历史冲突保留。启动路径仅至未来锁定后的只读paper/shadow研究；不放置、路由或自动化订单。",
+  "window_counts": {
+    "old_3y": {
+      "start": "2023-10-02",
+      "end": "2026-10-02",
+      "sessions": 754,
+      "observed_rows_all45": 32374,
+      "valid_rows_all45": 32321,
+      "invalid_rows_all45": 53,
+      "observed_rows_strategy43": 30866,
+      "valid_rows_strategy43": 30824,
+      "min_present_strategy_symbols": 39,
+      "max_present_strategy_symbols": 43,
+      "min_valid_strategy_symbols": 35,
+      "max_valid_strategy_symbols": 43,
+      "sessions_any_invalid_strategy_bar": 38,
+      "qqq_invalid_dates": [
+        "2025-04-04",
+        "2025-11-28",
+        "2026-05-08",
+        "2026-05-20"
+      ],
+      "soxx_invalid_dates": [
+        "2023-12-20",
+        "2024-01-29",
+        "2024-05-07",
+        "2025-07-21",
+        "2025-10-06",
+        "2026-01-15",
+        "2026-08-10"
+      ],
+      "symbols_start_after_period_start": {
+        "ALAB": "2024-03-20",
+        "CRCL": "2025-06-05",
+        "SNDK": "2025-02-13",
+        "SPCX": "2026-06-12"
+      }
+    },
+    "new_2022_onward": {
+      "start": "2022-01-03",
+      "end": "2026-10-02",
+      "sessions": 1192,
+      "observed_rows_all45": 49769,
+      "valid_rows_all45": 49684,
+      "invalid_rows_all45": 85,
+      "observed_rows_strategy43": 47385,
+      "valid_rows_strategy43": 47319,
+      "min_present_strategy_symbols": 35,
+      "max_present_strategy_symbols": 43,
+      "min_valid_strategy_symbols": 34,
+      "max_valid_strategy_symbols": 43,
+      "sessions_any_invalid_strategy_bar": 62,
+      "qqq_invalid_dates": [
+        "2025-04-04",
+        "2025-11-28",
+        "2026-05-08",
+        "2026-05-20"
+      ],
+      "soxx_invalid_dates": [
+        "2022-01-28",
+        "2022-02-25",
+        "2022-03-17",
+        "2022-03-28",
+        "2022-06-24",
+        "2022-07-05",
+        "2022-09-21",
+        "2022-11-25",
+        "2023-12-20",
+        "2024-01-29",
+        "2024-05-07",
+        "2025-07-21",
+        "2025-10-06",
+        "2026-01-15",
+        "2026-08-10"
+      ],
+      "symbols_start_after_period_start": {
+        "ALAB": "2024-03-20",
+        "ARM": "2023-09-14",
+        "CEG": "2022-01-19",
+        "CRCL": "2025-06-05",
+        "CRDO": "2022-01-27",
+        "META": "2022-06-09",
+        "SNDK": "2025-02-13",
+        "SPCX": "2026-06-12"
+      }
+    },
+    "development_2022_2024": {
+      "start": "2022-01-03",
+      "end": "2024-12-31",
+      "sessions": 753,
+      "observed_rows_all45": 30508,
+      "valid_rows_all45": 30457,
+      "invalid_rows_all45": 51,
+      "observed_rows_strategy43": 29002,
+      "valid_rows_strategy43": 28962,
+      "min_present_strategy_symbols": 35,
+      "max_present_strategy_symbols": 40,
+      "min_valid_strategy_symbols": 34,
+      "max_valid_strategy_symbols": 40,
+      "sessions_any_invalid_strategy_bar": 36,
+      "qqq_invalid_dates": [],
+      "soxx_invalid_dates": [
+        "2022-01-28",
+        "2022-02-25",
+        "2022-03-17",
+        "2022-03-28",
+        "2022-06-24",
+        "2022-07-05",
+        "2022-09-21",
+        "2022-11-25",
+        "2023-12-20",
+        "2024-01-29",
+        "2024-05-07"
+      ],
+      "symbols_start_after_period_start": {
+        "ALAB": "2024-03-20",
+        "ARM": "2023-09-14",
+        "CEG": "2022-01-19",
+        "CRCL": "2025-06-05",
+        "CRDO": "2022-01-27",
+        "META": "2022-06-09",
+        "SNDK": "2025-02-13",
+        "SPCX": "2026-06-12"
+      }
+    },
+    "validation_2025": {
+      "start": "2025-01-01",
+      "end": "2025-12-31",
+      "sessions": 250,
+      "observed_rows_all45": 10867,
+      "valid_rows_all45": 10851,
+      "invalid_rows_all45": 16,
+      "observed_rows_strategy43": 10367,
+      "valid_rows_strategy43": 10355,
+      "min_present_strategy_symbols": 40,
+      "max_present_strategy_symbols": 42,
+      "min_valid_strategy_symbols": 40,
+      "max_valid_strategy_symbols": 42,
+      "sessions_any_invalid_strategy_bar": 12,
+      "qqq_invalid_dates": [
+        "2025-04-04",
+        "2025-11-28"
+      ],
+      "soxx_invalid_dates": [
+        "2025-07-21",
+        "2025-10-06"
+      ],
+      "symbols_start_after_period_start": {
+        "CRCL": "2025-06-05",
+        "SNDK": "2025-02-13",
+        "SPCX": "2026-06-12"
+      }
+    },
+    "retrospective_2026": {
+      "start": "2026-01-01",
+      "end": "2026-10-02",
+      "sessions": 189,
+      "observed_rows_all45": 8394,
+      "valid_rows_all45": 8376,
+      "invalid_rows_all45": 18,
+      "observed_rows_strategy43": 8016,
+      "valid_rows_strategy43": 8002,
+      "min_present_strategy_symbols": 42,
+      "max_present_strategy_symbols": 43,
+      "min_valid_strategy_symbols": 41,
+      "max_valid_strategy_symbols": 43,
+      "sessions_any_invalid_strategy_bar": 14,
+      "qqq_invalid_dates": [
+        "2026-05-08",
+        "2026-05-20"
+      ],
+      "soxx_invalid_dates": [
+        "2026-01-15",
+        "2026-08-10"
+      ],
+      "symbols_start_after_period_start": {
+        "SPCX": "2026-06-12"
+      }
+    }
+  },
+  "source_inventory": {
+    "daily_files": 45,
+    "daily_rows": 52070,
+    "invalid_all_rows": 88,
+    "strategy_symbols": 43,
+    "contract_defects": [],
+    "date_defects": [],
+    "intraday": {
+      "files": 45,
+      "bars": 45000,
+      "earliest": "2026-09-16 14:40:00+00:00",
+      "latest": "2026-10-02 19:55:00+00:00",
+      "max_prior_intact_sessions": 11,
+      "symbols_with20_prior_intact_sessions": 0,
+      "intact_sessions_distribution": {
+        "12": 45
+      },
+      "session_count_distribution": {
+        "13": 45
+      }
+    }
+  },
+  "cross_source_summary": {
+    "files": 45,
+    "yahoo_rows": 99651,
+    "common_rows": 52070,
+    "all_manifest_hashes_match": true,
+    "metadata_identity_diagnostics": {},
+    "yahoo_invalid_rows": 0,
+    "ibkr_invalid_rows": 88,
+    "ibkr_invalid_with_valid_yahoo_counterpart": 88,
+    "common_closes_above1bps_difference": 886,
+    "common_closes_above10bps_difference": 22,
+    "common_closes_above100bps_difference": 2,
+    "return_pairs": 52025,
+    "return_diffs_above1bps": 43,
+    "return_diffs_above10bps": 7,
+    "return_diffs_above100bps": 4,
+    "calendar_defects": {}
+  },
+  "cross_source_anomaly_list": [
+    {
+      "symbol": "DELL",
+      "date": "2021-11-02",
+      "return_difference_bps": -17.998850265344977,
+      "inside_main_window": false,
+      "scope": "Observed source discrepancy; not a resolved correction"
+    },
+    {
+      "symbol": "SNDK",
+      "date": "2025-02-24",
+      "return_difference_bps": -351.3997409762182,
+      "inside_main_window": true,
+      "scope": "Observed source discrepancy; not a resolved correction"
+    },
+    {
+      "symbol": "SNDK",
+      "date": "2025-02-25",
+      "return_difference_bps": 348.2185264304727,
+      "inside_main_window": true,
+      "scope": "Observed source discrepancy; not a resolved correction"
+    },
+    {
+      "symbol": "SPCX",
+      "date": "2026-06-16",
+      "return_difference_bps": 498.18178647524246,
+      "inside_main_window": true,
+      "scope": "Observed source discrepancy; not a resolved correction"
+    },
+    {
+      "symbol": "SPCX",
+      "date": "2026-06-17",
+      "return_difference_bps": -431.2275687051548,
+      "inside_main_window": true,
+      "scope": "Observed source discrepancy; not a resolved correction"
+    },
+    {
+      "symbol": "VRT",
+      "date": "2023-02-16",
+      "return_difference_bps": 74.67325776309042,
+      "inside_main_window": true,
+      "scope": "Observed source discrepancy; not a resolved correction"
+    },
+    {
+      "symbol": "VRT",
+      "date": "2023-02-17",
+      "return_difference_bps": -74.4425595221443,
+      "inside_main_window": true,
+      "scope": "Observed source discrepancy; not a resolved correction"
+    }
+  ],
+  "cross_source_adjustment_scale_warning": {
+    "symbol": "WDC",
+    "period_before_2025_02_24": "approximately constant close-scale discrepancy 3.413 bps",
+    "common_closes_above1bps_difference": 849,
+    "2025_02_24_return_difference_bps": -4.59611939799931,
+    "source": "skeptic-cross-source-counts.json:per_symbol WDC"
+  },
+  "primary_signal_cross_source_counts": {
+    "ibkr_primary_eligible": 2198,
+    "yahoo_primary_eligible": 2221,
+    "both_feature_ready_symbol_sessions": 46822,
+    "differing_signals_both_ready": 22,
+    "primary_both_ready_ibkr": 2198,
+    "primary_both_ready_yahoo": 2190,
+    "yahoo_signal_only_when_ibkr_features_missing": 31,
+    "ibkr_signal_only_when_yahoo_features_missing": 0
+  },
+  "legacy_result_independent_reconciliation": {
+    "saved_primary_rows": 1196,
+    "independently_reconstructed_rows": 1196,
+    "max_gross_absolute_difference": 9.8879238130678e-17,
+    "net10bps_mean": 0.006467038876275232,
+    "same_stock_net10bps": 0.005103011558030051,
+    "same_stock_increment": 0.0013640273182451805,
+    "counts": {
+      "eligible_days": 1485,
+      "transitions": 1267,
+      "overlap_removed": 66,
+      "invalid_outcome": 3,
+      "right_censored": 2
+    },
+    "unbounded_accepted_event_occupancy": {
+      "max": 20,
+      "mean": 4.758620689655173,
+      "sessions_above5": 275,
+      "sessions_above10": 55,
+      "sum_positions_above5": 1021,
+      "max_same_day_entries": 11,
+      "entry_days_more_than5": 33
+    },
+    "same_stock_increment95ci": [
+      -0.003185405065253742,
+      0.005870644218873567
+    ],
+    "expanded_2022_event_counts": {
+      "eligible": 2198,
+      "transitions": 1892,
+      "overlap_removed": 94,
+      "invalid_outcome": 3,
+      "right_censored": 2,
+      "complete_events": 1793
+    }
+  },
+  "parent_reported_new_portfolio_observation": {
+    "verification_scope": "Reported by parent agent; this data-review subagent has not inspected/certified the new portfolio implementation",
+    "ibkr_primary": "One DELL held session lacks a validated mark; BLOCKED_DATA",
+    "yahoo_same_strategy": "No missing held-session marks reported",
+    "required_treatment": "Keep independent source runs and report IBKR diagnostic path separately; no silent source substitution"
+  },
+  "delivery_path_mapping": [
+    {
+      "original": "skeptic-data-counts.json",
+      "original_sha256": "0d3412cb6c8254c7a5e089c49d09639416c201cc7a1a2a49e62c5a9c02a57c5a",
+      "shipped": "research_outputs/data-counts.json",
+      "shipped_sha256": "0d3412cb6c8254c7a5e089c49d09639416c201cc7a1a2a49e62c5a9c02a57c5a",
+      "adaptation": "none"
+    },
+    {
+      "original": "skeptic-cross-source-counts.json",
+      "original_sha256": "dc4b36f42e53baacd228f2da40cbb5176e5364908a7820ab83743e8557f7f604",
+      "shipped": "research_outputs/cross-source-counts.json",
+      "shipped_sha256": "dc4b36f42e53baacd228f2da40cbb5176e5364908a7820ab83743e8557f7f604",
+      "adaptation": "none"
+    },
+    {
+      "original": "skeptic_audit_checks.py",
+      "original_sha256": "dcabc070413bb403fc43aa4c734659b563e1b12a18fa0a55fdb338284613a898",
+      "shipped": "scripts/audit_legacy_snapshot.py",
+      "shipped_sha256": "888351877a8f436e312b93b186ca17f90bc268187f4fd10b15c2e7b14ad09834",
+      "adaptation": "Replaced workspace-specific paths with explicit argparse inputs; audit calculations unchanged."
+    },
+    {
+      "original": "skeptic_cross_source_checks.py",
+      "original_sha256": "a460c3379b30bd9b402ce558a0532612752f14e2fd311a6ba818d5316689e115",
+      "shipped": "scripts/audit_cross_source.py",
+      "shipped_sha256": "f2aaef7e02ec338b9c0a8e5818d322f45cdc450a2a645fb84c884a500d77b4c3",
+      "adaptation": "Replaced workspace-specific paths with explicit argparse inputs; audit calculations unchanged."
+    }
+  ]
+}

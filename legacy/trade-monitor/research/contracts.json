@@ -1,0 +1,1183 @@
+{
+  "MU": {
+    "underlying_contract_id": 9939,
+    "exchange": "NASDAQ",
+    "symbol": "MU",
+    "description": "MICRON TECHNOLOGY INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "STX": {
+    "underlying_contract_id": 491932113,
+    "exchange": "NASDAQ",
+    "symbol": "STX",
+    "description": "SEAGATE TECHNOLOGY HOLDINGS",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "MCHP": {
+    "underlying_contract_id": 271568,
+    "exchange": "NASDAQ",
+    "symbol": "MCHP",
+    "description": "MICROCHIP TECHNOLOGY INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "KLAC": {
+    "underlying_contract_id": 270957,
+    "exchange": "NASDAQ",
+    "symbol": "KLAC",
+    "description": "KLA CORP",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "QCOM": {
+    "underlying_contract_id": 273544,
+    "exchange": "NASDAQ",
+    "symbol": "QCOM",
+    "description": "QUALCOMM INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "NVDA": {
+    "underlying_contract_id": 4815747,
+    "exchange": "NASDAQ",
+    "symbol": "NVDA",
+    "description": "NVIDIA CORP",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "NXPI": {
+    "underlying_contract_id": 77791077,
+    "exchange": "NASDAQ",
+    "symbol": "NXPI",
+    "description": "NXP SEMICONDUCTORS NV",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "MRVL": {
+    "underlying_contract_id": 483492393,
+    "exchange": "NASDAQ",
+    "symbol": "MRVL",
+    "description": "MARVELL TECHNOLOGY INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "QQQ": {
+    "underlying_contract_id": 320227571,
+    "exchange": "NASDAQ",
+    "symbol": "QQQ",
+    "description": "INVESCO QQQ TRUST SERIES 1",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "OPT"
+      }
+    ]
+  },
+  "HPE": {
+    "underlying_contract_id": 209411798,
+    "exchange": "NYSE",
+    "symbol": "HPE",
+    "description": "HEWLETT PACKARD ENTERPRISE",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "INTC": {
+    "underlying_contract_id": 270639,
+    "exchange": "NASDAQ",
+    "symbol": "INTC",
+    "description": "INTEL CORP",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "COHR": {
+    "underlying_contract_id": 584127832,
+    "exchange": "NYSE",
+    "symbol": "COHR",
+    "description": "COHERENT CORP",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "ORCL": {
+    "underlying_contract_id": 272800,
+    "exchange": "NYSE",
+    "symbol": "ORCL",
+    "description": "ORACLE CORP",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "AMD": {
+    "underlying_contract_id": 4391,
+    "exchange": "NASDAQ",
+    "symbol": "AMD",
+    "description": "ADVANCED MICRO DEVICES",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "GLW": {
+    "underlying_contract_id": 7655,
+    "exchange": "NYSE",
+    "symbol": "GLW",
+    "description": "CORNING INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "ANET": {
+    "underlying_contract_id": 740948854,
+    "exchange": "NYSE",
+    "symbol": "ANET",
+    "description": "ARISTA NETWORKS INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "CRDO": {
+    "underlying_contract_id": 541265127,
+    "exchange": "NASDAQ",
+    "symbol": "CRDO",
+    "description": "CREDO TECHNOLOGY GROUP HOLDI",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "AAOI": {
+    "underlying_contract_id": 135423662,
+    "symbol": "AAOI",
+    "exchange": "NASDAQ",
+    "country_code": "US"
+  },
+  "SPCX": {
+    "underlying_contract_id": 890493863,
+    "exchange": "NASDAQ",
+    "symbol": "SPCX",
+    "description": "SPACE EXPLORATION TECHN-CL A",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "SNDK": {
+    "underlying_contract_id": 760250490,
+    "exchange": "NASDAQ",
+    "symbol": "SNDK",
+    "description": "SANDISK CORP",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "CEG": {
+    "underlying_contract_id": 538132976,
+    "exchange": "NASDAQ",
+    "symbol": "CEG",
+    "description": "CONSTELLATION ENERGY",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "AVGO": {
+    "underlying_contract_id": 313130367,
+    "exchange": "NASDAQ",
+    "symbol": "AVGO",
+    "description": "BROADCOM INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "AAPL": {
+    "underlying_contract_id": 265598,
+    "exchange": "NASDAQ",
+    "symbol": "AAPL",
+    "description": "APPLE INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "GOOG": {
+    "underlying_contract_id": 208813720,
+    "exchange": "NASDAQ",
+    "symbol": "GOOG",
+    "description": "ALPHABET INC-CL C",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "MSFT": {
+    "underlying_contract_id": 272093,
+    "exchange": "NASDAQ",
+    "symbol": "MSFT",
+    "description": "MICROSOFT CORP",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "MPWR": {
+    "underlying_contract_id": 32106121,
+    "exchange": "NASDAQ",
+    "symbol": "MPWR",
+    "description": "MONOLITHIC POWER SYSTEMS INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      }
+    ]
+  },
+  "WDC": {
+    "underlying_contract_id": 13681,
+    "exchange": "NASDAQ",
+    "symbol": "WDC",
+    "description": "WESTERN DIGITAL CORP",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "TSM": {
+    "underlying_contract_id": 6223250,
+    "exchange": "NYSE",
+    "symbol": "TSM",
+    "description": "TAIWAN SEMICONDUCTOR-SP ADR",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "P": {
+    "underlying_contract_id": 208813725,
+    "exchange": "NYSE",
+    "symbol": "P",
+    "description": "EVERPURE INC-A",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ],
+    "previous_symbol": "PSTG",
+    "mapping_source": "https://www.everpuredata.com/company/newsroom/press-releases/everpure-to-change-ticker-symbol.html"
+  },
+  "LITE": {
+    "underlying_contract_id": 201113895,
+    "exchange": "NASDAQ",
+    "symbol": "LITE",
+    "description": "LUMENTUM HOLDINGS INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      }
+    ]
+  },
+  "LRCX": {
+    "underlying_contract_id": 732440574,
+    "exchange": "NASDAQ",
+    "symbol": "LRCX",
+    "description": "LAM RESEARCH CORP",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "SOXX": {
+    "underlying_contract_id": 12658194,
+    "exchange": "NASDAQ",
+    "symbol": "SOXX",
+    "description": "ISHARES SEMICONDUCTOR ETF",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "CRCL": {
+    "underlying_contract_id": 789044667,
+    "exchange": "NYSE",
+    "symbol": "CRCL",
+    "description": "CIRCLE INTERNET GROUP INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "AMAT": {
+    "underlying_contract_id": 266093,
+    "exchange": "NASDAQ",
+    "symbol": "AMAT",
+    "description": "APPLIED MATERIALS INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "DELL": {
+    "underlying_contract_id": 346218218,
+    "exchange": "NYSE",
+    "symbol": "DELL",
+    "description": "DELL TECHNOLOGIES -C",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "VST": {
+    "underlying_contract_id": 254457731,
+    "exchange": "NYSE",
+    "symbol": "VST",
+    "description": "VISTRA CORP",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "ARM": {
+    "underlying_contract_id": 653400472,
+    "exchange": "NASDAQ",
+    "symbol": "ARM",
+    "description": "ARM HOLDINGS PLC-ADR",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "AMZN": {
+    "underlying_contract_id": 3691937,
+    "exchange": "NASDAQ",
+    "symbol": "AMZN",
+    "description": "AMAZON.COM INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "SMCI": {
+    "underlying_contract_id": 731466419,
+    "exchange": "NASDAQ",
+    "symbol": "SMCI",
+    "description": "SUPER MICRO COMPUTER INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "VRT": {
+    "underlying_contract_id": 402783527,
+    "exchange": "NYSE",
+    "symbol": "VRT",
+    "description": "VERTIV HOLDINGS CO-A",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "MSTR": {
+    "underlying_contract_id": 272110,
+    "exchange": "NASDAQ",
+    "symbol": "MSTR",
+    "description": "STRATEGY INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "ALAB": {
+    "underlying_contract_id": 692196414,
+    "exchange": "NASDAQ",
+    "symbol": "ALAB",
+    "description": "ASTERA LABS INC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "ETN": {
+    "underlying_contract_id": 118017869,
+    "exchange": "NYSE",
+    "symbol": "ETN",
+    "description": "EATON CORP PLC",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "ASML": {
+    "underlying_contract_id": 117902840,
+    "exchange": "NASDAQ",
+    "symbol": "ASML",
+    "description": "ASML HOLDING NV-NY REG SHS",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  },
+  "META": {
+    "underlying_contract_id": 107113386,
+    "exchange": "NASDAQ",
+    "symbol": "META",
+    "description": "META PLATFORMS INC-CLASS A",
+    "country_code": "US",
+    "sections": [
+      {
+        "security_type": "STK"
+      },
+      {
+        "security_type": "BAG"
+      },
+      {
+        "security_type": "CFD"
+      },
+      {
+        "security_type": "IOPT"
+      },
+      {
+        "security_type": "OPT"
+      },
+      {
+        "security_type": "WAR"
+      }
+    ]
+  }
+}

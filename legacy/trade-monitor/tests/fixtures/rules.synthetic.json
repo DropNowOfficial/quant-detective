@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "stale_after_ms": 120000,
+  "rules": [
+    {
+      "id": "synthetic-range",
+      "version": "1",
+      "purpose": "entry",
+      "lower": "106",
+      "upper": "108",
+      "protection_fraction": null
+    }
+  ]
+}

@@ -1,0 +1,322 @@
+{
+  "schema_version": 1,
+  "membership": "RECONSTRUCTED_CURRENT_WATCHLIST_NOT_HISTORICAL_CONSTITUENTS",
+  "effective_from": "2026-10-04",
+  "instruments": [
+    {
+      "symbol": "AMD",
+      "contract_id": 4391,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "ADVANCED MICRO DEVICES"
+    },
+    {
+      "symbol": "INTC",
+      "contract_id": 270639,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "INTEL CORP"
+    },
+    {
+      "symbol": "SNDK",
+      "contract_id": 760250490,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "SANDISK CORP"
+    },
+    {
+      "symbol": "MU",
+      "contract_id": 9939,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "MICRON TECHNOLOGY INC"
+    },
+    {
+      "symbol": "MRVL",
+      "contract_id": 483492393,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "MARVELL TECHNOLOGY INC"
+    },
+    {
+      "symbol": "GLW",
+      "contract_id": 7655,
+      "exchange": "NYSE",
+      "group": "core",
+      "name": "CORNING INC"
+    },
+    {
+      "symbol": "GOOG",
+      "contract_id": 208813720,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "ALPHABET INC-CL C"
+    },
+    {
+      "symbol": "META",
+      "contract_id": 107113386,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "META PLATFORMS INC-CLASS A"
+    },
+    {
+      "symbol": "ARM",
+      "contract_id": 653400472,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "ARM HOLDINGS PLC-ADR"
+    },
+    {
+      "symbol": "NVDA",
+      "contract_id": 4815747,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "NVIDIA CORP"
+    },
+    {
+      "symbol": "AVGO",
+      "contract_id": 313130367,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "BROADCOM INC"
+    },
+    {
+      "symbol": "TSM",
+      "contract_id": 6223250,
+      "exchange": "NYSE",
+      "group": "core",
+      "name": "TAIWAN SEMICONDUCTOR-SP ADR"
+    },
+    {
+      "symbol": "ASML",
+      "contract_id": 117902840,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "ASML HOLDING NV-NY REG SHS"
+    },
+    {
+      "symbol": "AMAT",
+      "contract_id": 266093,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "APPLIED MATERIALS INC"
+    },
+    {
+      "symbol": "LRCX",
+      "contract_id": 732440574,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "LAM RESEARCH CORP"
+    },
+    {
+      "symbol": "KLAC",
+      "contract_id": 270957,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "KLA CORP"
+    },
+    {
+      "symbol": "ANET",
+      "contract_id": 740948854,
+      "exchange": "NYSE",
+      "group": "core",
+      "name": "ARISTA NETWORKS INC"
+    },
+    {
+      "symbol": "VRT",
+      "contract_id": 402783527,
+      "exchange": "NYSE",
+      "group": "core",
+      "name": "VERTIV HOLDINGS CO-A"
+    },
+    {
+      "symbol": "ORCL",
+      "contract_id": 272800,
+      "exchange": "NYSE",
+      "group": "core",
+      "name": "ORACLE CORP"
+    },
+    {
+      "symbol": "MSFT",
+      "contract_id": 272093,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "MICROSOFT CORP"
+    },
+    {
+      "symbol": "AMZN",
+      "contract_id": 3691937,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "AMAZON.COM INC"
+    },
+    {
+      "symbol": "DELL",
+      "contract_id": 346218218,
+      "exchange": "NYSE",
+      "group": "core",
+      "name": "DELL TECHNOLOGIES -C"
+    },
+    {
+      "symbol": "AAPL",
+      "contract_id": 265598,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "APPLE INC"
+    },
+    {
+      "symbol": "CRCL",
+      "contract_id": 789044667,
+      "exchange": "NYSE",
+      "group": "core",
+      "name": "CIRCLE INTERNET GROUP INC"
+    },
+    {
+      "symbol": "MSTR",
+      "contract_id": 272110,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "STRATEGY INC"
+    },
+    {
+      "symbol": "SPCX",
+      "contract_id": 890493863,
+      "exchange": "NASDAQ",
+      "group": "core",
+      "name": "SPACE EXPLORATION TECHN-CL A"
+    },
+    {
+      "symbol": "SMCI",
+      "contract_id": 731466419,
+      "exchange": "NASDAQ",
+      "group": "discovery",
+      "name": "SUPER MICRO COMPUTER INC"
+    },
+    {
+      "symbol": "CRDO",
+      "contract_id": 541265127,
+      "exchange": "NASDAQ",
+      "group": "discovery",
+      "name": "CREDO TECHNOLOGY GROUP HOLDI"
+    },
+    {
+      "symbol": "ALAB",
+      "contract_id": 692196414,
+      "exchange": "NASDAQ",
+      "group": "discovery",
+      "name": "ASTERA LABS INC"
+    },
+    {
+      "symbol": "COHR",
+      "contract_id": 584127832,
+      "exchange": "NYSE",
+      "group": "discovery",
+      "name": "COHERENT CORP"
+    },
+    {
+      "symbol": "LITE",
+      "contract_id": 201113895,
+      "exchange": "NASDAQ",
+      "group": "discovery",
+      "name": "LUMENTUM HOLDINGS INC"
+    },
+    {
+      "symbol": "AAOI",
+      "contract_id": 135423662,
+      "exchange": "NASDAQ",
+      "group": "discovery",
+      "name": "AAOI"
+    },
+    {
+      "symbol": "QCOM",
+      "contract_id": 273544,
+      "exchange": "NASDAQ",
+      "group": "discovery",
+      "name": "QUALCOMM INC"
+    },
+    {
+      "symbol": "MPWR",
+      "contract_id": 32106121,
+      "exchange": "NASDAQ",
+      "group": "discovery",
+      "name": "MONOLITHIC POWER SYSTEMS INC"
+    },
+    {
+      "symbol": "MCHP",
+      "contract_id": 271568,
+      "exchange": "NASDAQ",
+      "group": "discovery",
+      "name": "MICROCHIP TECHNOLOGY INC"
+    },
+    {
+      "symbol": "NXPI",
+      "contract_id": 77791077,
+      "exchange": "NASDAQ",
+      "group": "discovery",
+      "name": "NXP SEMICONDUCTORS NV"
+    },
+    {
+      "symbol": "ETN",
+      "contract_id": 118017869,
+      "exchange": "NYSE",
+      "group": "discovery",
+      "name": "EATON CORP PLC"
+    },
+    {
+      "symbol": "VST",
+      "contract_id": 254457731,
+      "exchange": "NYSE",
+      "group": "discovery",
+      "name": "VISTRA CORP"
+    },
+    {
+      "symbol": "CEG",
+      "contract_id": 538132976,
+      "exchange": "NASDAQ",
+      "group": "discovery",
+      "name": "CONSTELLATION ENERGY"
+    },
+    {
+      "symbol": "HPE",
+      "contract_id": 209411798,
+      "exchange": "NYSE",
+      "group": "discovery",
+      "name": "HEWLETT PACKARD ENTERPRISE"
+    },
+    {
+      "symbol": "P",
+      "contract_id": 208813725,
+      "exchange": "NYSE",
+      "group": "discovery",
+      "name": "EVERPURE INC-A"
+    },
+    {
+      "symbol": "WDC",
+      "contract_id": 13681,
+      "exchange": "NASDAQ",
+      "group": "discovery",
+      "name": "WESTERN DIGITAL CORP"
+    },
+    {
+      "symbol": "STX",
+      "contract_id": 491932113,
+      "exchange": "NASDAQ",
+      "group": "discovery",
+      "name": "SEAGATE TECHNOLOGY HOLDINGS"
+    },
+    {
+      "symbol": "QQQ",
+      "contract_id": 320227571,
+      "exchange": "NASDAQ",
+      "group": "benchmark",
+      "name": "INVESCO QQQ TRUST SERIES 1"
+    },
+    {
+      "symbol": "SOXX",
+      "contract_id": 12658194,
+      "exchange": "NASDAQ",
+      "group": "benchmark",
+      "name": "ISHARES SEMICONDUCTOR ETF"
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "role": "SKEPTIC",
+  "reviewed_at_utc": "2026-10-04T07:07:29.764925+00:00",
+  "scope": "Independent read-only review of the new public multi-market terminal; prior MA5 lab review is separate. No external network requests were made by this reviewer.",
+  "decision": {
+    "ready_to_merge": true,
+    "scope": "Read-only public market-data terminal, with explicit coverage and source limitations.",
+    "unresolved_critical": 0,
+    "unresolved_important": 0,
+    "alpha_certified": false,
+    "trading_readiness_certified": false,
+    "live_provider_availability_certified": false
+  },
+  "reviewed_files": [
+    {
+      "path": "market_data/providers.py",
+      "sha256": "1f3dd781fed89338f4ac1be0aacc9262a4a60b4dea87df6c03731ac6ddacacec"
+    },
+    {
+      "path": "market_data/transport.py",
+      "sha256": "61ff519b6723537d8a7eed46021c15598071671d1656bd910cd34f8b9eb4a7d1"
+    },
+    {
+      "path": "market_data/server.py",
+      "sha256": "3d5323cf349c551be7726df9ae2b5cec3da23e716cd944444f04e7b58be99c96"
+    },
+    {
+      "path": "market_data/cli.py",
+      "sha256": "bfa26834cdf9bf7bc7937560bd4a8d62f9d4ca459aad66fef6405896be79f8fa"
+    },
+    {
+      "path": "market_data/template.html",
+      "sha256": "987bfe294fa08c91992e19733fc24314fdb4bf8577651cf806165eadae62a1ab"
+    },
+    {
+      "path": "tests/test_market_providers.py",
+      "sha256": "7f99778ed951319574af50bd1c406aa274d1ba3bb7005c72c8754f148ef0b067"
+    },
+    {
+      "path": "tests/test_market_transport.py",
+      "sha256": "d4b9365f664c8715a872ae4ce5488baa29e2c2efe6ec7372a402a3f573dd5c14"
+    },
+    {
+      "path": "tests/test_market_server.py",
+      "sha256": "6c6fcd1b3632392036992978010235e3033f7451c3797b0a7536d6fbb213ce69"
+    },
+    {
+      "path": "tests/browser_market_data.cjs",
+      "sha256": "bd4ab4b38fdc3f021dc3ea0cc90ced36d5c161fd5d683760f313dd767b8ede87"
+    }
+  ],
+  "findings": [
+    {
+      "id": "M01",
+      "severity": "Important",
+      "status": "RESOLVED_INDEPENDENTLY_VERIFIED",
+      "location": "market_data/providers.py::_row",
+      "problem": "Contradictory open/close outside high-low range were retained as valid OHLC.",
+      "initial_reproduction": "Synthetic high=105/low=99 accepted open=100/close=50, open=-1/close=101, and open=100/close=106; each returned ok=true, retained=1, dropped=0.",
+      "fix": "General low <= min(open,close) <= max(open,close) <= high validation.",
+      "verification": "The same three synthetic examples now return zero rows, dropped_rows=1 and partial=true."
+    },
+    {
+      "id": "M02",
+      "severity": "Important",
+      "status": "RESOLVED_INDEPENDENTLY_VERIFIED",
+      "location": "market_data/providers.py::_yahoo_symbol/_validate_yahoo_meta",
+      "problem": "HTTP/CLI caller could request BTC-USD as us_equity and receive a crypto candle labelled US securities and share volume; missing identity metadata was accepted.",
+      "initial_reproduction": "Synthetic Yahoo meta with symbol BTC-USD, CRYPTOCURRENCY, exchange CCC produced ok=true under us_equity.",
+      "fix": "Required symbol, type, exchange, timezone and currency; conservative observed US venue/type checks; A-share code family/suffix checks and matching SHH/SHZ metadata. B-share and unrelated symbols rejected; unsupported venues remain explicit failures.",
+      "verification": "Original synthetic crypto reproduction rejected; AAPL/900901.SS rejected under cn_equity before fetch; expanded missing/wrong-metadata unit tests pass."
+    },
+    {
+      "id": "M03",
+      "severity": "Important",
+      "status": "RESOLVED_INDEPENDENTLY_VERIFIED",
+      "location": "market_data/providers.py::get_candles",
+      "problem": "OKX shared candle endpoint allowed BTC-USDT-SWAP to be labelled dated futures.",
+      "initial_reproduction": "Synthetic successful OKX response passed with market=okx_futures and symbol=BTC-USDT-SWAP.",
+      "fix": "Canonical SWAP versus dated-contract suffix validation before GET.",
+      "verification": "Both wrong-subtype directions now reject with no network call; correct dated-contract fixture passes."
+    },
+    {
+      "id": "M04",
+      "severity": "Important",
+      "status": "RESOLVED_INDEPENDENTLY_VERIFIED",
+      "location": "market_data/transport.py::fetch",
+      "problem": "curl read default curlrc, which could add credentials, redirects, retry or method overrides despite the transport contract.",
+      "evidence": "Local curl --manual confirms default curlrc loading and requirement that --disable be the first option.",
+      "fix": "--disable is curl first option, including the conditional Referer branch.",
+      "verification": "Independent mocked process assertions cover ordinary and Referer endpoints, --max-time 12, communicate(timeout=12), and no redirect/retry/user options."
+    }
+  ],
+  "tests": [
+    {
+      "command": "uv run --extra research pytest -q tests/test_market_providers.py tests/test_market_server.py tests/test_market_transport.py",
+      "result": "66 passed in 0.58s",
+      "log": "/tmp/qd-market-independent-pytest.log"
+    },
+    {
+      "command": "CHROMIUM_EXECUTABLE=/tmp/chromium node tests/browser_market_data.cjs",
+      "result": "PASS: eight catalogs, search, manual fetching, 100000/15m request, old-market response races, null taker, failure clearing, tiny nonzero prices/axes, 320px layout, no JS errors",
+      "log": "/tmp/qd-market-independent-browser.log"
+    },
+    {
+      "command": "python /tmp/qd-market-independent-checks.py",
+      "result": "PASS: original counterexamples rejected; curl configuration isolated; real localhost client disconnect prevents another synthetic upstream page",
+      "script": "/tmp/qd-market-independent-checks.py",
+      "log": "/tmp/qd-market-independent-checks.log"
+    }
+  ],
+  "positive_controls": [
+    "Source/market identities and derivative volume units remain distinct; Gate is explicitly USDT perpetual, not cash equities or spot.",
+    "Only 1m/5m/15m accepted; Binance/Gate pages <=1000 and OKX pages <=300; Yahoo historical request windows bounded to <=1000 interval slots.",
+    "Missing/nonfinite fields are not zero-filled; incomplete candles carry closed status and source/time basis.",
+    "HTTP/application/non-JSON errors are explicit; no source substitution or invented candles.",
+    "12-second individual GET deadline is enforced by curl and process timeout/kill; a multi-page operation can take longer and UI cancellation is separately disclosed.",
+    "Host/Origin restrictions, fixed server routes, approved HTTPS endpoints and query allowlists limit local API exposure; no orders, credentials or arbitrary-file routes.",
+    "UI only initiates candles on user action, checks response identity, discards stale response races, clears old price displays and avoids presenting tiny nonzero numbers as zero."
+  ],
+  "remaining_limits": [
+    "US Yahoo quote identity currently allows only observed NMS/NGM/NYQ EQUITY/ETF, New York timezone and USD; broader catalog entries can explicitly fail as unsupported.",
+    "A-share directory contains historical/delisted/alias entries, not a certified active trading universe. BJ quote identity remains unsupported.",
+    "Normal-session filtering is not certification of each holiday/half-day exchange calendar; stale/latest-trading-day prices are not promised realtime.",
+    "Actual provider outages/rate restrictions and upstream economic correctness are not independently certified.",
+    "No backtests, strategy signals, alpha, order execution or trading readiness were validated by this review."
+  ],
+  "observed_external_probe_receipt": "/tmp/qd-provider-live-probes.json (read-only receipt inspection; no new external probes by reviewer)",
+  "root_reported_later_evidence": [
+    "/tmp/qd-market-binance-spot-recheck.json; root reports HTTP200 and 1372 active symbols with showPermissionSets=false.",
+    "Root reports canonical make verify and real-source UI checks passed; these are separately attributable and not counted as this reviewer's own executions."
+  ],
+  "modifications": "No implementation, working-tree, index or branch edits; only synthetic review script/logs and this JSON under /tmp.",
+  "raw_market_data_in_this_report": false
+}

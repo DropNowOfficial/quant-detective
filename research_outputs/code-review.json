@@ -1,0 +1,62 @@
+{
+  "role": "SKEPTIC",
+  "known_at": "2026-10-04T06:30:35.241680+00:00",
+  "scope": "Independent read-only source review and targeted reproductions by final_research_review; not an investment certification.",
+  "base_commit": "d3d7a1270097f42457ffd1a2ef96ca8a9e0ede22",
+  "backend_verdict": "NO_REMAINING_BLOCKER_IN_REVIEWED_SCOPE",
+  "ui_verdict": "PASS_DIAGNOSTIC_TEACHING_SCOPE",
+  "findings": [
+    {
+      "id": "R01",
+      "severity": "important",
+      "issue": "Single retained session crashes exchange_calendars construction under research extras.",
+      "fix": "Pad construction bounds; retain exact requested sessions; canonical test command includes research extra.",
+      "independently_verified": true
+    },
+    {
+      "id": "R02",
+      "severity": "important",
+      "issue": "Set traversal changes EW floating-point output and experiment IDs across Python hash seeds.",
+      "fix": "Sort symbol union before any cash arithmetic; cross-process regression for three hash seeds.",
+      "independently_verified": true,
+      "actual_yahoo_ew_sha256": "a0ac634b57931ee0566f707416184f431f1f339229c0faa537020ff8146349b5"
+    },
+    {
+      "id": "R03",
+      "severity": "minor",
+      "issue": "Audit filenames changed for shipment.",
+      "fix": "Original and shipped paths/hashes mapped in data-review.json."
+    },
+    {
+      "id": "R04",
+      "severity": "minor",
+      "issue": "Private research server accepted arbitrary Host.",
+      "fix": "Reject non-local or duplicate Host on GET/HEAD; local HTTP regression passes."
+    },
+    {
+      "id": "R05",
+      "severity": "minor",
+      "issue": "Buy/hold final position count disagreed with successful liquidation; stale final day exposure/turnover overstated an exit.",
+      "fix": "Explicit liquidation flag controls positions, exposure and turnover; valid/stale last-day regression passed. Six actual benchmark final position counters corrected, without changing any performance result."
+    }
+  ],
+  "declined_to_certify": [
+    "literature interpretation",
+    "corporate-action economic correctness",
+    "profit or alpha",
+    "remote CI",
+    "live-trading readiness"
+  ],
+  "merge_verdict": "READY_SUBJECT_TO_FINAL_ARTIFACT_AND_CANONICAL_CHECKS",
+  "reviewed_template_sha256": "6de01ddfe8c32e6c0433e3eb90ff11f0eeecb101d90d3de7e6adda959017a513",
+  "ui_independent_checks": {
+    "fixture": "PASS",
+    "actual_result_run_id": "81428db42415f2949373ed15",
+    "actual_selected_scenario": "volume08 / hold10 / cost50",
+    "csv_reconciliation": "PASS",
+    "extreme_future_chart_and_axis_invariance": "PASS",
+    "fixed_reference_labels": "PASS",
+    "retrospective_not_oos": "PASS",
+    "scope_limit": "Earlier frozen numerical result with final template; final192-scenario artifact independently checked by root."
+  }
+}
