@@ -629,6 +629,7 @@ def scan_once(symbols=CORE_FALLBACK_SYMBOLS, fetcher=fetch, now=None, workers=8)
         "mode": "PUBLIC_HEADLESS_OBSERVATION",
         "coverage_scope": COVERAGE_CORE_FALLBACK,
         "market_wide": False,
+        "decision_mode": "CORE_FALLBACK_OBSERVATION_ONLY",
         "coverage_note": "Fixed fallback/core watchlist only; not whole-market discovery.",
         "capability_gaps": list(LIVE_CAPABILITY_GAPS),
         "trading_enabled": False,
