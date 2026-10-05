@@ -1,6 +1,11 @@
 name: hosted-core-watch-fallback
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'market_data/github_alerts.py'
+      - '.github/workflows/market-watch.yml'
   schedule:
     # Redundant public-data fallback. The VPS watcher is a separate runtime.
     # Short five-minute jobs avoid an hours-long blind spot if one schedule is dropped.
