@@ -32,6 +32,7 @@ from .universe import (
 
 ET = ZoneInfo("America/New_York")
 OUTPUT_ENV = "QD_WATCH_OUTPUT"
+LIQUIDITY_FLOOR_ENV = "QD_MIN_MEDIAN_DOLLAR_VOLUME"
 _DAILY_CACHE = {}
 _NEWS_CACHE = {}
 _VOLUME_PROFILE_CACHE = {}
@@ -43,6 +44,19 @@ PUBLIC_5M_STALE_AFTER_SECONDS = 600
 
 def _finite(v):
     return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def _liquidity_floor():
+    raw = os.getenv(LIQUIDITY_FLOOR_ENV, "").strip()
+    if not raw:
+        return None
+    try:
+        value = float(raw)
+    except ValueError as exc:
+        raise ValueError(f"{LIQUIDITY_FLOOR_ENV} must be numeric") from exc
+    if not math.isfinite(value) or value <= 0:
+        raise ValueError(f"{LIQUIDITY_FLOOR_ENV} must be > 0")
+    return value
 
 
 def _pct(a, b):
@@ -157,7 +171,7 @@ def _market_regime_summary(context):
         "expected": len(SECTOR_PROXY_SYMBOLS),
         "positive": sum(v > 0 for v in changes),
         "negative": sum(v < 0 for v in changes),
-        "median_change_pct": statistics.median(changes) if changes else None,
+        "median_change_pct": median(changes) if changes else None,
         "strongest": max(sector_rows, key=lambda x:x[1]) if sector_rows else None,
         "weakest": min(sector_rows, key=lambda x:x[1]) if sector_rows else None,
         "label": "SECTOR_ETF_PROXY_NOT_MARKET_BREADTH",
@@ -225,6 +239,11 @@ def _daily_metrics(rows, now):
     if len(rows) < 22:
         raise ValueError(f"need >=22 completed daily bars, got {len(rows)}")
     closes = [r["close"] for r in rows]
+    dollar_volumes = [
+        r["close"] * r["volume"] for r in rows
+        if _finite(r.get("volume")) and r["volume"] > 0
+    ]
+    median_dollar_volume_20d = median(dollar_volumes[-20:]) if dollar_volumes else None
     ma5s = [fmean(closes[-5-i:len(closes)-i]) for i in (0, 1, 2)]
     ma10 = fmean(closes[-10:])
     prev_ma10 = fmean(closes[-11:-1])
@@ -247,6 +266,7 @@ def _daily_metrics(rows, now):
         "ma20": ma20,
         "ma20_direction": "UP" if ma20 > prev_ma20 else "DOWN" if ma20 < prev_ma20 else "FLAT",
         "atr5": atr5,
+        "median_dollar_volume_20d": median_dollar_volume_20d,
         "atr_pct": atr5 / rows[-1]["close"] * 100,
     }
 
@@ -372,7 +392,7 @@ def _intraday_metrics(rows, daily, now, history_rows=None):
     return result
 
 
-def classify(daily, intra, broad_market_change=None, qqq_change=None):
+def classify(daily, intra, broad_market_change=None, qqq_change=None, liquidity_floor=None):
     if intra.get("data_stale"):
         return {
             "state": "STALE",
@@ -385,6 +405,12 @@ def classify(daily, intra, broad_market_change=None, qqq_change=None):
             "observation_geometry": False,
             "gap_regime": "UNRATED",
             "entry_blockers": ["stale_public_market_data"],
+            "liquidity_policy": {
+                "metric": "median_dollar_volume_20d",
+                "floor": liquidity_floor,
+                "observed": daily.get("median_dollar_volume_20d"),
+                "configured": liquidity_floor is not None,
+            },
             "relative_change_vs_spy_pp": None,
             "relative_change_vs_qqq_pp": None,
         }
@@ -428,6 +454,13 @@ def classify(daily, intra, broad_market_change=None, qqq_change=None):
         gap_regime = "SHOCK"
     vwap_atr = intra.get("price_vs_vwap_atr")
     entry_blockers = []
+    median_dollar_volume = daily.get("median_dollar_volume_20d")
+    if liquidity_floor is None:
+        entry_blockers.append("liquidity_policy_unconfigured")
+    elif not _finite(median_dollar_volume):
+        entry_blockers.append("liquidity_metric_unavailable")
+    elif median_dollar_volume < liquidity_floor:
+        entry_blockers.append("liquidity_below_configured_floor")
     if not intra.get("two_completed_5m_above_vwap_and_ma5", False):
         entry_blockers.append("two_completed_5m_hold_missing")
     if not _finite(rvol):
@@ -476,6 +509,12 @@ def classify(daily, intra, broad_market_change=None, qqq_change=None):
         "observation_geometry": observation_geometry,
         "gap_regime": gap_regime,
         "entry_blockers": entry_blockers,
+        "liquidity_policy": {
+            "metric": "median_dollar_volume_20d",
+            "floor": liquidity_floor,
+            "observed": median_dollar_volume,
+            "configured": liquidity_floor is not None,
+        },
         "relative_change_vs_spy_pp": rs_spy,
         "relative_change_vs_qqq_pp": rs_qqq,
     }
@@ -498,7 +537,12 @@ def _scan_symbol(symbol, fetcher, now, broad_market_change=None, qqq_change=None
     volume_rows, volume_known_at = volume_cached
     intraday_rows, _, intra_receipt = _chart(fetcher, symbol, range_value="5d", interval="5m", include_prepost=True)
     intra = _intraday_metrics(intraday_rows, daily, now, history_rows=volume_rows)
-    state = classify(daily, intra, broad_market_change=broad_market_change, qqq_change=qqq_change)
+    state = classify(
+        daily, intra,
+        broad_market_change=broad_market_change,
+        qqq_change=qqq_change,
+        liquidity_floor=_liquidity_floor(),
+    )
     previous = datetime.fromisoformat(daily["previous_session_date"]).date()
     current = now.astimezone(ET).date()
     calendar_gap = (current - previous).days
