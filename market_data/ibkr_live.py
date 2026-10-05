@@ -50,7 +50,12 @@ def _row_map(report):
 
 def _realtime_quote(quote):
     availability = str((quote or {}).get("market_data_availability") or "")
-    return bool(quote and _finite(quote.get("last")) and availability.startswith("R"))
+    return bool(
+        quote
+        and _finite(quote.get("last"))
+        and quote.get("last_status", "TRADE") == "TRADE"
+        and availability.startswith("R")
+    )
 
 
 def _live_state(symbol, quote, structural, broad_market_change, qqq_change):
@@ -107,6 +112,8 @@ def _live_state(symbol, quote, structural, broad_market_change, qqq_change):
         "same_time_rvol": intra.get("same_time_rvol"),
         "ibkr_updated_ms": quote.get("updated_ms"),
         "market_data_availability": quote.get("market_data_availability"),
+        "last_status": quote.get("last_status"),
+        "stock_type": quote.get("stock_type"),
     }
 
 
