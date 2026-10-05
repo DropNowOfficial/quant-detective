@@ -1,11 +1,11 @@
 [Unit]
-Description=Poll Quant Detective main branch for production updates
+Description=Fallback poll for Quant Detective production updates
 
 [Timer]
-OnBootSec=5s
-OnUnitInactiveSec=1s
-AccuracySec=100ms
-RandomizedDelaySec=0
+OnBootSec=30s
+OnUnitInactiveSec=60s
+AccuracySec=5s
+RandomizedDelaySec=5s
 Persistent=true
 Unit=quant-detective-update.service
 
