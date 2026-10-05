@@ -155,6 +155,27 @@ def test_failed_ibkr_auth_is_backed_off_for_30_seconds(tmp_path):
     assert gw.calls == 2
 
 
+
+
+class DiscoveryGateway(FakeGateway):
+    def snapshots(self, contracts):
+        out=super().snapshots(contracts)
+        if "XYZ" in contracts:
+            out["XYZ"]={
+                "last":50.0,
+                "change_pct":4.0,
+                "market_data_availability":"R",
+                "stock_type":"Common",
+            }
+        if "ABC" in contracts:
+            out["ABC"]={
+                "last":25.0,
+                "change_pct":3.0,
+                "market_data_availability":"R",
+                "stock_type":"ETF",
+            }
+        return out
+
 class FakeDiscovery:
     def __init__(self):
         self.round=0
@@ -182,7 +203,7 @@ class FakeDiscovery:
 
 def test_discovery_candidate_is_visible_before_structural_enrichment(tmp_path):
     d=HybridDaemon(
-        symbols=("NVDA",),gateway=FakeGateway(True),scan_fn=fake_scan,
+        symbols=("NVDA",),gateway=DiscoveryGateway(True),scan_fn=fake_scan,
         discovery=FakeDiscovery(),discovery_structure_limit=24,
         state_path=tmp_path/"state.json",events_path=tmp_path/"events.jsonl",
         snapshot_seconds=2,structure_seconds=60,
@@ -255,7 +276,7 @@ class MultiHitDiscovery:
 
 def test_multi_scan_discovery_emits_one_prequalification_event(tmp_path):
     d=HybridDaemon(
-        symbols=("NVDA",),gateway=FakeGateway(True),scan_fn=fake_scan,
+        symbols=("NVDA",),gateway=DiscoveryGateway(True),scan_fn=fake_scan,
         discovery=MultiHitDiscovery(),discovery_structure_limit=24,
         state_path=tmp_path/"state.json",events_path=tmp_path/"events.jsonl",
         snapshot_seconds=2,structure_seconds=60,
@@ -296,3 +317,22 @@ def test_old_discovery_is_not_reported_as_current_after_broker_failure(tmp_path)
     assert second["market_wide_discovery"] is False
     assert second["coverage_scope"]=="CORE_FALLBACK"
     assert second["discovery_stale"] is True
+
+
+def test_ineligible_etf_discovery_does_not_enter_harness_or_emit_event(tmp_path):
+    discovery=FakeDiscovery()
+    discovery.round=1  # next tick returns ABC, which DiscoveryGateway marks as ETF
+    d=HybridDaemon(
+        symbols=("NVDA",),gateway=DiscoveryGateway(True),scan_fn=fake_scan,
+        discovery=discovery,discovery_structure_limit=24,
+        state_path=tmp_path/"state.json",events_path=tmp_path/"events.jsonl",
+        snapshot_seconds=2,structure_seconds=60,
+    )
+    d.initialize()
+    out=d.cycle()
+    candidate=out["discovery_candidates"][0]
+    assert candidate["symbol"]=="ABC"
+    assert candidate["stock_type"]=="ETF"
+    assert candidate["eligible_stock_type"] is False
+    assert "ABC" not in d.discovery_symbols
+    assert not [e for e in out["events_this_cycle"] if e.get("symbol")=="ABC"]
