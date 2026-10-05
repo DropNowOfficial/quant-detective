@@ -467,6 +467,7 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
             "rth_vwap_approx": r["intraday"]["rth_vwap_approx"],
             "same_time_rvol": r["intraday"]["same_time_rvol"],
             "same_time_rvol_samples": r["intraday"]["same_time_rvol_samples"],
+            "market_context": market_context,
             "news": (r.get("news") or {}).get("items", [])[:3],
         })
     return {
