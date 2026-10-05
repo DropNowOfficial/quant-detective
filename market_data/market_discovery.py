@@ -17,6 +17,7 @@ from .universe import (
     IBKR_DISCOVERY_LOCATION,
     IBKR_DISCOVERY_SCAN_NAMES,
     COVERAGE_IBKR_DYNAMIC,
+    MARKET_CONTEXT_SYMBOLS,
 )
 
 
@@ -43,6 +44,7 @@ class IBKRMarketDiscovery:
         self._params_loaded_at = 0.0
         self._cursor = 0
         self._pool = {}
+        self._excluded_symbols = {s for s in MARKET_CONTEXT_SYMBOLS if "=" not in s}
 
     def _load_specs(self):
         now = self.clock()
@@ -92,7 +94,7 @@ class IBKRMarketDiscovery:
                 continue
             symbol = str(row.get("symbol") or "").upper().strip()
             conid = row.get("con_id")
-            if not symbol or not isinstance(conid, int):
+            if not symbol or symbol in self._excluded_symbols or not isinstance(conid, int):
                 continue
             item = self._pool.setdefault(symbol, {
                 "symbol": symbol,
