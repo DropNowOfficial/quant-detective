@@ -1,0 +1,31 @@
+[Unit]
+Description=Quant Detective persistent IBKR market watcher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=quantdetective
+Group=quantdetective
+WorkingDirectory=/opt/quant-detective/current
+EnvironmentFile=-/etc/quant-detective/market-watch.env
+ExecStart=/opt/quant-detective/current/.venv/bin/python -m market_data.cli ibkr-watch \
+  --symbols ${QD_SYMBOLS} \
+  --snapshot-seconds ${QD_SNAPSHOT_SECONDS} \
+  --structure-seconds ${QD_STRUCTURE_SECONDS} \
+  --gateway-url ${QD_IBKR_GATEWAY_URL} \
+  --state-path /var/lib/quant-detective/state.json \
+  --events-path /var/lib/quant-detective/events.jsonl
+Restart=always
+RestartSec=3
+TimeoutStopSec=20
+KillSignal=SIGINT
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/quant-detective
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

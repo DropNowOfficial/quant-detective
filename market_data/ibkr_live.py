@@ -1,0 +1,292 @@
+"""Persistent hybrid watcher: IBKR fast snapshots + slower structural scans.
+
+The daemon has no order path. IBKR is used for fast live observations; completed
+RTH daily/5-minute structure and public news remain in the structural watcher.
+If IBKR is unavailable, the daemon explicitly degrades to public-only mode.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+import json
+import math
+import os
+from pathlib import Path
+import tempfile
+import time
+
+from .ibkr_cpg import ClientPortalGateway
+from .us_watch import DEFAULT_SYMBOLS, scan_once
+
+
+def _finite(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def _atomic_json(path, value):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as handle:
+        handle.write(payload)
+        tmp = Path(handle.name)
+    os.replace(tmp, path)
+
+
+def _append_jsonl(path, value):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(value, ensure_ascii=False, allow_nan=False) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _row_map(report):
+    return {r["symbol"]: r for r in report.get("rows", []) if r.get("status") == "OK" and r.get("symbol")}
+
+
+def _realtime_quote(quote):
+    availability = str((quote or {}).get("market_data_availability") or "")
+    return bool(quote and _finite(quote.get("last")) and availability.startswith("R"))
+
+
+def _live_state(symbol, quote, structural, qqq_change):
+    price = quote.get("last")
+    change = quote.get("change_pct")
+    daily = structural.get("daily") or {}
+    intra = structural.get("intraday") or {}
+    ma5, atr5 = daily.get("ma5"), daily.get("atr5")
+    d5 = (price - ma5) / atr5 if _finite(price) and _finite(ma5) and _finite(atr5) and atr5 > 0 else None
+    rs = change - qqq_change if _finite(change) and _finite(qqq_change) else None
+    leader_reasons = []
+    if _finite(change) and change >= 1.0:
+        leader_reasons.append(f"IBKR day +{change:.2f}%")
+    if _finite(rs) and rs >= 0.5:
+        leader_reasons.append(f"IBKR vs QQQ +{rs:.2f}pp")
+    public_state = structural.get("state")
+    vwap = intra.get("rth_vwap_approx")
+    above_vwap = _finite(price) and _finite(vwap) and price >= vwap
+    if public_state == "ENTRY_CONFIRMED" and _finite(d5) and -0.15 <= d5 <= 0.35 and above_vwap:
+        state = "ENTRY_CONFIRMED"
+        reason = "structural entry confirmation remains valid under current IBKR snapshot"
+    elif leader_reasons and _finite(d5) and d5 > 0.35:
+        state = "LEADER_HOT_NO_CHASE"
+        reason = "IBKR live leader detected but price is extended above completed-day MA5"
+    elif leader_reasons:
+        state = "LEADER_WATCH"
+        reason = "IBKR live leader detected; full structural entry gate is not satisfied"
+    elif public_state in {"ENTRY_ARMED", "ENTRY_CONFIRMED"}:
+        state = "ENTRY_ARMED"
+        reason = "public structural setup remains armed; current IBKR live leader trigger is absent"
+    elif _finite(d5) and d5 > 0.35:
+        state = "EXTENDED"
+        reason = "current IBKR price is > +0.35 ATR above completed-day MA5"
+    else:
+        state = "WATCH"
+        reason = "no material live or structural transition"
+    return {
+        "symbol": symbol,
+        "state": state,
+        "reason": reason,
+        "price": price,
+        "change_pct": change,
+        "bid": quote.get("bid"),
+        "ask": quote.get("ask"),
+        "volume": quote.get("volume"),
+        "d5_atr": d5,
+        "relative_change_vs_qqq_pp": rs,
+        "leader_reasons": leader_reasons,
+        "structural_state": public_state,
+        "structural_known_at": structural.get("known_at"),
+        "rth_vwap_approx": vwap,
+        "same_time_rvol": intra.get("same_time_rvol"),
+        "ibkr_updated_ms": quote.get("updated_ms"),
+        "market_data_availability": quote.get("market_data_availability"),
+    }
+
+
+class HybridDaemon:
+    def __init__(
+        self,
+        symbols=DEFAULT_SYMBOLS,
+        gateway=None,
+        snapshot_seconds=2.0,
+        structure_seconds=60.0,
+        state_path="runtime/market-watch/state.json",
+        events_path="runtime/market-watch/events.jsonl",
+        scan_fn=scan_once,
+        clock=time.time,
+        sleeper=time.sleep,
+    ):
+        if snapshot_seconds < 1.0:
+            raise ValueError("snapshot_seconds must be >= 1")
+        if structure_seconds < 30:
+            raise ValueError("structure_seconds must be >= 30")
+        self.symbols = tuple(dict.fromkeys(s.upper() for s in symbols))
+        self.gateway = gateway or ClientPortalGateway()
+        self.snapshot_seconds = float(snapshot_seconds)
+        self.structure_seconds = float(structure_seconds)
+        self.state_path = state_path
+        self.events_path = events_path
+        self.scan_fn = scan_fn
+        self.clock = clock
+        self.sleep = sleeper
+        self.contracts = {}
+        self.contract_errors = {}
+        self.structural = {}
+        self.structural_report = None
+        self.last_structure = 0.0
+        self.last_tickle = 0.0
+        self.last_auth = 0.0
+        self.auth = {"authenticated": False, "connected": False}
+        self.previous_states = {}
+        self.started_at = datetime.now(timezone.utc).isoformat()
+
+    def initialize(self):
+        self.auth = self.gateway.auth_status()
+        if self.auth.get("authenticated"):
+            self.gateway.ensure_accounts()
+            wanted = tuple(dict.fromkeys((*self.symbols, "QQQ")))
+            self.contracts, self.contract_errors = self.gateway.resolve_symbols(wanted)
+        self.refresh_structure(force=True)
+
+    def refresh_structure(self, force=False):
+        now = self.clock()
+        if not force and now - self.last_structure < self.structure_seconds:
+            return
+        report = self.scan_fn(symbols=self.symbols)
+        self.structural_report = report
+        self.structural = _row_map(report)
+        self.last_structure = now
+
+    def _refresh_auth(self):
+        now = self.clock()
+        if now - self.last_auth >= 30:
+            self.auth = self.gateway.auth_status()
+            self.last_auth = now
+        if self.auth.get("authenticated") and now - self.last_tickle >= 45:
+            self.gateway.tickle()
+            self.last_tickle = now
+
+    def cycle(self):
+        self.refresh_structure()
+        quotes = {}
+        mode = "DEGRADED_PUBLIC_ONLY"
+        error = None
+        try:
+            self._refresh_auth()
+            if not self.auth.get("authenticated"):
+                raise RuntimeError("IBKR gateway session is not authenticated")
+            if not self.contracts:
+                wanted = tuple(dict.fromkeys((*self.symbols, "QQQ")))
+                self.contracts, self.contract_errors = self.gateway.resolve_symbols(wanted)
+            quotes = self.gateway.snapshots(self.contracts)
+            if not quotes:
+                raise RuntimeError("IBKR snapshot returned no resolved quotes")
+            realtime_count = sum(_realtime_quote(q) for q in quotes.values())
+            if realtime_count == 0:
+                raise RuntimeError("IBKR returned no realtime-subscribed quotes (field 6509 is not Realtime)")
+            mode = "IBKR_LIVE_PLUS_PUBLIC_STRUCTURE"
+        except Exception as exc:
+            error = f"{type(exc).__name__}: {str(exc)[:240]}"
+
+        qqq_change = (quotes.get("QQQ") or {}).get("change_pct")
+        rows = []
+        if mode.startswith("IBKR_"):
+            for symbol in self.symbols:
+                structural = self.structural.get(symbol)
+                quote = quotes.get(symbol)
+                if structural and _realtime_quote(quote):
+                    rows.append(_live_state(symbol, quote, structural, qqq_change))
+                elif structural:
+                    availability = (quote or {}).get("market_data_availability")
+                    rows.append({
+                        "symbol": symbol,
+                        "state": structural.get("state", "WATCH"),
+                        "reason": "IBKR realtime quote unavailable/not subscribed for this symbol; showing structural state only",
+                        "structural_state": structural.get("state"),
+                        "ibkr_quote_missing": True,
+                        "market_data_availability": availability,
+                    })
+        else:
+            for symbol in self.symbols:
+                structural = self.structural.get(symbol)
+                if structural:
+                    rows.append({
+                        "symbol": symbol,
+                        "state": structural.get("state", "WATCH"),
+                        "reason": "IBKR unavailable; public structural state only",
+                        "structural_state": structural.get("state"),
+                        "public_change_pct": (structural.get("intraday") or {}).get("change_pct"),
+                        "d5_atr": (structural.get("intraday") or {}).get("d5_atr"),
+                    })
+
+        priority = {"ENTRY_CONFIRMED": 0, "ENTRY_ARMED": 1, "LEADER_HOT_NO_CHASE": 2,
+                    "LEADER_WATCH": 3, "EXTENDED": 4, "WATCH": 5}
+        rows.sort(key=lambda r: (priority.get(r.get("state"), 9), -(r.get("change_pct") or -999), r["symbol"]))
+        now_iso = datetime.now(timezone.utc).isoformat()
+        material = {"ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH"}
+        events = []
+        for row in rows:
+            old = self.previous_states.get(row["symbol"])
+            new = row.get("state")
+            if new != old and (new in material or old in material):
+                event = {
+                    "at_utc": now_iso,
+                    "symbol": row["symbol"],
+                    "previous": old,
+                    "state": new,
+                    "mode": mode,
+                    "reason": row.get("reason"),
+                    "price": row.get("price"),
+                    "change_pct": row.get("change_pct"),
+                    "d5_atr": row.get("d5_atr"),
+                    "relative_change_vs_qqq_pp": row.get("relative_change_vs_qqq_pp"),
+                }
+                _append_jsonl(self.events_path, event)
+                events.append(event)
+            self.previous_states[row["symbol"]] = new
+
+        state = {
+            "generated_at_utc": now_iso,
+            "started_at_utc": self.started_at,
+            "mode": mode,
+            "ibkr_error": error,
+            "ibkr_auth": self.auth,
+            "contracts_resolved": len(self.contracts),
+            "contract_errors": self.contract_errors,
+            "snapshot_seconds": self.snapshot_seconds,
+            "structure_seconds": self.structure_seconds,
+            "last_structure_age_seconds": max(0.0, self.clock() - self.last_structure),
+            "rows": rows,
+            "events_this_cycle": events,
+        }
+        _atomic_json(self.state_path, state)
+        return state
+
+    def run(self, once=False):
+        self.initialize()
+        while True:
+            started = self.clock()
+            state = self.cycle()
+            compact = {
+                "generated_at_utc": state["generated_at_utc"],
+                "mode": state["mode"],
+                "ibkr_error": state["ibkr_error"],
+                "material": [
+                    {"symbol": r["symbol"], "state": r.get("state"), "price": r.get("price"),
+                     "change_pct": r.get("change_pct"), "d5_atr": r.get("d5_atr")}
+                    for r in state["rows"] if r.get("state") in {
+                        "ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH"
+                    }
+                ],
+            }
+            print(json.dumps(compact, ensure_ascii=False, allow_nan=False), flush=True)
+            if once:
+                return state
+            elapsed = self.clock() - started
+            self.sleep(max(0.0, self.snapshot_seconds - elapsed))
+
+
+def run(**kwargs):
+    return HybridDaemon(**kwargs).run()

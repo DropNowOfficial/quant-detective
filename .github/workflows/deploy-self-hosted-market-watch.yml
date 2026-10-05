@@ -1,0 +1,57 @@
+name: deploy-self-hosted-market-watch
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'market_data/ibkr_*.py'
+      - 'market_data/us_watch.py'
+      - 'market_data/cli.py'
+      - 'deploy/**'
+      - '.github/workflows/deploy-self-hosted-market-watch.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: self-hosted-market-watch-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, x64, quant-detective]
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          enable-cache: false
+
+      - name: Verify before deploy
+        run: |
+          uv sync --frozen
+          uv run --extra research pytest -q tests/test_ibkr_cpg.py tests/test_ibkr_live.py tests/test_us_watch.py
+
+      - name: Install immutable release
+        shell: bash
+        run: |
+          release="/opt/quant-detective/releases/${GITHUB_SHA}"
+          sudo install -d -o quantdetective -g quantdetective -m 0755 "$release"
+          sudo rsync -a --delete             --exclude '.git' --exclude '.venv' --exclude 'runtime'             "$GITHUB_WORKSPACE/" "$release/"
+          sudo chown -R quantdetective:quantdetective "$release"
+          sudo -u quantdetective uv sync --project "$release" --frozen
+          sudo ln -sfn "$release" /opt/quant-detective/current
+
+      - name: Restart persistent watcher
+        run: |
+          sudo systemctl daemon-reload
+          sudo systemctl restart quant-detective-live.service
+          sleep 8
+          sudo systemctl --no-pager --full status quant-detective-live.service
+
+      - name: Health check
+        run: |
+          /opt/quant-detective/current/.venv/bin/python             /opt/quant-detective/current/deploy/healthcheck.py             /var/lib/quant-detective/state.json 20

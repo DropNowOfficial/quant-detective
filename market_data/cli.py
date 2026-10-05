@@ -7,6 +7,8 @@ from . import providers
 from .server import make_server
 from .transport import fetch
 from .us_watch import DEFAULT_SYMBOLS, run as run_us_watch
+from .ibkr_cpg import ClientPortalGateway
+from .ibkr_live import HybridDaemon
 
 
 def print_candles(result):
@@ -55,7 +57,34 @@ def main():
     watch.add_argument('--github-alerts', action='store_true')
     watch.add_argument('--output')
 
+    ibkr = sub.add_parser('ibkr-watch')
+    ibkr.add_argument('--symbols', default=','.join(DEFAULT_SYMBOLS))
+    ibkr.add_argument('--snapshot-seconds', type=float, default=2.0)
+    ibkr.add_argument('--structure-seconds', type=float, default=60.0)
+    ibkr.add_argument('--gateway-url', default='https://127.0.0.1:5000/v1/api')
+    ibkr.add_argument('--state-path', default='runtime/market-watch/state.json')
+    ibkr.add_argument('--events-path', default='runtime/market-watch/events.jsonl')
+    ibkr.add_argument('--once', action='store_true')
+
     args = parser.parse_args()
+
+    if args.command == 'ibkr-watch':
+        symbols = tuple(dict.fromkeys(x.strip().upper() for x in args.symbols.split(',') if x.strip()))
+        if not symbols or len(symbols) > 60 or any(not re.fullmatch(r'[A-Z0-9][A-Z0-9._-]{0,15}', x) for x in symbols):
+            parser.exit(2, 'ibkr-watch symbols invalid or too many (max 60)\n')
+        try:
+            gateway = ClientPortalGateway(args.gateway_url)
+            HybridDaemon(
+                symbols=symbols,
+                gateway=gateway,
+                snapshot_seconds=args.snapshot_seconds,
+                structure_seconds=args.structure_seconds,
+                state_path=args.state_path,
+                events_path=args.events_path,
+            ).run(once=args.once)
+        except (ValueError, TypeError, OSError, RuntimeError) as exc:
+            parser.exit(2, f'ibkr-watch failed: {exc}\n')
+        return
 
     if args.command == 'watch':
         symbols = tuple(dict.fromkeys(s.strip().upper() for s in args.symbols.split(',') if s.strip()))
