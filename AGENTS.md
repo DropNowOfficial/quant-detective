@@ -19,7 +19,7 @@ Durable rules for humans and agents. **Repo text beats chat memory.**
 4. **Deterministic math/invariants live in code** — not in free-form prose alone.
 5. **Vector cannot certify itself** — Atlas integrates only after validation; Skeptic may reject.
 6. **No raw market datasets in Git** — manifests/hashes only; caches stay out of the repo.
-7. **No trading actions** — research system only; never place, route, or automate trades.
+7. **No trading actions** — market analysis and research only; never place, route, or automate trades.
 8. **REQUIRED / REPORTED / EXPECTED stay separate** — screens (e.g. 10% hurdle) are not forecasts.
 9. **Time Machine anti-leakage** — PREDICT → LOCK → REVEAL → SCORE; no look-ahead.
 

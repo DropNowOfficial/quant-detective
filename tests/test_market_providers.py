@@ -299,3 +299,16 @@ def test_invalid_request_rejected_before_network(market, interval, count):
     with pytest.raises(ValueError):
         get(market, "SOLUSDT", interval, count, fetch)
     assert not fetch.calls
+
+
+def test_cn_benchmark_has_dedicated_etf_identity_and_cash_stock_api_stays_strict():
+    from market_data.providers import get_benchmark, _yahoo_symbol, ProviderError
+    stamp=1790994600  # 2026-10-03 is a weekend; identity tested even if session filtering removes rows.
+    def response(kind='ETF',symbol='510300.SS'):
+        return {'chart':{'error':None,'result':[{'meta':{'symbol':symbol,'instrumentType':kind,'exchangeName':'SHH','exchangeTimezoneName':'Asia/Shanghai','currency':'CNY'},'timestamp':[stamp], 'indicators':{'quote':[{'open':[2],'high':[3],'low':[1],'close':[2],'volume':[10]}]}}]}}
+    fetch=Fetch(response())
+    out=get_benchmark('cn_equity','1m',1,fetch,now_ms=stamp*1000+60000)
+    assert out['ok'] and out['instrument_role']=='ETF_BENCHMARK'
+    assert '510300.SS' in fetch.calls[0][0]
+    assert not get_benchmark('cn_equity','1m',1,Fetch(response('EQUITY')),now_ms=stamp*1000+60000)['ok']
+    with pytest.raises(ProviderError):_yahoo_symbol('510300','cn_equity')
