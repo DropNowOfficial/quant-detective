@@ -200,9 +200,11 @@ class HybridDaemon:
             "ibkr_auth": self.auth,
             "contracts_resolved": len(self.contracts),
             "contract_errors": self.contract_errors,
-            "coverage_scope": COVERAGE_IBKR_DYNAMIC if self.discovery_report else COVERAGE_CORE_FALLBACK,
-            "market_wide_discovery": bool(self.discovery_report),
+            "coverage_scope": COVERAGE_IBKR_DYNAMIC if discovery_current else COVERAGE_CORE_FALLBACK,
+            "market_wide_discovery": discovery_current,
             "discovery_exhaustive": False,
+            "discovery_current": discovery_current,
+            "discovery_stale": bool(self.discovery_report) and not discovery_current,
             "discovery": self.discovery_report,
             "discovery_error": self.discovery_error,
             "discovery_candidates": list(self.discovery_candidates),
@@ -241,6 +243,7 @@ class HybridDaemon:
         quotes = {}
         mode = "DEGRADED_PUBLIC_ONLY"
         error = None
+        discovery_current = False
         try:
             self._refresh_auth()
             if not self.auth.get("authenticated"):
@@ -252,6 +255,7 @@ class HybridDaemon:
                 self.discovery = IBKRMarketDiscovery(self.gateway)
             try:
                 self.discovery_report = self.discovery.tick()
+                discovery_current = not bool(self.discovery_report.get("paced"))
                 candidates = self.discovery.candidates(limit=self.discovery_structure_limit)
                 self.discovery_candidates = tuple({
                     "symbol": item["symbol"],
