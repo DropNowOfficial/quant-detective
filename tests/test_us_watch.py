@@ -25,6 +25,7 @@ def intra(**changes):
         "d5_atr": 0.1,
         "two_completed_5m_above_vwap_and_ma5": False,
         "same_time_rvol": 1.0,
+        "price_vs_vwap_atr": 0.02,
     }
     out.update(changes)
     return out
@@ -48,9 +49,20 @@ def test_entry_confirmed_requires_two_completed_bars_above_vwap_and_ma5():
     assert result["state"] == "ENTRY_CONFIRMED"
 
 
-def test_missing_rvol_blocks_entry_confirmation():
+def test_missing_rvol_blocks_entry_confirmation_and_armed_state():
     result = classify(daily(), intra(d5_atr=0.05, two_completed_5m_above_vwap_and_ma5=True, same_time_rvol=None))
-    assert result["state"] == "ENTRY_ARMED"
+    assert result["state"] == "WATCH"
+
+
+def test_faded_early_leader_is_not_still_called_hot():
+    result = classify(daily(), intra(change_pct=-1.2, premarket_change_pct=1.5, move_from_rth_open_pct=-1.3, d5_atr=0.8))
+    assert result["leader_detected"]
+    assert result["state"] == "LEADER_FADED"
+
+
+def test_armed_requires_near_vwap_and_volume_context():
+    result = classify(daily(), intra(d5_atr=0.15, price_vs_vwap_atr=-0.25, same_time_rvol=1.2))
+    assert result["state"] != "ENTRY_ARMED"
 
 
 def test_premarket_move_can_trigger_leader_even_before_rth():
