@@ -1,41 +1,28 @@
 name: hosted-core-watch-fallback
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'market_data/us_watch.py'
-      - 'market_data/github_alerts.py'
-      - 'market_data/transport.py'
-      - '.github/workflows/market-watch*.yml'
   schedule:
-    # Public-data redundancy only. The VPS/broker discovery path is the primary runtime.
-    # The runner loops every 60s internally; schedule itself is only the handoff.
-    - cron: '7 4 * * 1-5'
+    # Redundant public-data fallback. VPS/broker runtime is primary.
+    # Five-minute short jobs avoid a single missed long-job handoff creating
+    # an hours-long blind spot. Offset from minute 0 to reduce peak-load risk.
+    - cron: '2-57/5 4-19 * * 1-5'
       timezone: 'America/New_York'
-    - cron: '57 9 * * 1-5'
-      timezone: 'America/New_York'
-    - cron: '47 15 * * 1-5'
+    - cron: '2 20 * * 1-5'
       timezone: 'America/New_York'
   workflow_dispatch:
-    inputs:
-      duration_minutes:
-        description: 'How long to keep the watcher alive (0 = one scan when manually dispatched)'
-        required: false
-        default: '0'
-      poll_seconds:
-        description: 'Polling cadence in seconds'
-        required: false
-        default: '60'
 
 permissions:
   contents: read
   issues: write
 
+concurrency:
+  group: hosted-core-watch-fallback
+  cancel-in-progress: false
+
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 8
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,43 +36,12 @@ jobs:
       - name: Sync locked environment
         run: uv sync --frozen
 
-      - name: Resolve handoff duration
-        id: window
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          SCHEDULE_EXPR: ${{ github.event.schedule }}
-          MANUAL_DURATION: ${{ inputs.duration_minutes }}
-          MANUAL_POLL: ${{ inputs.poll_seconds }}
-        run: |
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            echo "duration=${MANUAL_DURATION:-0}" >> "$GITHUB_OUTPUT"
-            echo "poll=${MANUAL_POLL:-60}" >> "$GITHUB_OUTPUT"
-          else
-            case "$SCHEDULE_EXPR" in
-              "7 4 * * 1-5") duration=355 ;;
-              "57 9 * * 1-5") duration=355 ;;
-              "47 15 * * 1-5") duration=258 ;;
-              *) duration=5 ;;
-            esac
-            echo "duration=$duration" >> "$GITHUB_OUTPUT"
-            echo "poll=60" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Headless continuous market watch
+      - name: One-shot core fallback scan
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           QD_WATCH_OUTPUT: market-watch.json
         run: |
-          args=(
-            --github-alerts
-            --poll-seconds "${{ steps.window.outputs.poll }}"
-            --duration-minutes "${{ steps.window.outputs.duration }}"
-          )
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ steps.window.outputs.duration }}" = "0" ]; then
-            args+=(--once)
-          fi
-          uv run python -m market_data.cli watch "${args[@]}"
+          uv run python -m market_data.cli watch --once --github-alerts
 
       - name: Write compact run summary
         if: always()
@@ -96,14 +52,23 @@ jobs:
           import json, os
           data=json.load(open("market-watch.json", encoding="utf-8"))
           rows=[r for r in data.get("rows",[]) if r.get("state") not in {"WATCH","EXTENDED"}]
-          out=["## Quant Detective Market Watch", "", f"Generated: {data.get('generated_at_et')}"]
+          regime=data.get("market_regime") or {}
+          out=[
+              "## Quant Detective Hosted Fallback",
+              "",
+              f"Generated: {data.get('generated_at_et')}",
+              f"Coverage: {data.get('coverage_scope')} / market_wide={data.get('market_wide')}",
+              f"Decision mode: {data.get('decision_mode')}",
+              "",
+          ]
           for r in rows[:25]:
               i=r.get("intraday",{})
               out.append(
                   f"- **{r['symbol']}** {r.get('state')} | "
                   f"{i.get('change_pct')}% | d5={i.get('d5_atr')} ATR | "
-                  f"vs QQQ={r.get('relative_change_vs_qqq_pp')}pp | {r.get('reason')}"
+                  f"vs SPY={r.get('relative_change_vs_spy_pp')}pp | {r.get('reason')}"
               )
+          out += ["", "Market regime: " + json.dumps(regime, ensure_ascii=False)]
           with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as f:
               f.write("\n".join(out)+"\n")
           PY
