@@ -13,7 +13,8 @@ Market leadership and entry eligibility are separate.
 
 - `LEADER_HOT_NO_CHASE`: a material move is happening, but price is too far above completed-day MA5.
 - `LEADER_WATCH`: a material move is happening, but the entry gate is not complete.
-- `ENTRY_ARMED`: completed-day trend and MA5/ATR geometry are valid; intraday confirmation is incomplete.
+- `LEADER_FADED`: a premarket/gap/early leader signal existed, but current RTH price action has materially reversed; this is a caution event, not a hot-leader label.
+- `ENTRY_ARMED`: completed-day trend and MA5/ATR geometry are valid, price is no more than 0.10 ATR below RTH VWAP, and same-time RVOL is at least 0.6; full confirmation is incomplete.
 - `ENTRY_CONFIRMED`: completed-day trend, MA5/ATR geometry, two completed 5-minute closes above RTH VWAP + MA5, and same-time historical RVOL >= 0.8.
 - `EXTENDED` / `WATCH`: no alert-grade transition.
 
