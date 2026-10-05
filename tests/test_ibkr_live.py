@@ -209,3 +209,17 @@ def test_stale_dynamic_contracts_are_pruned(tmp_path):
     d.cycle()
     assert "XYZ" not in d.contracts
     assert "ABC" in d.contracts
+
+
+def test_halted_quote_cannot_drive_realtime_state():
+    from market_data.ibkr_live import _realtime_quote
+    assert not _realtime_quote({
+        "last":115.0,
+        "last_status":"HALTED",
+        "market_data_availability":"RpB",
+    })
+    assert not _realtime_quote({
+        "last":115.0,
+        "last_status":"PREVIOUS_CLOSE",
+        "market_data_availability":"RpB",
+    })
