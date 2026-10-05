@@ -364,7 +364,9 @@ class HybridDaemon:
             "discovery_exhaustive": False,
             "discovery": self.discovery_report,
             "discovery_error": self.discovery_error,
+            "discovery_candidates": list(self.discovery_candidates),
             "discovery_symbol_count": len(self.discovery_symbols),
+            "discovery_structure_limit": self.discovery_structure_limit,
             "structural_symbol_count": len(self.structural),
             "capability_gaps": [
                 "market_breadth_not_integrated",
