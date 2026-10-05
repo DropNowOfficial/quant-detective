@@ -18,7 +18,7 @@ import uuid
 from .ibkr_cpg import ClientPortalGateway
 from .market_discovery import IBKRMarketDiscovery
 from .us_watch import scan_once
-from .universe import CORE_FALLBACK_SYMBOLS, COVERAGE_CORE_FALLBACK, COVERAGE_IBKR_DYNAMIC, LIVE_CAPABILITY_GAPS
+from .universe import CORE_FALLBACK_SYMBOLS, COVERAGE_CORE_FALLBACK, COVERAGE_IBKR_DYNAMIC, LIVE_CAPABILITY_GAPS, IBKR_ALLOWED_STOCK_TYPES
 
 
 def _finite(v):
@@ -209,6 +209,7 @@ class HybridDaemon:
             "discovery_error": self.discovery_error,
             "discovery_candidates": list(self.discovery_candidates),
             "discovery_symbol_count": len(self.discovery_symbols),
+            "discovery_raw_symbol_count": len(raw_discovery_symbols),
             "discovery_structure_limit": self.discovery_structure_limit,
             "structural_symbol_count": len(self.structural),
             "capability_gaps": list(LIVE_CAPABILITY_GAPS),
@@ -244,6 +245,7 @@ class HybridDaemon:
         mode = "DEGRADED_PUBLIC_ONLY"
         error = None
         discovery_current = False
+        raw_discovery_symbols = self.discovery_symbols
         try:
             self._refresh_auth()
             if not self.auth.get("authenticated"):
@@ -270,11 +272,11 @@ class HybridDaemon:
                     "last_seen": item.get("last_seen"),
                     "structural_enriched": item["symbol"] in self.structural,
                 } for item in candidates)
-                self.discovery_symbols = tuple(
+                raw_discovery_symbols = tuple(
                     item["symbol"] for item in candidates if item["symbol"] not in self.symbols
                 )
                 base_symbols = set((*self.symbols, "SPY", "QQQ"))
-                active_dynamic = set(self.discovery_symbols)
+                active_dynamic = set(raw_discovery_symbols)
                 self.contracts = {
                     symbol: contract for symbol, contract in self.contracts.items()
                     if symbol in base_symbols or symbol in active_dynamic
@@ -291,6 +293,16 @@ class HybridDaemon:
             quotes = self.gateway.snapshots(self.contracts)
             if not quotes:
                 raise RuntimeError("IBKR snapshot returned no resolved quotes")
+            eligible_dynamic = tuple(
+                symbol for symbol in raw_discovery_symbols
+                if (quotes.get(symbol) or {}).get("stock_type") in IBKR_ALLOWED_STOCK_TYPES
+            )
+            self.discovery_symbols = eligible_dynamic
+            self.discovery_candidates = tuple({
+                **item,
+                "stock_type": (quotes.get(item["symbol"]) or {}).get("stock_type"),
+                "eligible_stock_type": (quotes.get(item["symbol"]) or {}).get("stock_type") in IBKR_ALLOWED_STOCK_TYPES,
+            } for item in self.discovery_candidates)
             realtime_count = sum(_realtime_quote(q) for q in quotes.values())
             if realtime_count == 0:
                 raise RuntimeError("IBKR returned no realtime-subscribed quotes (field 6509 is not Realtime)")
