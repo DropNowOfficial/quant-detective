@@ -55,3 +55,16 @@ def test_adapter_blocks_unknown_endpoint():
     gw=ClientPortalGateway(opener=opener_for([]))
     with pytest.raises(ValueError):
         gw._request("POST","/iserver/account/orders")
+
+
+def test_allowed_paths_contain_no_order_routes():
+    from market_data.ibkr_cpg import ALLOWED_PATHS
+    assert ALLOWED_PATHS
+    assert all("order" not in path.lower() for path in ALLOWED_PATHS)
+    assert set(ALLOWED_PATHS) == {
+        "/iserver/auth/status",
+        "/tickle",
+        "/iserver/accounts",
+        "/iserver/secdef/search",
+        "/iserver/marketdata/snapshot",
+    }
