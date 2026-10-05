@@ -29,6 +29,7 @@ def intra(**changes):
         "open_gap_atr": 0.1,
         "price_vs_vwap_atr": 0.1,
         "rth_completed_bars": 20,
+        "data_stale": False,
     }
     out.update(changes)
     return out
@@ -172,3 +173,21 @@ def test_vwap_extension_blocks_entry_confirmation():
     )
     assert result["state"] == "ENTRY_ARMED"
     assert "vwap_distance_outside_confirmation_band" in result["entry_blockers"]
+
+
+def test_stale_public_data_blocks_all_alert_states():
+    result = classify(
+        daily(),
+        intra(
+            data_stale=True,
+            change_pct=8.0,
+            d5_atr=0.1,
+            two_completed_5m_above_vwap_and_ma5=True,
+            same_time_rvol=3.0,
+        ),
+        broad_market_change=1.0,
+        qqq_change=1.5,
+    )
+    assert result["state"] == "STALE"
+    assert not result["leader_detected"]
+    assert "stale_public_market_data" in result["entry_blockers"]
