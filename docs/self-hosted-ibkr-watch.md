@@ -87,3 +87,31 @@ holds the completed structural VWAP/MA5 geometry.
 
 This preserves the rule: faster price data improves detection latency; it does
 not weaken the entry gate.
+
+
+## Automatic VPS deployment
+
+For the current DigitalOcean host, the recommended deployment path does not
+require a GitHub self-hosted runner.
+
+One-time install:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DropNowOfficial/quant-detective/main/deploy/install-autoupdate.sh | bash
+```
+
+This installs a root-owned systemd timer. Every five minutes it checks the exact
+SHA of `main`. If the SHA changed, it:
+
+1. clones the new commit into a separate immutable release directory;
+2. creates its own virtual environment;
+3. installs the package;
+4. runs the IBKR/watcher regression tests;
+5. switches `/opt/quant-detective/current` atomically;
+6. restarts the watcher;
+7. waits for a fresh non-BOOTSTRAPPING health state;
+8. rolls the symlink back to the prior release if health verification fails.
+
+The updater never needs a global Git `safe.directory=*` exception. Existing
+release repositories are queried as the `quantdetective` owner instead of
+running Git as root against another user's repository.
