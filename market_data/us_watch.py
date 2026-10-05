@@ -331,16 +331,20 @@ def classify(daily, intra, broad_market_change=None, qqq_change=None):
     gap = intra.get("open_gap_pct")
     from_open = intra.get("move_from_rth_open_pct")
     leader_reasons = []
+    event_context = []
     rs_spy = chg - broad_market_change if _finite(chg) and _finite(broad_market_change) else None
     rs_qqq = chg - qqq_change if _finite(chg) and _finite(qqq_change) else None
+    session = intra.get("current_session")
+    if _finite(pre) and pre >= 0.8:
+        event_context.append(f"premarket +{pre:.2f}%")
+        if session == "PRE":
+            leader_reasons.append(f"premarket +{pre:.2f}%")
+    if _finite(gap) and gap >= 0.8:
+        event_context.append(f"open gap +{gap:.2f}%")
     if _finite(chg) and chg >= 1.0:
         leader_reasons.append(f"day +{chg:.2f}%")
-    if _finite(rs_spy) and rs_spy >= 0.5:
+    if _finite(rs_spy) and rs_spy >= 0.5 and _finite(chg) and chg > 0:
         leader_reasons.append(f"vs SPY +{rs_spy:.2f}pp")
-    if _finite(pre) and pre >= 0.8:
-        leader_reasons.append(f"premarket +{pre:.2f}%")
-    if _finite(gap) and gap >= 0.8:
-        leader_reasons.append(f"open gap +{gap:.2f}%")
     if _finite(from_open) and from_open >= 1.0:
         leader_reasons.append(f"RTH from open +{from_open:.2f}%")
     leader = bool(leader_reasons)
@@ -376,6 +380,7 @@ def classify(daily, intra, broad_market_change=None, qqq_change=None):
         "reason": reason,
         "leader_detected": leader,
         "leader_reasons": leader_reasons,
+        "event_context": event_context,
         "daily_trend_gate": trend_ok,
         "standard_entry_geometry": standard_geometry,
         "observation_geometry": observation_geometry,
@@ -466,6 +471,7 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
             "state": r["state"],
             "reason": r["reason"],
             "leader_reasons": r.get("leader_reasons", []),
+            "event_context": r.get("event_context", []),
             "current_price": r["intraday"]["current_price"],
             "change_pct": r["intraday"]["change_pct"],
             "premarket_change_pct": r["intraday"]["premarket_change_pct"],
