@@ -22,10 +22,10 @@ jobs:
           python-version: "3.13"
           enable-cache: false
       - run: uv sync --frozen
-      - name: Scan NVDA TSM MSFT with current public data
+      - name: Scan cross-sector public sample with current data
         run: |
           uv run python -m market_data.cli watch --once \
-            --symbols "NVDA,TSM,MSFT" \
+            --symbols "NVDA,JPM,XOM,LLY,WMT,CAT,NEE,PLD,BA,UNH,COST,GS" \
             --output market-watch-smoke.json
       - name: Validate and summarize
         shell: bash
@@ -35,9 +35,15 @@ jobs:
           data=json.load(open("market-watch-smoke.json", encoding="utf-8"))
           rows=data.get("rows", [])
           ok=[r for r in rows if r.get("status") == "OK"]
-          if not ok:
-              raise SystemExit("all public-data smoke symbols failed")
-          lines=["## Live smoke: NVDA / TSM / MSFT", "", f"Generated: {data.get('generated_at_et')}"]
+          if len(ok) < 8:
+              raise SystemExit(f"public-data smoke coverage too low: {len(ok)}/12")
+          if data.get("market_wide") is not False or data.get("coverage_scope") != "CORE_FALLBACK":
+              raise SystemExit("public fallback coverage metadata is dishonest")
+          context=data.get("market_context") or {}
+          fresh=[v for v in context.values() if v.get("ok") and not v.get("stale")]
+          if len(fresh) < 3:
+              raise SystemExit("broad market context freshness too low")
+          lines=["## Live smoke: cross-sector public sample", "", f"Generated: {data.get('generated_at_et')}"]
           for r in rows:
               i=r.get("intraday", {})
               lines.append(
@@ -47,7 +53,7 @@ jobs:
                   f"RVOL={i.get('same_time_rvol')}"
               )
           lines.append("")
-          lines.append("Overnight proxies: " + json.dumps(data.get("market_context", {}), ensure_ascii=False))
+          lines.append("Market context: " + json.dumps(data.get("market_context", {}), ensure_ascii=False))
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
               f.write("\n".join(lines)+"\n")
           print("\n".join(lines))
