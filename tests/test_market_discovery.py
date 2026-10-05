@@ -61,6 +61,9 @@ def test_candidates_rank_multi_scan_hits_ahead():
     rows=d.candidates()
     assert rows[0]["symbol"]=="BBB"
     assert len(rows[0]["scan_hits"])==2
+    assert rows[0]["scan_hit_count"]==2
+    assert rows[0]["multi_scan"] is True
+    assert rows[0]["best_rank"]==0
 
 
 def test_market_context_etfs_are_not_discovery_candidates():
