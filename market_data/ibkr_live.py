@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import tempfile
 import time
+import uuid
 
 from .ibkr_cpg import ClientPortalGateway
 from .us_watch import DEFAULT_SYMBOLS, scan_once
@@ -139,8 +140,20 @@ class HybridDaemon:
         self.last_tickle = 0.0
         self.last_auth = 0.0
         self.auth = {"authenticated": False, "connected": False}
+        self.run_id = uuid.uuid4().hex
         self.previous_states = {}
+        try:
+            prior = json.loads(Path(self.state_path).read_text(encoding="utf-8"))
+            self.previous_states = {
+                row.get("symbol"): row.get("state")
+                for row in prior.get("rows", [])
+                if row.get("symbol") and row.get("state")
+            }
+        except Exception:
+            pass
         self.started_at = datetime.now(timezone.utc).isoformat()
+        self.last_log_signature = None
+        self.last_log_at = 0.0
 
     def initialize(self):
         try:
@@ -155,9 +168,11 @@ class HybridDaemon:
                 "connected": False,
                 "initialization_error": f"{type(exc).__name__}: {str(exc)[:240]}",
             }
+        self.last_auth = self.clock()
         _atomic_json(self.state_path, {
             "generated_at_utc": datetime.now(timezone.utc).isoformat(),
             "started_at_utc": self.started_at,
+            "run_id": self.run_id,
             "mode": "BOOTSTRAPPING",
             "phase": "initial_structure_scan",
             "ibkr_auth": self.auth,
@@ -182,8 +197,8 @@ class HybridDaemon:
     def _refresh_auth(self):
         now = self.clock()
         if now - self.last_auth >= 30:
-            self.auth = self.gateway.auth_status()
             self.last_auth = now
+            self.auth = self.gateway.auth_status()
         if self.auth.get("authenticated") and now - self.last_tickle >= 45:
             self.gateway.tickle()
             self.last_tickle = now
@@ -270,6 +285,7 @@ class HybridDaemon:
         state = {
             "generated_at_utc": now_iso,
             "started_at_utc": self.started_at,
+            "run_id": self.run_id,
             "mode": mode,
             "ibkr_error": error,
             "ibkr_auth": self.auth,
@@ -291,17 +307,28 @@ class HybridDaemon:
             state = self.cycle()
             compact = {
                 "generated_at_utc": state["generated_at_utc"],
+                "run_id": state["run_id"],
                 "mode": state["mode"],
                 "ibkr_error": state["ibkr_error"],
                 "material": [
                     {"symbol": r["symbol"], "state": r.get("state"), "price": r.get("price"),
-                     "change_pct": r.get("change_pct"), "d5_atr": r.get("d5_atr")}
+                     "change_pct": r.get("change_pct", r.get("public_change_pct")),
+                     "d5_atr": r.get("d5_atr")}
                     for r in state["rows"] if r.get("state") in {
                         "ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH"
                     }
                 ],
             }
-            print(json.dumps(compact, ensure_ascii=False, allow_nan=False), flush=True)
+            signature = (
+                state["mode"],
+                tuple((x["symbol"], x["state"]) for x in compact["material"]),
+                bool(state["ibkr_error"]),
+            )
+            now = self.clock()
+            if signature != self.last_log_signature or now - self.last_log_at >= 60:
+                print(json.dumps(compact, ensure_ascii=False, allow_nan=False), flush=True)
+                self.last_log_signature = signature
+                self.last_log_at = now
             if once:
                 return state
             elapsed = self.clock() - started
