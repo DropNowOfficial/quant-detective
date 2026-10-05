@@ -145,10 +145,17 @@ class IBKRMarketDiscovery:
     def candidates(self, limit=60):
         now = self.clock()
         self._prune(now)
-        rows = list(self._pool.values())
+        rows = []
+        for item in self._pool.values():
+            copy = dict(item)
+            hits = copy.get("scan_hits", {})
+            copy["scan_hit_count"] = len(hits)
+            copy["best_rank"] = min((hit.get("rank", 9999) for hit in hits.values()), default=9999)
+            copy["multi_scan"] = copy["scan_hit_count"] >= 2
+            rows.append(copy)
         rows.sort(key=lambda item: (
-            -len(item.get("scan_hits", {})),
-            min((hit.get("rank", 9999) for hit in item.get("scan_hits", {}).values()), default=9999),
+            -item["scan_hit_count"],
+            item["best_rank"],
             -item.get("last_seen", 0.0),
             item["symbol"],
         ))
