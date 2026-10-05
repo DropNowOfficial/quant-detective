@@ -39,7 +39,7 @@ def test_auth_and_snapshot_are_read_only():
     opener=opener_for([
         ("/iserver/auth/status", {"authenticated":True,"connected":True}),
         ("/iserver/accounts", {"accounts":["U1"]}),
-        ("/iserver/marketdata/snapshot", [{"conid":1,"31":"123.45","83":"1.20","84":"123.4","86":"123.5","7762":"1.2M"}]),
+        ("/iserver/marketdata/snapshot", [{"conid":1,"31":"123.45","83":"1.20%","84":"123.4","86":"123.5","7762":"1.2M"}]),
     ])
     gw=ClientPortalGateway(opener=opener, sleeper=lambda _:None)
     assert gw.auth_status()["authenticated"]
