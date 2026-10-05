@@ -1,4 +1,5 @@
 name: continuous-market-watch
+# A main-branch watcher change also triggers an immediate production one-shot scan.
 
 on:
   push:
