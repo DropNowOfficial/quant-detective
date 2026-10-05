@@ -285,6 +285,13 @@ def run_once(
     native = native_runs[0] if native_runs else None
     result["native_schedule"] = native
     native_phase = _run_phase(native)
+    native_age = _age_seconds(native, now)
+    result["native_result_age_seconds"] = native_age
+    result["native_result_fresh"] = bool(
+        native_phase == "SUCCESS"
+        and native_age is not None
+        and -60 <= native_age <= native_success_fresh_seconds
+    )
 
     # A completed successful scan is the only native state called healthy.
     if _recent_success(native, now, native_success_fresh_seconds):
@@ -315,6 +322,13 @@ def run_once(
     result["workflow_dispatch"] = fallback
     result["last_api_success_at_utc"] = now.isoformat()
     fallback_phase = _run_phase(fallback)
+    fallback_age = _age_seconds(fallback, now)
+    result["fallback_result_age_seconds"] = fallback_age
+    result["fallback_result_fresh"] = bool(
+        fallback_phase == "SUCCESS"
+        and fallback_age is not None
+        and -60 <= fallback_age <= fallback_success_fresh_seconds
+    )
 
     if fallback_phase in {s.upper() for s in ACTIVE_STATUSES}:
         result["status"] = f"FALLBACK_RUN_{fallback_phase}"
