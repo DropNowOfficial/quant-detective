@@ -55,6 +55,7 @@ Therefore the old runtime must not be described as a whole-market real-time scan
 - True market breadth: advance/decline, new highs/lows, percent above moving averages.
 - Sector/industry membership and percentile relative strength.
 - News-first market discovery.
+- True overnight/24h stock-session feed; futures context is not a substitute.
 - Halt/resume, block-trade, unusual options and sub-5-minute spike event feeds.
 - A permanently authenticated professional realtime provider on the VPS.
 - Certified security-class filtering for scanner results (ETF/warrant/special classes).
