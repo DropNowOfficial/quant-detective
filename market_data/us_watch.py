@@ -34,6 +34,8 @@ OUTPUT_ENV = "QD_WATCH_OUTPUT"
 _DAILY_CACHE = {}
 _NEWS_CACHE = {}
 _VOLUME_PROFILE_CACHE = {}
+# Operational floor only; not a backtest-certified alpha threshold.
+STANDARD_RVOL_FLOOR = 0.8
 
 
 def _finite(v):
@@ -302,8 +304,10 @@ def _intraday_metrics(rows, daily, now, history_rows=None):
         "premarket_change_pct": _pct(pre_last, prior),
         "rth_open": rth_open,
         "open_gap_pct": _pct(rth_open, prior),
+        "open_gap_atr": ((rth_open - prior) / daily["atr5"]) if _finite(rth_open) else None,
         "rth_vwap_approx": current_vwap,
         "price_vs_vwap_pct": _pct(current, current_vwap),
+        "price_vs_vwap_atr": ((current - current_vwap) / daily["atr5"]) if _finite(current_vwap) else None,
         "two_completed_5m_above_vwap_and_ma5": two_above,
         "rth_completed_bars": len(completed_rth),
         "premarket_bars": len(pre),
@@ -352,13 +356,39 @@ def classify(daily, intra, broad_market_change=None, qqq_change=None):
     standard_geometry = -0.10 <= d5 <= 0.20
     observation_geometry = -0.35 <= d5 <= 0.40
     rvol = intra.get("same_time_rvol")
-    confirmed = (trend_ok and standard_geometry
-                 and intra.get("two_completed_5m_above_vwap_and_ma5", False)
-                 and _finite(rvol) and rvol >= 0.8)
+    gap_atr = intra.get("open_gap_atr")
+    gap_abs = abs(gap_atr) if _finite(gap_atr) else None
+    if gap_abs is None:
+        gap_regime = "NO_RTH_GAP"
+    elif gap_abs <= 0.50:
+        gap_regime = "NORMAL"
+    elif gap_abs <= 0.80:
+        gap_regime = "CAUTION"
+    else:
+        gap_regime = "SHOCK"
+    vwap_atr = intra.get("price_vs_vwap_atr")
+    entry_blockers = []
+    if not intra.get("two_completed_5m_above_vwap_and_ma5", False):
+        entry_blockers.append("two_completed_5m_hold_missing")
+    if not _finite(rvol):
+        entry_blockers.append("same_time_rvol_unavailable")
+    elif rvol < STANDARD_RVOL_FLOOR:
+        entry_blockers.append("same_time_rvol_below_operational_floor")
+    if not _finite(vwap_atr) or not 0 <= vwap_atr <= 0.25:
+        entry_blockers.append("vwap_distance_outside_confirmation_band")
+    if gap_regime in {"CAUTION", "SHOCK"}:
+        # HARNESS requires a stronger reclaim/retest for larger gaps. The
+        # current public 5m path does not yet prove that retest, so do not
+        # silently promote these cases.
+        entry_blockers.append("gap_requires_reclaim_retest")
+    if gap_regime == "SHOCK" and intra.get("rth_completed_bars", 0) < 12:
+        entry_blockers.append("shock_gap_first_60m")
+
+    confirmed = trend_ok and standard_geometry and not entry_blockers
 
     if confirmed:
         state = "ENTRY_CONFIRMED"
-        reason = "daily trend + MA5/ATR geometry + two completed 5m closes above session VWAP/MA5 + same-time RVOL >= 0.8"
+        reason = "completed-day trend + MA5/ATR geometry + completed 5m VWAP hold + usable same-time RVOL + non-extended VWAP distance"
     elif trend_ok and observation_geometry:
         state = "ENTRY_ARMED"
         reason = "daily trend and MA5/ATR geometry valid; VWAP/5m or same-time RVOL confirmation incomplete"
@@ -384,6 +414,8 @@ def classify(daily, intra, broad_market_change=None, qqq_change=None):
         "daily_trend_gate": trend_ok,
         "standard_entry_geometry": standard_geometry,
         "observation_geometry": observation_geometry,
+        "gap_regime": gap_regime,
+        "entry_blockers": entry_blockers,
         "relative_change_vs_spy_pp": rs_spy,
         "relative_change_vs_qqq_pp": rs_qqq,
     }
