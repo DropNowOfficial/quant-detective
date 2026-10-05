@@ -35,6 +35,8 @@ _NEWS_CACHE = {}
 _VOLUME_PROFILE_CACHE = {}
 # Operational floor only; not a backtest-certified alpha threshold.
 STANDARD_RVOL_FLOOR = 0.8
+# Two 5-minute intervals. Operational freshness guard, not an exchange SLA.
+PUBLIC_5M_STALE_AFTER_SECONDS = 600
 
 
 def _finite(v):
@@ -117,6 +119,11 @@ def _market_proxy(fetcher, symbol, now):
         last = rows[-1]
         prior = next((float(meta[k]) for k in ("regularMarketPreviousClose", "chartPreviousClose", "previousClose")
                       if _finite(meta.get(k))), None)
+        age_seconds = max(0.0, now.timestamp() - last["t"])
+        local = now.astimezone(ET)
+        minute = local.hour * 60 + local.minute
+        active_window = local.weekday() < 5 and 240 <= minute < 1200
+        stale = active_window and age_seconds > PUBLIC_5M_STALE_AFTER_SECONDS
         return {
             "ok": True,
             "symbol": symbol,
@@ -125,8 +132,10 @@ def _market_proxy(fetcher, symbol, now):
             "change_pct": _pct(last["close"], prior),
             "prior_reference": prior,
             "last_bar_utc": datetime.fromtimestamp(last["t"], timezone.utc).isoformat(),
+            "bar_age_seconds": age_seconds,
+            "stale": stale,
             "known_at": receipt.get("received_at_utc"),
-            "role": "OVERNIGHT_REGIME_PROXY",
+            "role": "MARKET_CONTEXT_PROXY",
         }
     except Exception as exc:
         return {"ok": False, "symbol": symbol, "role": "OVERNIGHT_REGIME_PROXY",
@@ -294,10 +303,17 @@ def _intraday_metrics(rows, daily, now, history_rows=None):
     pre_last = pre[-1]["close"] if pre else None
     rth_open = rth[0]["open"] if rth else None
     same_time_rvol, rvol_samples = _same_time_rvol(today, history_rows or [], now)
+    bar_age_seconds = max(0.0, now.timestamp() - last["t"])
+    local_now = now.astimezone(ET)
+    local_minute = local_now.hour * 60 + local_now.minute
+    active_window = local_now.weekday() < 5 and 240 <= local_minute < 1200
+    data_stale = active_window and bar_age_seconds > PUBLIC_5M_STALE_AFTER_SECONDS
     result = {
         "current_price": current,
         "current_session": last["session"],
         "current_bar_time_utc": datetime.fromtimestamp(last["t"], timezone.utc).isoformat(),
+        "current_bar_age_seconds": bar_age_seconds,
+        "data_stale": data_stale,
         "change_pct": _pct(current, prior),
         "premarket_last": pre_last,
         "premarket_change_pct": _pct(pre_last, prior),
@@ -327,6 +343,21 @@ def _intraday_metrics(rows, daily, now, history_rows=None):
 
 
 def classify(daily, intra, broad_market_change=None, qqq_change=None):
+    if intra.get("data_stale"):
+        return {
+            "state": "STALE",
+            "reason": "public 5m observation is stale during an active market window",
+            "leader_detected": False,
+            "leader_reasons": [],
+            "event_context": [],
+            "daily_trend_gate": False,
+            "standard_entry_geometry": False,
+            "observation_geometry": False,
+            "gap_regime": "UNRATED",
+            "entry_blockers": ["stale_public_market_data"],
+            "relative_change_vs_spy_pp": None,
+            "relative_change_vs_qqq_pp": None,
+        }
     trend_ok = daily["ma5_slope_1d"] > 0 and daily["ma5_3point_slope"] >= 0
     d5 = intra["d5_atr"]
     chg = intra.get("change_pct")
@@ -459,8 +490,10 @@ def scan_once(symbols=CORE_FALLBACK_SYMBOLS, fetcher=fetch, now=None, workers=8)
     now = now or datetime.now(timezone.utc)
     symbols = tuple(dict.fromkeys(s.upper() for s in symbols))
     market_context = _market_context(fetcher, now)
-    broad_market_change = (market_context.get("SPY") or {}).get("change_pct")
-    qqq_change = (market_context.get("QQQ") or {}).get("change_pct")
+    spy_context = market_context.get("SPY") or {}
+    qqq_context = market_context.get("QQQ") or {}
+    broad_market_change = spy_context.get("change_pct") if spy_context.get("ok") and not spy_context.get("stale") else None
+    qqq_change = qqq_context.get("change_pct") if qqq_context.get("ok") and not qqq_context.get("stale") else None
     rows = []
     with ThreadPoolExecutor(max_workers=max(1, min(workers, 12)), thread_name_prefix="qd-us-watch") as pool:
         futures = {pool.submit(_scan_symbol, s, fetcher, now, broad_market_change, qqq_change): s for s in symbols}
@@ -472,7 +505,7 @@ def scan_once(symbols=CORE_FALLBACK_SYMBOLS, fetcher=fetch, now=None, workers=8)
                 rows.append({"symbol": symbol, "status": "ERROR", "error": f"{type(exc).__name__}: {str(exc)[:240]}"})
     rows.sort(key=lambda r: (
         {"ENTRY_CONFIRMED": 0, "ENTRY_ARMED": 1, "LEADER_HOT_NO_CHASE": 2, "LEADER_WATCH": 3,
-         "EXTENDED": 4, "WATCH": 5}.get(r.get("state"), 9),
+         "EXTENDED": 4, "WATCH": 5, "STALE": 8}.get(r.get("state"), 9),
         -(r.get("intraday", {}).get("change_pct") or -999),
         r["symbol"],
     ))
