@@ -1,11 +1,8 @@
 # Continuous Market Watch
 
-This layer fixes the old LIVE screener's two structural blind spots:
+[System map / 中文入口](system-map.zh-CN.md)
 
-1. the scan stopped when the browser session expired;
-2. U.S. equities deliberately discarded all premarket/postmarket bars.
-
-The headless watcher is independent of the browser UI.
+This page describes the public-data headless `watch` command and its GitHub-hosted fallback. It is independent of browser LIVE and of the VPS `ibkr-watch` daemon. The browser still has session expiry and RTH-only U.S. bars; this separate path does not change those properties.
 
 ## States
 
@@ -61,23 +58,23 @@ Material states query Yahoo's public search/news endpoint. News is context, not 
 
 ## GitHub execution
 
-After this workflow exists on the repository default branch, `continuous-market-watch` starts three overlapping long-running GitHub-hosted shifts:
+The current [workflow](../.github/workflows/market-watch.yml) is named `hosted-core-watch-fallback`. Each job performs **one scan**, using `watch --once --github-alerts`, with an eight-minute job timeout. It no longer starts three overlapping long-running shifts.
 
-- 04:07 ET: 355 minutes
-- 09:57 ET: 355 minutes
-- 15:47 ET: 258 minutes
+Its configured schedule is Monday–Friday in `America/New_York`: every five minutes from 04:02 through 19:57, plus 20:02. Manual dispatch is available; pushes to `main` trigger it only when the workflow or `market_data/github_alerts.py` changes. A push-triggered heartbeat does not prove that scheduled runs are firing.
 
-Inside a shift, the watcher polls every 60 seconds. The overlap reduces handoff gaps if a scheduled job starts slightly late. Daily and volume-profile inputs are cached for that ET date, and news is cached for 15 minutes.
-
-GitHub schedule is only the handoff trigger. GitHub's documented minimum scheduled interval is five minutes, but the already-running process can poll more frequently inside the job. GitHub-hosted jobs still have a six-hour execution limit and scheduled runs can be delayed, so this is near-continuous hosted scanning rather than an exchange-grade streaming service. A self-hosted runner/service is the path for a true always-on process.
+This is a best-effort scheduled fallback, not a continuous process or an exchange-grade feed. A cron declaration alone is not execution evidence. Check the Actions run's trigger, timestamp, commit, conclusion and scanner heartbeat. GitHub-hosted fallback health does not prove VPS health; see the [self-hosted guide](self-hosted-ibkr-watch.md).
 
 ## Alerts
 
-When a material state appears, the workflow creates or reuses:
+On a successfully published scan, the workflow creates or reuses a daily issue (even with no new material event):
 
 `Market Watch | YYYY-MM-DD ET`
 
-The daily issue is assigned to the repository owner. Comments are deduplicated by date + symbol + state.
+The daily issue is assigned to the repository owner. A mutable **Scanner heartbeat** comment records the latest scan, its trigger/run/commit, OK/error counts and material-alert count. Material-event comments are deduplicated by date + symbol + state. Issue numbers vary by date; they are not a fixed channel ID.
+
+Alert count in a scan, newly published deduplicated comments, and notifications actually received by a person are different quantities. An issue comment proves publication, not email/push delivery. No new material comment does not mean no scan occurred or no market opportunity existed. The publisher requires the GitHub repository and runtime token environment; never commit credentials.
+
+The VPS `ibkr-watch` service currently writes local state/events and does **not** call this publisher. Its files are not automatically the source of these GitHub comments. See [publisher](../market_data/github_alerts.py), [public watcher](../market_data/us_watch.py) and [VPS daemon](../market_data/ibkr_live.py).
 
 This alert stream is observation-only. It does not create, draft, route, or submit orders.
 

@@ -1,5 +1,7 @@
 # Architecture (v0)
 
+This is the preserved research-OS architecture, not a map of all current runtime processes. For the browser, research, VPS and GitHub entrypoints and their lifecycle boundaries, start with the [system map（中文）](system-map.zh-CN.md).
+
 ```
                  ┌─────────────────────────┐
                  │   Multi-agent protocol  │

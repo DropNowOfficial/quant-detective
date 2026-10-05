@@ -1,7 +1,8 @@
 # Self-hosted IBKR market watcher
 
-This is the production path for Quant Detective market monitoring. GitHub-hosted
-public-data scanning remains the fallback.
+[System map / 中文入口](system-map.zh-CN.md)
+
+This is the intended persistent host-service path for Quant Detective market monitoring. GitHub-hosted public-data scanning is a separate fallback. This document describes repository configuration, not proof that any particular host has installed or is running it.
 
 ## Architecture
 
@@ -12,6 +13,8 @@ The production process is a host service, not a five-day GitHub Actions job.
   same-time RVOL and news from the existing public structural watcher.
 - **Persistent state:** `/var/lib/quant-detective/state.json`.
 - **Append-only transitions:** `/var/lib/quant-detective/events.jsonl`.
+- **Delivery boundary:** the current `ibkr-watch` daemon writes those files and console logs. It does not call the GitHub publisher or prove that a person received a notification. The hosted `watch --github-alerts` path performs its own scan.
+- **Scope:** the example environment contains a 41-symbol core watchlist. The current daemon also includes [IBKR U.S. major-market Top-N discovery](../market_data/market_discovery.py); by default up to 24 discovery candidates are considered for stock-type filtering and subsequent structural analysis. It explicitly reports `discovery_exhaustive=false`, not exhaustive full-market coverage. Actual discovery availability and scope must be checked on the host.
 - **Explicit degradation:** if IBKR authentication/session/quotes fail, mode is
   `DEGRADED_PUBLIC_ONLY`. The service never relabels public Yahoo data as IBKR.
 
@@ -100,8 +103,7 @@ One-time install:
 curl -fsSL https://raw.githubusercontent.com/DropNowOfficial/quant-detective/main/deploy/install-autoupdate.sh | bash
 ```
 
-This installs a root-owned systemd timer. Every five minutes it checks the exact
-SHA of `main`. If the SHA changed, it:
+This installs a root-owned systemd timer. The current [timer unit](../deploy/systemd/quant-detective-update.timer) uses `OnBootSec=30s`, `OnUnitInactiveSec=60s`, `AccuracySec=5s` and `RandomizedDelaySec=5s`. The 60-second interval starts after the previous update service becomes inactive; it is neither a strict wall-clock cadence nor proof of the installed host configuration. It checks the exact SHA of `main`. If the SHA changed, it:
 
 1. clones the new commit into a separate immutable release directory;
 2. creates its own virtual environment;
@@ -115,3 +117,19 @@ SHA of `main`. If the SHA changed, it:
 The updater never needs a global Git `safe.directory=*` exception. Existing
 release repositories are queried as the `quantdetective` owner instead of
 running Git as root against another user's repository.
+
+## Verify the installed host separately
+
+Use read-only inspection before treating repository changes as deployed:
+
+```bash
+readlink -f /opt/quant-detective/current
+systemctl status quant-detective-live.service --no-pager
+systemctl cat quant-detective-update.timer
+systemctl list-timers --all --no-pager
+python /opt/quant-detective/current/deploy/healthcheck.py
+```
+
+Compare the active release SHA with the intended commit; inspect the effective unit including overrides. Check state freshness, `mode`, `ibkr_error`, structural-data age and per-symbol errors. Also inspect `discovery_current`, `discovery_scope`, `discovery_error` and candidate counts: discovery merged into code does not prove a live authenticated scanner is running. `DEGRADED_PUBLIC_ONLY` means public fallback, not authenticated IBKR quotes. The repository also contains watchdog service/timer definitions; verify that the actual host has loaded them rather than assuming a merge enabled them.
+
+A passing local health check is not an end-to-end notification test. Check GitHub run/heartbeat and any receiving channel separately. Do not restart, redeploy, change timers or install a gateway merely to inspect status.

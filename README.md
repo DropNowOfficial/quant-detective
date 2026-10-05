@@ -1,17 +1,20 @@
-# Quant Detective LIVE
+# Quant Detective
 
-**Public market data → closed-bar features → ranked candidates → rule explanations.** The default product is a continuously refreshed screening terminal. Research and backtests are secondary; no account connection or order routing.
+**Start here: [系统地图与入口（中文）](docs/system-map.zh-CN.md).** This repository contains preserved HARNESS-related work, frozen research/replay, and separate browser, VPS and GitHub observation runtimes. They do not share one lifecycle or one delivery guarantee. No trading actions are enabled.
+
+The default web homepage is the LIVE minute-bar screener: public market data → closed-bar features → ranked candidates → rule explanations. Its scanning sessions depend on browser polling; it is not the persistent VPS watcher.
 
 ## Start the LIVE screener
 
 ```bash
-git clone --branch feature/live-screener-20261004 https://github.com/DropNowOfficial/quant-detective.git
+git clone --branch main https://github.com/DropNowOfficial/quant-detective.git
 cd quant-detective
 python -m market_data serve
 ```
 
 Open `http://127.0.0.1:8767/`. Python 3.11+ and `curl` are required; the LIVE runtime uses only the standard library. On Windows, run `start-live.cmd` from the repository. The reproducible developer environment remains `uv sync --frozen` and `uv run qd-market serve`.
 
+- **Lifecycle:** keep both the server and browser polling active. A session is removed after more than 90 seconds without access; the server process alone does not preserve that scan. VPS background observation and GitHub alerts are separate paths; see the [system map](docs/system-map.zh-CN.md).
 - **LIVE / SCREENER / STOCK:** ongoing provider GET requests, editable thresholds, ranked candidates, whole-row selection, source-specific charts and check-by-check explanations.
 - **Binance spot mirror, Gate USDT perpetual, OKX perpetual** public adapters; US/A-share and other original public directory adapters remain available. Live crypto comparisons use USDT-quoted instruments, not synthetic cross-currency returns. Derivative contracts never stand in for cash stocks.
 - Target **12-second batch cadence**, 12 symbols per batch, four concurrent GETs. Each GET stops at 12 seconds. Slow requests/other active tabs can lengthen actual cadence; the UI reports cycle duration, coverage and each observation's age. Whole-directory rotation is NOT a claim that every instrument updates every 12 seconds.
