@@ -52,11 +52,15 @@ def fetch(url, kind='json'):
     args = ['curl', '--disable', '--silent', '--show-error', '--max-time', '12',
             '--connect-timeout', '12', '--max-filesize', '16777216',
             '--write-out', '\n%{http_code}', url]
+    host = urlsplit(url).hostname
     referers = {'query.sse.com.cn': 'https://www.sse.com.cn/assortment/stock/list/share/',
                 'www.szse.cn': 'https://www.szse.cn/market/product/stock/list/index.html',
                 'www.cninfo.com.cn': 'https://www.cninfo.com.cn/'}
-    if urlsplit(url).hostname in referers:
-        args[2:2] = ['--referer', referers[urlsplit(url).hostname], '--user-agent', 'QuantDetective/0.1 (public read-only data)']
+    if host in referers:
+        args[2:2] = ['--referer', referers[host], '--user-agent', 'QuantDetective/0.1 (public read-only data)']
+    elif host == 'query1.finance.yahoo.com':
+        args[2:2] = ['--user-agent', 'Mozilla/5.0 (compatible; QuantDetective/0.1; +https://github.com/DropNowOfficial/quant-detective)',
+                     '--header', 'Accept: application/json']
     try:
         options = {'stdout': subprocess.PIPE, 'stderr': subprocess.PIPE}
         if kind != 'bytes':
