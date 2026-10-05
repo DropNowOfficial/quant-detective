@@ -31,7 +31,7 @@ def intra(**changes):
 
 
 def test_leader_detection_is_separate_from_entry_gate():
-    result = classify(daily(), intra(current_price=113, change_pct=4.0, d5_atr=1.3))
+    result = classify(daily(), intra(current_price=113, change_pct=4.0, d5_atr=1.3), qqq_change=0.5)
     assert result["leader_detected"]
     assert result["state"] == "LEADER_HOT_NO_CHASE"
     assert not result["standard_entry_geometry"]
@@ -85,3 +85,18 @@ def test_intraday_uses_premarket_but_rth_vwap_only_uses_rth():
     metrics=_intraday_metrics(rows,daily(),now)
     assert metrics["premarket_last"] == 102
     assert metrics["rth_vwap_approx"] < 101
+
+
+def test_relative_strength_vs_qqq_can_trigger_leader():
+    result = classify(daily(), intra(change_pct=0.9, premarket_change_pct=0.1, open_gap_pct=0.1,
+                                     move_from_rth_open_pct=0.2, d5_atr=0.3), qqq_change=0.2)
+    assert result["leader_detected"]
+    assert result["relative_change_vs_qqq_pp"] > 0.5
+    assert any("vs QQQ" in x for x in result["leader_reasons"])
+
+
+def test_one_percent_day_move_is_not_silenced():
+    result = classify(daily(), intra(change_pct=1.05, premarket_change_pct=0.0, open_gap_pct=0.0,
+                                     move_from_rth_open_pct=0.1, d5_atr=0.6), qqq_change=0.7)
+    assert result["leader_detected"]
+    assert result["state"] == "LEADER_HOT_NO_CHASE"
