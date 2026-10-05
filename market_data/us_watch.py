@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
-from statistics import fmean
+from statistics import fmean, median
 import json
 import math
 import os
@@ -33,6 +33,7 @@ DEFAULT_SYMBOLS = (
 OUTPUT_ENV = "QD_WATCH_OUTPUT"
 _DAILY_CACHE = {}
 _NEWS_CACHE = {}
+_VOLUME_PROFILE_CACHE = {}
 
 
 def _finite(v):
@@ -219,7 +220,29 @@ def _vwap_path(rows):
     return out
 
 
-def _intraday_metrics(rows, daily, now):
+def _same_time_rvol(current_rows, history_rows, now):
+    completed = [r for r in current_rows if r.get("session") == "RTH" and r.get("completed")]
+    if not completed:
+        return None, 0
+    target_local = datetime.fromtimestamp(completed[-1]["t"], ET)
+    target_minute = target_local.hour * 60 + target_local.minute
+    current_cumulative = sum(r["volume"] for r in completed)
+    today = now.astimezone(ET).date()
+    by_date = {}
+    for r in history_rows:
+        local = datetime.fromtimestamp(r["t"], ET)
+        minute = local.hour * 60 + local.minute
+        if local.date() >= today or not 570 <= minute < 960 or minute > target_minute:
+            continue
+        by_date[local.date()] = by_date.get(local.date(), 0.0) + r["volume"]
+    samples = [by_date[d] for d in sorted(by_date)[-20:] if by_date[d] > 0]
+    if not samples:
+        return None, 0
+    baseline = median(samples)
+    return (current_cumulative / baseline if baseline > 0 else None), len(samples)
+
+
+def _intraday_metrics(rows, daily, now, history_rows=None):
     today = _today_intraday(rows, now)
     if not today:
         raise ValueError("no bars for current ET date")
@@ -238,6 +261,7 @@ def _intraday_metrics(rows, daily, now):
     prior = daily["prior_close"]
     pre_last = pre[-1]["close"] if pre else None
     rth_open = rth[0]["open"] if rth else None
+    same_time_rvol, rvol_samples = _same_time_rvol(today, history_rows or [], now)
     result = {
         "current_price": current,
         "current_session": last["session"],
@@ -254,6 +278,8 @@ def _intraday_metrics(rows, daily, now):
         "premarket_bars": len(pre),
         "postmarket_bars": len(post),
         "d5_atr": (current - daily["ma5"]) / daily["atr5"],
+        "same_time_rvol": same_time_rvol,
+        "same_time_rvol_samples": rvol_samples,
     }
     if rth:
         result["move_from_rth_open_pct"] = _pct(current, rth_open)
@@ -286,14 +312,17 @@ def classify(daily, intra):
 
     standard_geometry = -0.10 <= d5 <= 0.20
     observation_geometry = -0.35 <= d5 <= 0.40
-    confirmed = trend_ok and standard_geometry and intra.get("two_completed_5m_above_vwap_and_ma5", False)
+    rvol = intra.get("same_time_rvol")
+    confirmed = (trend_ok and standard_geometry
+                 and intra.get("two_completed_5m_above_vwap_and_ma5", False)
+                 and _finite(rvol) and rvol >= 0.8)
 
     if confirmed:
         state = "ENTRY_CONFIRMED"
-        reason = "daily trend + MA5/ATR geometry + two completed 5m closes above session VWAP and MA5"
+        reason = "daily trend + MA5/ATR geometry + two completed 5m closes above session VWAP/MA5 + same-time RVOL >= 0.8"
     elif trend_ok and observation_geometry:
         state = "ENTRY_ARMED"
-        reason = "daily trend and MA5/ATR geometry valid; intraday confirmation incomplete"
+        reason = "daily trend and MA5/ATR geometry valid; VWAP/5m or same-time RVOL confirmation incomplete"
     elif leader and d5 > 0.35:
         state = "LEADER_HOT_NO_CHASE"
         reason = "strong move detected, but price is too extended above completed-day MA5"
@@ -327,8 +356,14 @@ def _scan_symbol(symbol, fetcher, now):
         cached = (daily, daily_receipt.get("received_at_utc"))
         _DAILY_CACHE[cache_key] = cached
     daily, daily_known_at = cached
+    volume_cached = _VOLUME_PROFILE_CACHE.get(cache_key)
+    if volume_cached is None:
+        volume_rows, _, volume_receipt = _chart(fetcher, symbol, range_value="1mo", interval="5m", include_prepost=False)
+        volume_cached = (volume_rows, volume_receipt.get("received_at_utc"))
+        _VOLUME_PROFILE_CACHE[cache_key] = volume_cached
+    volume_rows, volume_known_at = volume_cached
     intraday_rows, _, intra_receipt = _chart(fetcher, symbol, range_value="5d", interval="5m", include_prepost=True)
-    intra = _intraday_metrics(intraday_rows, daily, now)
+    intra = _intraday_metrics(intraday_rows, daily, now, history_rows=volume_rows)
     state = classify(daily, intra)
     previous = datetime.fromisoformat(daily["previous_session_date"]).date()
     current = now.astimezone(ET).date()
@@ -339,6 +374,7 @@ def _scan_symbol(symbol, fetcher, now):
         "source": "Yahoo Finance public chart",
         "known_at": intra_receipt.get("received_at_utc"),
         "daily_known_at": daily_known_at,
+        "volume_profile_known_at": volume_known_at,
         "calendar_days_since_previous_session": calendar_gap,
         "monday_weekend_context": current.weekday() == 0 and calendar_gap >= 3,
         "daily": daily,
@@ -397,6 +433,8 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
             "open_gap_pct": r["intraday"]["open_gap_pct"],
             "d5_atr": r["intraday"]["d5_atr"],
             "rth_vwap_approx": r["intraday"]["rth_vwap_approx"],
+            "same_time_rvol": r["intraday"]["same_time_rvol"],
+            "same_time_rvol_samples": r["intraday"]["same_time_rvol_samples"],
             "news": (r.get("news") or {}).get("items", [])[:3],
         })
     return {
