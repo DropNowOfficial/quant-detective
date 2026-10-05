@@ -18,6 +18,7 @@ def daily():
 def intra(**changes):
     out = {
         "current_price": 101.0,
+        "current_session": "RTH",
         "change_pct": 1.0,
         "premarket_change_pct": 0.4,
         "open_gap_pct": 0.3,
@@ -54,7 +55,7 @@ def test_missing_rvol_blocks_entry_confirmation():
 
 
 def test_premarket_move_can_trigger_leader_even_before_rth():
-    result = classify(daily(), intra(change_pct=0.9, premarket_change_pct=1.4, d5_atr=0.5))
+    result = classify(daily(), intra(current_session="PRE", change_pct=0.9, premarket_change_pct=1.4, d5_atr=0.5))
     assert result["leader_detected"]
     assert any("premarket" in x for x in result["leader_reasons"])
 
@@ -100,3 +101,23 @@ def test_one_percent_day_move_is_not_silenced():
                                      move_from_rth_open_pct=0.1, d5_atr=0.6), broad_market_change=0.7, qqq_change=0.8)
     assert result["leader_detected"]
     assert result["state"] == "LEADER_HOT_NO_CHASE"
+
+
+def test_old_premarket_gap_does_not_keep_failed_rth_move_as_leader():
+    result = classify(
+        daily(),
+        intra(
+            current_session="RTH",
+            change_pct=-2.0,
+            premarket_change_pct=1.4,
+            open_gap_pct=1.1,
+            move_from_rth_open_pct=-3.0,
+            d5_atr=0.1,
+        ),
+        broad_market_change=0.4,
+        qqq_change=0.5,
+    )
+    assert not result["leader_detected"]
+    assert "premarket +1.40%" in result["event_context"]
+    assert "open gap +1.10%" in result["event_context"]
+    assert result["state"] == "ENTRY_ARMED"
