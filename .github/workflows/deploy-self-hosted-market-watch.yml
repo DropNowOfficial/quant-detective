@@ -2,14 +2,6 @@ name: deploy-self-hosted-market-watch
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'market_data/ibkr_*.py'
-      - 'market_data/us_watch.py'
-      - 'market_data/cli.py'
-      - 'deploy/**'
-      - '.github/workflows/deploy-self-hosted-market-watch.yml'
 
 permissions:
   contents: read
