@@ -18,6 +18,7 @@ class Gateway:
         self.run_calls.append((instrument,location,scan_type))
         if scan_type=="GAIN":
             return {"contracts":[
+                {"symbol":"SPY","con_id":756733,"listing_exchange":"ARCA","company_name":"SPDR","scan_data":"5.0%"},
                 {"symbol":"AAA","con_id":1,"listing_exchange":"NASDAQ","company_name":"AAA","scan_data":"4.2%"},
                 {"symbol":"BBB","con_id":2,"listing_exchange":"NYSE","company_name":"BBB","scan_data":"3.8%"},
             ]}
@@ -60,3 +61,13 @@ def test_candidates_rank_multi_scan_hits_ahead():
     rows=d.candidates()
     assert rows[0]["symbol"]=="BBB"
     assert len(rows[0]["scan_hits"])==2
+
+
+def test_market_context_etfs_are_not_discovery_candidates():
+    d=IBKRMarketDiscovery(
+        Gateway(),
+        scan_names=("Top % Gainers",),
+        clock=lambda:1000.0,
+    )
+    d.tick()
+    assert "SPY" not in {row["symbol"] for row in d.candidates()}
