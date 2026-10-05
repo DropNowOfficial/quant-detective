@@ -107,3 +107,46 @@ def test_initialize_writes_bootstrapping_state_before_structure_scan(tmp_path):
     d.initialize()
     assert observed["mode"]=="BOOTSTRAPPING"
     assert observed["phase"]=="initial_structure_scan"
+
+
+def test_run_id_changes_between_daemon_instances(tmp_path):
+    d1=HybridDaemon(
+        symbols=("NVDA",),gateway=FakeGateway(False),scan_fn=fake_scan,
+        state_path=tmp_path/"state.json",events_path=tmp_path/"events.jsonl",
+        snapshot_seconds=2,structure_seconds=60,
+    )
+    d1.initialize()
+    first=d1.run_id
+    d2=HybridDaemon(
+        symbols=("NVDA",),gateway=FakeGateway(False),scan_fn=fake_scan,
+        state_path=tmp_path/"state.json",events_path=tmp_path/"events.jsonl",
+        snapshot_seconds=2,structure_seconds=60,
+    )
+    d2.initialize()
+    assert d2.run_id != first
+
+
+def test_failed_ibkr_auth_is_backed_off_for_30_seconds(tmp_path):
+    class FailingGateway:
+        def __init__(self):
+            self.calls=0
+        def auth_status(self):
+            self.calls += 1
+            raise RuntimeError("offline")
+    now=[1000.0]
+    gw=FailingGateway()
+    d=HybridDaemon(
+        symbols=("NVDA",),gateway=gw,scan_fn=fake_scan,
+        state_path=tmp_path/"state.json",events_path=tmp_path/"events.jsonl",
+        snapshot_seconds=2,structure_seconds=60,clock=lambda:now[0],
+    )
+    d.initialize()
+    assert gw.calls == 1
+    d.cycle()
+    assert gw.calls == 1
+    now[0] += 29
+    d.cycle()
+    assert gw.calls == 1
+    now[0] += 1
+    d.cycle()
+    assert gw.calls == 2
