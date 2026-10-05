@@ -30,6 +30,22 @@ class CPGError(RuntimeError):
     pass
 
 
+def _last_price(value):
+    if value is None:
+        return None, "MISSING"
+    text = str(value).strip()
+    if not text:
+        return None, "MISSING"
+    status = "TRADE"
+    if text[0].upper() == "H":
+        status = "HALTED"
+        text = text[1:].strip()
+    elif text[0].upper() == "C":
+        status = "PREVIOUS_CLOSE"
+        text = text[1:].strip()
+    return _number(text), status
+
+
 def _number(value):
     if isinstance(value, bool) or value is None:
         return None
@@ -208,10 +224,12 @@ class ClientPortalGateway:
             symbol = by_conid.get(conid)
             if not symbol:
                 continue
+            last, last_status = _last_price(row.get("31"))
             out[symbol] = {
                 "symbol": symbol,
                 "conid": conid,
-                "last": _number(row.get("31")),
+                "last": last,
+                "last_status": last_status,
                 "change": _number(row.get("82")),
                 "change_pct": _number(row.get("83")),
                 "bid": _number(row.get("84")),
