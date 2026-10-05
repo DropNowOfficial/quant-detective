@@ -44,6 +44,34 @@ def _event_mark(key):
     return f"<!-- qd-event:{key} -->"
 
 
+HEARTBEAT_MARK = "<!-- qd-heartbeat -->"
+
+
+def _heartbeat_markdown(report):
+    context = report.get("market_context") or {}
+    stale_context = sorted(
+        symbol for symbol, row in context.items()
+        if isinstance(row, dict) and row.get("stale")
+    )
+    rows = report.get("rows") or []
+    ok_rows = sum(r.get("status") == "OK" for r in rows)
+    error_rows = sum(r.get("status") == "ERROR" for r in rows)
+    return "\n".join([
+        HEARTBEAT_MARK,
+        "### Scanner heartbeat",
+        "",
+        f"- Last hosted fallback scan: **{report.get('generated_at_et')}**",
+        f"- Coverage: **{report.get('coverage_scope')}**",
+        f"- Market-wide: **{report.get('market_wide')}**",
+        f"- Decision mode: **{report.get('decision_mode')}**",
+        f"- Symbols OK / error: **{ok_rows} / {error_rows}**",
+        f"- Material alerts in this scan: **{len(report.get('alerts') or [])}**",
+        f"- Stale market-context feeds: **{', '.join(stale_context) if stale_context else 'none'}**",
+        "",
+        "_Heartbeat proves this GitHub fallback scan ran. It does not prove the VPS daemon is healthy._",
+    ])
+
+
 def _event_markdown(event):
     lines = [
         _event_mark(event["event_key"]),
@@ -99,17 +127,18 @@ def _find_daily_issue(repo, token, title):
     return None
 
 
-def _seen_markers(repo, token, issue):
+def _comments(repo, token, issue):
+    return _api("GET", f"/repos/{repo}/issues/{issue['number']}/comments?per_page=100", token=token)
+
+
+def _seen_markers(issue, comments):
     text = issue.get("body") or ""
-    comments = _api("GET", f"/repos/{repo}/issues/{issue['number']}/comments?per_page=100", token=token)
     text += "\n" + "\n".join(str(c.get("body") or "") for c in comments)
     return text
 
 
 def publish(report):
     alerts = report.get("alerts") or []
-    if not alerts:
-        return {"published": 0, "reason": "no material alerts"}
     repo = os.getenv("GITHUB_REPOSITORY")
     token = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
     if not repo or not token:
@@ -123,13 +152,40 @@ def publish(report):
             "Automated Quant Detective headless watch.\n\n"
             "This issue records material **leader** and **entry-state** observations. "
             "Leader detection is intentionally separate from entry eligibility, so an extended stock "
-            "can trigger a warning without becoming a buy setup. No trading action is enabled.\n"
+            "can trigger a warning without becoming a buy setup. No trading action is enabled.\n\n"
+            "The heartbeat comment is operational status only: no new alert comment does not mean "
+            "there was no scan, and a GitHub heartbeat does not prove the VPS daemon is healthy.\n"
         )
         owner = repo.split("/", 1)[0]
         issue = _api("POST", f"/repos/{repo}/issues", token=token,
                      body={"title": title, "body": body, "assignees": [owner]})
 
-    seen = _seen_markers(repo, token, issue)
+    comments = _comments(repo, token, issue)
+    heartbeat_body = _heartbeat_markdown(report)
+    heartbeat = next(
+        (c for c in comments if HEARTBEAT_MARK in str(c.get("body") or "")),
+        None,
+    )
+    if heartbeat is None:
+        created = _api(
+            "POST",
+            f"/repos/{repo}/issues/{issue['number']}/comments",
+            token=token,
+            body={"body": heartbeat_body},
+        )
+        comments.append(created)
+        heartbeat_action = "created"
+    else:
+        _api(
+            "PATCH",
+            f"/repos/{repo}/issues/comments/{heartbeat['id']}",
+            token=token,
+            body={"body": heartbeat_body},
+        )
+        heartbeat["body"] = heartbeat_body
+        heartbeat_action = "updated"
+
+    seen = _seen_markers(issue, comments)
     published = 0
     for event in alerts:
         mark = _event_mark(event["event_key"])
@@ -139,7 +195,12 @@ def publish(report):
         _api("POST", f"/repos/{repo}/issues/{issue['number']}/comments", token=token, body={"body": body})
         seen += "\n" + mark
         published += 1
-    return {"published": published, "issue_number": issue["number"], "issue_url": issue.get("html_url")}
+    return {
+        "published": published,
+        "heartbeat": heartbeat_action,
+        "issue_number": issue["number"],
+        "issue_url": issue.get("html_url"),
+    }
 
 
 def main():
