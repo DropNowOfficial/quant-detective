@@ -49,9 +49,9 @@ def test_entry_confirmed_requires_two_completed_bars_above_vwap_and_ma5():
     assert result["state"] == "ENTRY_CONFIRMED"
 
 
-def test_missing_rvol_blocks_entry_confirmation():
+def test_missing_rvol_blocks_entry_confirmation_and_armed_state():
     result = classify(daily(), intra(d5_atr=0.05, two_completed_5m_above_vwap_and_ma5=True, same_time_rvol=None))
-    assert result["state"] == "ENTRY_ARMED"
+    assert result["state"] == "WATCH"
 
 
 def test_faded_early_leader_is_not_still_called_hot():
