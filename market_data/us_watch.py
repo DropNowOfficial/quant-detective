@@ -26,6 +26,7 @@ from .universe import (
     CORE_FALLBACK_SYMBOLS,
     MARKET_CONTEXT_SYMBOLS,
     COVERAGE_CORE_FALLBACK,
+    LIVE_CAPABILITY_GAPS,
 )
 
 ET = ZoneInfo("America/New_York")
@@ -138,7 +139,7 @@ def _market_proxy(fetcher, symbol, now):
             "role": "MARKET_CONTEXT_PROXY",
         }
     except Exception as exc:
-        return {"ok": False, "symbol": symbol, "role": "OVERNIGHT_REGIME_PROXY",
+        return {"ok": False, "symbol": symbol, "role": "MARKET_CONTEXT_PROXY",
                 "error": f"{type(exc).__name__}: {str(exc)[:200]}"}
 
 
@@ -556,13 +557,7 @@ def scan_once(symbols=CORE_FALLBACK_SYMBOLS, fetcher=fetch, now=None, workers=8)
         "coverage_scope": COVERAGE_CORE_FALLBACK,
         "market_wide": False,
         "coverage_note": "Fixed fallback/core watchlist only; not whole-market discovery.",
-        "capability_gaps": [
-            "market_breadth_not_integrated",
-            "sector_industry_relative_strength_not_integrated",
-            "news_first_market_discovery_not_integrated",
-            "historical_3y_confidence_not_integrated",
-            "value_price_return_pendulum_not_integrated",
-        ],
+        "capability_gaps": list(LIVE_CAPABILITY_GAPS),
         "trading_enabled": False,
         "sources": ["Yahoo Finance public chart", "Yahoo Finance public search/news"],
         "market_context": market_context,
