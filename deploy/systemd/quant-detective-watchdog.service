@@ -1,0 +1,8 @@
+[Unit]
+Description=Quant Detective stale-state watchdog
+After=quant-detective-live.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/quant-detective/current/.venv/bin/python /opt/quant-detective/current/deploy/watchdog.py 180 45
+Nice=10
