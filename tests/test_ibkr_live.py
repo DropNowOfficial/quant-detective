@@ -55,6 +55,7 @@ def test_daemon_degrades_explicitly_when_ibkr_auth_missing(tmp_path):
     d.initialize()
     out=d.cycle()
     assert out["mode"]=="DEGRADED_PUBLIC_ONLY"
+    assert out["decision_mode"]=="CORE_FALLBACK_OBSERVATION_ONLY"
     assert out["ibkr_error"]
     assert out["rows"][0]["reason"].startswith("IBKR unavailable")
 
