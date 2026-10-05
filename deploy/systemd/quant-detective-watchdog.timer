@@ -1,0 +1,13 @@
+[Unit]
+Description=Check Quant Detective watcher freshness every minute
+
+[Timer]
+OnBootSec=90s
+OnUnitInactiveSec=60s
+AccuracySec=5s
+RandomizedDelaySec=5s
+Persistent=true
+Unit=quant-detective-watchdog.service
+
+[Install]
+WantedBy=timers.target
