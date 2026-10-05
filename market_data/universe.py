@@ -60,6 +60,7 @@ LIVE_CAPABILITY_GAPS = (
     "market_breadth_not_integrated",
     "sector_industry_relative_strength_not_integrated",
     "news_first_market_discovery_not_integrated",
+    "overnight_stock_session_not_integrated",
     "halt_resume_event_feed_not_integrated",
     "block_trade_options_event_feed_not_integrated",
     "reclaim_retest_higher_low_confirmation_not_integrated",
