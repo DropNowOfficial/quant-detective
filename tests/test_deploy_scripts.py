@@ -44,3 +44,10 @@ def test_watchdog_assets_and_updater_install_path_exist():
     assert "OnUnitInactiveSec=60s" in timer
     assert "quant-detective-watchdog.timer" in updater
     assert "quant-detective-watchdog.service" in updater
+
+
+def test_watchdog_is_enabled_only_after_new_release_health_passes():
+    text=(ROOT/"deploy/update-production.sh").read_text()
+    health_pos=text.index('if [ "$ready" -ne 1 ]')
+    enable_pos=text.index('systemctl enable --now quant-detective-watchdog.timer')
+    assert enable_pos > health_pos
