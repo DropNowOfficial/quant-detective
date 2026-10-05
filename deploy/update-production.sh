@@ -51,24 +51,27 @@ rollback() {
 }
 
 if [ ! -d "$release/.git" ]; then
-  tmp="$RELEASES/.tmp-$remote_sha"
-  rm -rf "$tmp"
-  git clone --depth 1 --branch main "$REPO_URL" "$tmp"
-  actual="$(git -C "$tmp" rev-parse HEAD)"
+  rm -rf "$release"
+  git clone --depth 1 --branch main "$REPO_URL" "$release"
+  actual="$(git -C "$release" rev-parse HEAD)"
   if [ "$actual" != "$remote_sha" ]; then
     echo "remote moved during clone; retry on next timer" >&2
-    rm -rf "$tmp"
+    rm -rf "$release"
     exit 5
   fi
 
-  python3 -m venv "$tmp/.venv"
-  "$tmp/.venv/bin/python" -m pip install --upgrade pip >/dev/null
-  "$tmp/.venv/bin/pip" install -e "$tmp" >/dev/null
-  "$tmp/.venv/bin/python" -m pytest -q     "$tmp/tests/test_ibkr_cpg.py"     "$tmp/tests/test_ibkr_live.py"     "$tmp/tests/test_us_watch.py"
-  chown -R quantdetective:quantdetective "$tmp"
-  mv "$tmp" "$release"
+  if ! python3 -m venv "$release/.venv" \
+    || ! "$release/.venv/bin/python" -m pip install --upgrade pip >/dev/null \
+    || ! "$release/.venv/bin/pip" install -e "$release" >/dev/null \
+    || ! "$release/.venv/bin/python" -m pytest -q \
+      "$release/tests/test_ibkr_cpg.py" \
+      "$release/tests/test_ibkr_live.py" \
+      "$release/tests/test_us_watch.py"; then
+    rm -rf "$release"
+    exit 6
+  fi
+  chown -R quantdetective:quantdetective "$release"
 fi
-
 ln -sfn "$release" "$CURRENT"
 install -m 0644 "$release/deploy/systemd/quant-detective-live.service" /etc/systemd/system/quant-detective-live.service
 install -m 0755 "$release/deploy/update-production.sh" /usr/local/sbin/quant-detective-update
