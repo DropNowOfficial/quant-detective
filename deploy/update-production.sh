@@ -117,4 +117,5 @@ if [ "$ready" -ne 1 ]; then
   rollback
 fi
 
+systemctl try-restart quant-detective-update.timer || true
 echo "deployed $remote_sha successfully"
