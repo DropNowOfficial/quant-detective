@@ -155,6 +155,19 @@ class HybridDaemon:
                 "connected": False,
                 "initialization_error": f"{type(exc).__name__}: {str(exc)[:240]}",
             }
+        _atomic_json(self.state_path, {
+            "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+            "started_at_utc": self.started_at,
+            "mode": "BOOTSTRAPPING",
+            "phase": "initial_structure_scan",
+            "ibkr_auth": self.auth,
+            "contracts_resolved": len(self.contracts),
+            "contract_errors": self.contract_errors,
+            "snapshot_seconds": self.snapshot_seconds,
+            "structure_seconds": self.structure_seconds,
+            "rows": [],
+            "events_this_cycle": [],
+        })
         self.refresh_structure(force=True)
 
     def refresh_structure(self, force=False):
