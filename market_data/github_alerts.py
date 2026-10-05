@@ -51,18 +51,31 @@ def _heartbeat_markdown(report):
     rows = report.get("rows") or []
     ok_rows = sum(r.get("status") == "OK" for r in rows)
     error_rows = sum(r.get("status") == "ERROR" for r in rows)
-    return "\n".join([
+    repo = os.getenv("GITHUB_REPOSITORY") or ""
+    run_id = os.getenv("GITHUB_RUN_ID") or ""
+    event_name = os.getenv("GITHUB_EVENT_NAME") or "unknown"
+    sha = os.getenv("GITHUB_SHA") or ""
+    run_url = f"https://github.com/{repo}/actions/runs/{run_id}" if repo and run_id else None
+    lines = [
         HEARTBEAT_MARK,
         "### Scanner heartbeat",
         "",
         f"- Last hosted fallback scan: **{report.get('generated_at_et')}**",
+        f"- Trigger: **{event_name}**",
+        f"- GitHub run id: **{run_id or 'n/a'}**",
+        f"- Commit: **{sha[:12] if sha else 'n/a'}**",
         "- Scope: **configured core watchlist / public observation fallback**",
         f"- Symbols OK / error: **{ok_rows} / {error_rows}**",
         f"- Material alerts in this scan: **{len(report.get('alerts') or [])}**",
+    ]
+    if run_url:
+        lines.append(f"- Actions run: {run_url}")
+    lines += [
         "",
-        "_This proves the GitHub hosted fallback ran. It does not prove the VPS daemon is healthy._",
-        "_No new alert comment does not mean there was no scan or no market opportunity._",
-    ])
+        "_This proves that specific GitHub hosted fallback run executed. It does not prove the VPS daemon is healthy._",
+        "_No new material-alert comment does not mean there was no scan or no market opportunity._",
+    ]
+    return "\n".join(lines)
 
 
 def _event_markdown(event):
