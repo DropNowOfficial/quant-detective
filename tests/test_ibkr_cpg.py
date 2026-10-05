@@ -39,7 +39,7 @@ def test_auth_and_snapshot_are_read_only():
     opener=opener_for([
         ("/iserver/auth/status", {"authenticated":True,"connected":True}),
         ("/iserver/accounts", {"accounts":["U1"]}),
-        ("/iserver/marketdata/snapshot", [{"conid":1,"31":"123.45","83":"1.20%","84":"123.4","86":"123.5","7762":"1.2M"}]),
+        ("/iserver/marketdata/snapshot", [{"conid":1,"31":"123.45","83":"1.20%","84":"123.4","86":"123.5","7762":"1.2M","6509":"RpB","7899":"Common"}]),
     ])
     gw=ClientPortalGateway(opener=opener, sleeper=lambda _:None)
     assert gw.auth_status()["authenticated"]
@@ -48,6 +48,10 @@ def test_auth_and_snapshot_are_read_only():
     assert out["NVDA"]["last"] == 123.45
     assert out["NVDA"]["change_pct"] == 1.2
     assert out["NVDA"]["volume"] == 1_200_000
+    assert out["NVDA"]["market_data_availability"] == "RpB"
+    assert out["NVDA"]["stock_type"] == "Common"
+    snapshot_urls=[url for _,url in opener.calls if "/iserver/marketdata/snapshot" in url]
+    assert snapshot_urls and "6509" in snapshot_urls[0] and "7899" in snapshot_urls[0]
     assert all("/orders" not in url for _,url in opener.calls)
 
 
