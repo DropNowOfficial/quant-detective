@@ -390,8 +390,10 @@ def run_once(
 def main():
     result = run_once()
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    if result["status"] in {"TOKEN_MISSING", "API_ERROR"}:
+    if result["status"] == "TOKEN_MISSING":
         raise SystemExit(3)
+    if result["status"] == "API_ERROR":
+        raise SystemExit(4)
 
 
 if __name__ == "__main__":
