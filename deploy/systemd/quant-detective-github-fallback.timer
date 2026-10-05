@@ -1,7 +1,10 @@
 [Unit]
-Description=Dispatch GitHub market-watch fallback if native schedule is stale
+Description=Check GitHub fallback every five minutes; dispatcher enforces ET weekday window
 
 [Timer]
+# Intentionally wakes outside market hours so the status file records
+# OUTSIDE_MARKET_WINDOW. github_fallback_dispatch.py performs zero GitHub API
+# calls and never dispatches outside Mon-Fri 04:00-20:10 America/New_York.
 OnBootSec=3min
 OnUnitInactiveSec=5min
 AccuracySec=10s
