@@ -2,7 +2,9 @@ name: continuous-market-watch
 
 on:
   schedule:
-    - cron: '*/5 4-20 * * 1-5'
+    - cron: '*/5 4-19 * * 1-5'
+      timezone: 'America/New_York'
+    - cron: '0 20 * * 1-5'
       timezone: 'America/New_York'
   workflow_dispatch:
 
@@ -19,16 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
-      - name: Restrict scheduled runs to 04:00-20:00 ET
-        if: github.event_name == 'schedule'
-        shell: bash
-        run: |
-          HHMM="$(TZ=America/New_York date +%H%M)"
-          if [ "$HHMM" -lt 0400 ] || [ "$HHMM" -gt 2000 ]; then
-            echo "Outside watch window: $HHMM ET"
-            exit 0
-          fi
-
       - name: Checkout
         uses: actions/checkout@v4
 
