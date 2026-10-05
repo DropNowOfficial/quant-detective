@@ -13,11 +13,26 @@ CORE_FALLBACK_SYMBOLS = (
 )
 
 # Broad context is intentionally not a tech-only QQQ view.
+SECTOR_PROXY_SYMBOLS = (
+    "XLK",   # technology
+    "XLF",   # financials
+    "XLE",   # energy
+    "XLV",   # health care
+    "XLI",   # industrials
+    "XLY",   # consumer discretionary
+    "XLP",   # consumer staples
+    "XLU",   # utilities
+    "XLRE",  # real estate
+    "XLB",   # materials
+    "XLC",   # communication services
+    "SOXX",  # semiconductor industry proxy
+)
+
 MARKET_CONTEXT_SYMBOLS = (
     "SPY",   # broad large-cap U.S. equity
     "QQQ",   # Nasdaq-100 / growth context
     "IWM",   # small-cap context
-    "SOXX",  # semiconductor context
+    *SECTOR_PROXY_SYMBOLS,
     "NQ=F",  # Nasdaq-100 futures
     "ES=F",  # S&P 500 futures
     "RTY=F", # Russell 2000 futures
