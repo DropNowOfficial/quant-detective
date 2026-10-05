@@ -508,7 +508,10 @@ def run(*, symbols=DEFAULT_SYMBOLS, poll_seconds=60, duration_minutes=0, github_
                  "d5_atr": a.get("d5_atr")}
                 for a in report.get("alerts", [])
             ],
-            "errors": [r.get("symbol") for r in report.get("rows", []) if r.get("status") == "ERROR"],
+            "errors": [
+                {"symbol": r.get("symbol"), "error": r.get("error")}
+                for r in report.get("rows", []) if r.get("status") == "ERROR"
+            ],
         }
         print(json.dumps(compact, ensure_ascii=False, allow_nan=False), flush=True)
         if github_alerts:
