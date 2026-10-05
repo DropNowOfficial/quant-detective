@@ -7,6 +7,8 @@ This layer fixes the old LIVE screener's two structural blind spots:
 
 The headless watcher is independent of the browser UI.
 
+**Coverage boundary:** public/Yahoo mode is a fixed core fallback watchlist, not a whole-market scanner. When an authenticated IBKR scanner is available, a separate discovery layer rotates provider-native U.S.-major scans and only then sends ranked candidates into HARNESS qualification. Discovery is market-wide top-N discovery, not an exhaustive snapshot of every listed security.
+
 ## States
 
 Market leadership and entry eligibility are separate.
@@ -41,11 +43,13 @@ The browser LIVE provider remains unchanged and RTH-only. The headless watcher i
 
 Single-stock public Yahoo data do not provide the full 20:00-04:00 ET overnight session. Do not label that gap as stock-level overnight coverage.
 
-The watcher therefore adds:
+The watcher therefore keeps a broad context basket:
 
-- Nasdaq-100 futures (`NQ=F`) as an overnight growth/tech regime proxy;
-- S&P 500 futures (`ES=F`) as a broad overnight regime proxy;
-- QQQ as a same-session relative-strength benchmark when available.
+- SPY as the primary broad-market relative-strength reference;
+- QQQ as growth/Nasdaq context;
+- IWM as small-cap context;
+- SOXX as semiconductor context;
+- NQ, ES and RTY futures as overnight index-regime proxies.
 
 True single-stock overnight coverage requires a provider that exposes those prints, for example a self-hosted broker/data gateway. This repository does not contain broker credentials.
 
@@ -54,6 +58,15 @@ True single-stock overnight coverage requires a provider that exposes those prin
 For each stock, a cached one-month 5-minute RTH history builds prior-session cumulative volume at the same clock time. Current cumulative RTH volume is divided by the median of up to the last 20 available sessions.
 
 No same-time volume history means no `ENTRY_CONFIRMED`.
+
+### Market-wide discovery
+
+When IBKR scanner access is authenticated, discovery uses the provider's current scanner capability list rather than guessed codes. It rotates available U.S.-major stock scans such as top gainers, top losers, hot-by-volume, trade-count and volume-rate scans when those names are actually returned by `/iserver/scanner/params`. Each request returns a ranked top-N slice; candidate union is then enriched by the slower HARNESS structure layer.
+
+This is deliberately two-stage:
+
+1. **Discovery:** what is moving across the market?
+2. **Qualification:** does the candidate satisfy completed-day trend, MA5/ATR, gap, VWAP, completed-5m and RVOL rules?
 
 ### News context
 
