@@ -1,13 +1,13 @@
 [Unit]
-Description=Fallback poll for Quant Detective production updates
+Description=Check Quant Detective watcher freshness every minute
 
 [Timer]
-OnBootSec=30s
+OnBootSec=90s
 OnUnitInactiveSec=60s
 AccuracySec=5s
 RandomizedDelaySec=5s
 Persistent=true
-Unit=quant-detective-update.service
+Unit=quant-detective-watchdog.service
 
 [Install]
 WantedBy=timers.target
