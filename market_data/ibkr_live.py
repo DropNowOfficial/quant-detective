@@ -384,6 +384,11 @@ class HybridDaemon:
             "started_at_utc": self.started_at,
             "run_id": self.run_id,
             "mode": mode,
+            "decision_mode": (
+                "DYNAMIC_DISCOVERY_MANUAL_REVIEW"
+                if mode == "IBKR_LIVE_PLUS_PUBLIC_STRUCTURE" and discovery_current
+                else "CORE_FALLBACK_OBSERVATION_ONLY"
+            ),
             "ibkr_error": error,
             "ibkr_auth": self.auth,
             "contracts_resolved": len(self.contracts),
