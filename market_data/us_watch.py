@@ -418,6 +418,7 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
     now = now or datetime.now(timezone.utc)
     symbols = tuple(dict.fromkeys(s.upper() for s in symbols))
     market_context = _market_context(fetcher, now)
+    qqq_change = (market_context.get("QQQ") or {}).get("change_pct")
     rows = []
     with ThreadPoolExecutor(max_workers=max(1, min(workers, 12)), thread_name_prefix="qd-us-watch") as pool:
         futures = {pool.submit(_scan_symbol, s, fetcher, now, qqq_change): s for s in symbols}
