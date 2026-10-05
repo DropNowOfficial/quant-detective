@@ -1,4 +1,4 @@
-name: continuous-market-watch
+name: hosted-core-watch-fallback
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - 'market_data/transport.py'
       - '.github/workflows/market-watch*.yml'
   schedule:
-    # Three overlapping long-lived hosted jobs cover 04:00-20:00 ET on weekdays.
+    # Public-data redundancy only. The VPS/broker discovery path is the primary runtime.
     # The runner loops every 60s internally; schedule itself is only the handoff.
     - cron: '7 4 * * 1-5'
       timezone: 'America/New_York'
@@ -81,7 +81,6 @@ jobs:
             --github-alerts
             --poll-seconds "${{ steps.window.outputs.poll }}"
             --duration-minutes "${{ steps.window.outputs.duration }}"
-            --symbols "NVDA,TSM,MSFT,AMD,AVGO,MU,INTC,SNDK,MRVL,GLW,GOOG,META,ARM,ASML,AMAT,LRCX,KLAC,ANET,VRT,ORCL,CRCL,MSTR,AMZN,DELL,AAPL,SMCI,CRDO,ALAB,COHR,LITE,AAOI,QCOM,MPWR,MCHP,NXPI,ETN,VST,CEG,HPE,WDC,STX"
           )
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ steps.window.outputs.duration }}" = "0" ]; then
             args+=(--once)
