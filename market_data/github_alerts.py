@@ -106,7 +106,9 @@ def publish(report):
             "Leader detection is intentionally separate from entry eligibility, so an extended stock "
             "can trigger a warning without becoming a buy setup. No trading action is enabled.\n"
         )
-        issue = _api("POST", f"/repos/{repo}/issues", token=token, body={"title": title, "body": body})
+        owner = repo.split("/", 1)[0]
+        issue = _api("POST", f"/repos/{repo}/issues", token=token,
+                     body={"title": title, "body": body, "assignees": [owner]})
 
     seen = _seen_markers(repo, token, issue)
     published = 0
