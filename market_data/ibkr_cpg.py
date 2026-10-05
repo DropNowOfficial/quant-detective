@@ -33,7 +33,7 @@ def _number(value):
         return None
     if isinstance(value, (int, float)):
         return float(value) if math.isfinite(float(value)) else None
-    text = str(value).strip().replace(",", "")
+    text = str(value).strip().replace(",", "").replace("%", "")
     if not text:
         return None
     while text and text[0].isalpha():
