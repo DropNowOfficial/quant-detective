@@ -223,3 +223,46 @@ def test_halted_quote_cannot_drive_realtime_state():
         "last_status":"PREVIOUS_CLOSE",
         "market_data_availability":"RpB",
     })
+
+
+class MultiHitDiscovery:
+    def tick(self):
+        return {
+            "coverage_scope":"IBKR_US_MAJOR_DYNAMIC",
+            "market_wide_discovery":True,
+            "exhaustive":False,
+            "scan_display_name":"Hot Contracts by Volume",
+            "returned":1,
+        }
+    def candidates(self, limit=60):
+        return [{
+            "symbol":"XYZ",
+            "conid":99,
+            "exchange":"NASDAQ",
+            "company_name":"XYZ INC",
+            "first_seen":1.0,
+            "last_seen":2.0,
+            "scan_hits":{
+                "Top % Gainers":{"rank":2},
+                "Hot Contracts by Volume":{"rank":4},
+            },
+            "scan_hit_count":2,
+            "best_rank":2,
+            "multi_scan":True,
+        }]
+
+
+def test_multi_scan_discovery_emits_one_prequalification_event(tmp_path):
+    d=HybridDaemon(
+        symbols=("NVDA",),gateway=FakeGateway(True),scan_fn=fake_scan,
+        discovery=MultiHitDiscovery(),discovery_structure_limit=24,
+        state_path=tmp_path/"state.json",events_path=tmp_path/"events.jsonl",
+        snapshot_seconds=2,structure_seconds=60,
+    )
+    d.initialize()
+    first=d.cycle()
+    hits=[e for e in first["events_this_cycle"] if e.get("state")=="DISCOVERY_MULTI_HIT"]
+    assert len(hits)==1
+    assert hits[0]["symbol"]=="XYZ"
+    second=d.cycle()
+    assert not [e for e in second["events_this_cycle"] if e.get("state")=="DISCOVERY_MULTI_HIT"]
