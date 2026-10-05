@@ -466,7 +466,8 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
             "d5_atr": r["intraday"]["d5_atr"],
             "rth_vwap_approx": r["intraday"]["rth_vwap_approx"],
             "same_time_rvol": r["intraday"]["same_time_rvol"],
-            "same_time_rvol_samples": r["intraday"]["same_time_rvol_samples"],\n            "relative_change_vs_qqq_pp": r.get("relative_change_vs_qqq_pp"),
+            "same_time_rvol_samples": r["intraday"]["same_time_rvol_samples"],
+            "relative_change_vs_qqq_pp": r.get("relative_change_vs_qqq_pp"),
             "market_context": market_context,
             "news": (r.get("news") or {}).get("items", [])[:3],
         })
