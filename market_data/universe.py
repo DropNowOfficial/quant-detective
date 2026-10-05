@@ -38,3 +38,21 @@ IBKR_DISCOVERY_LOCATION = "STK.US.MAJOR"
 
 COVERAGE_CORE_FALLBACK = "CORE_FALLBACK"
 COVERAGE_IBKR_DYNAMIC = "IBKR_US_MAJOR_DYNAMIC"
+
+
+LIVE_CAPABILITY_GAPS = (
+    "liquidity_gate_policy_not_integrated",
+    "market_breadth_not_integrated",
+    "sector_industry_relative_strength_not_integrated",
+    "news_first_market_discovery_not_integrated",
+    "halt_resume_event_feed_not_integrated",
+    "block_trade_options_event_feed_not_integrated",
+    "reclaim_retest_higher_low_confirmation_not_integrated",
+    "momentum_continuation_reentry_not_integrated",
+    "historical_3y_confidence_not_integrated",
+    "value_price_return_pendulum_not_integrated",
+    "corporate_action_normalization_not_audited",
+    "exchange_calendar_early_close_not_integrated",
+    "external_push_notification_not_configured",
+    "stale_state_watchdog_not_integrated",
+)
