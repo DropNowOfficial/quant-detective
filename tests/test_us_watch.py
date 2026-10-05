@@ -24,6 +24,7 @@ def intra(**changes):
         "move_from_rth_open_pct": 0.7,
         "d5_atr": 0.1,
         "two_completed_5m_above_vwap_and_ma5": False,
+        "same_time_rvol": 1.0,
     }
     out.update(changes)
     return out
@@ -43,8 +44,13 @@ def test_entry_armed_is_visible_before_full_confirmation():
 
 
 def test_entry_confirmed_requires_two_completed_bars_above_vwap_and_ma5():
-    result = classify(daily(), intra(d5_atr=0.05, two_completed_5m_above_vwap_and_ma5=True))
+    result = classify(daily(), intra(d5_atr=0.05, two_completed_5m_above_vwap_and_ma5=True, same_time_rvol=1.1))
     assert result["state"] == "ENTRY_CONFIRMED"
+
+
+def test_missing_rvol_blocks_entry_confirmation():
+    result = classify(daily(), intra(d5_atr=0.05, two_completed_5m_above_vwap_and_ma5=True, same_time_rvol=None))
+    assert result["state"] == "ENTRY_ARMED"
 
 
 def test_premarket_move_can_trigger_leader_even_before_rth():
