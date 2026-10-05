@@ -67,4 +67,18 @@ def test_allowed_paths_contain_no_order_routes():
         "/iserver/accounts",
         "/iserver/secdef/search",
         "/iserver/marketdata/snapshot",
+        "/iserver/scanner/params",
+        "/iserver/scanner/run",
     }
+
+
+def test_market_scanner_is_read_only_and_sends_json():
+    opener=opener_for([
+        ("/iserver/scanner/params", {"scan_type_list":[]}),
+        ("/iserver/scanner/run", {"contracts":[{"symbol":"NVDA","con_id":4815747}]}),
+    ])
+    gw=ClientPortalGateway(opener=opener, sleeper=lambda _:None)
+    assert gw.scanner_params()["scan_type_list"] == []
+    out=gw.scanner_run(instrument="STK", location="STK.US.MAJOR", scan_type="TOP_PERC_GAIN")
+    assert out["contracts"][0]["symbol"] == "NVDA"
+    assert all("order" not in url.lower() for _,url in opener.calls)
