@@ -16,7 +16,7 @@ from urllib.request import Request, urlopen
 
 
 ALLOWED_PATHS = {
-    "/iserver/auth/status": {"GET"},
+    "/iserver/auth/status": {"GET", "POST"},
     "/tickle": {"POST"},
     "/iserver/accounts": {"GET"},
     "/iserver/secdef/search": {"GET"},
@@ -99,13 +99,22 @@ class ClientPortalGateway:
             raise CPGError("IBKR returned non-JSON data") from exc
 
     def auth_status(self):
-        data = self._request("GET", "/iserver/auth/status")
-        return {
-            "authenticated": bool(data.get("authenticated")),
-            "connected": bool(data.get("connected")),
-            "competing": bool(data.get("competing")),
-            "message": data.get("message") or "",
-        }
+        # Legacy Client Portal Gateway documentation uses GET, while current
+        # Trading Web API references POST. Support both without broadening the
+        # endpoint whitelist beyond this read-only status resource.
+        last_error = None
+        for method in ("POST", "GET"):
+            try:
+                data = self._request(method, "/iserver/auth/status")
+                return {
+                    "authenticated": bool(data.get("authenticated")),
+                    "connected": bool(data.get("connected")),
+                    "competing": bool(data.get("competing")),
+                    "message": data.get("message") or "",
+                }
+            except CPGError as exc:
+                last_error = exc
+        raise last_error or CPGError("IBKR auth status unavailable")
 
     def tickle(self):
         return self._request("POST", "/tickle")
@@ -174,7 +183,7 @@ class ClientPortalGateway:
         if not isinstance(data, dict) or not isinstance(data.get("contracts"), list):
             raise CPGError("IBKR scanner returned invalid payload")
         return data
-    def snapshots(self, contracts, fields=("31", "82", "83", "84", "86", "7762")):
+    def snapshots(self, contracts, fields=("31", "82", "83", "84", "86", "7762", "6509", "7899")):
         if not contracts:
             return {}
         if not self._accounts_ready:
@@ -210,5 +219,6 @@ class ClientPortalGateway:
                 "volume": _number(row.get("7762")) or _number(row.get("87")),
                 "updated_ms": _number(row.get("_updated")),
                 "market_data_availability": row.get("6509"),
+                "stock_type": row.get("7899"),
             }
         return out
