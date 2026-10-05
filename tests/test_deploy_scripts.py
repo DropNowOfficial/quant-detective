@@ -67,6 +67,7 @@ def test_github_fallback_dispatch_timer_is_wired_safely():
     assert "EnvironmentFile=-/etc/quant-detective/github-fallback.env" in service
     assert "SuccessExitStatus=3" in service
     assert "OnUnitInactiveSec=5min" in timer
+    assert "Mon-Fri 04:00-20:10 America/New_York" in timer
     assert "QD_GITHUB_FALLBACK_TOKEN=" in env
     assert "quant-detective-github-fallback.timer" in updater
     assert "github-fallback.env.example" in updater
