@@ -149,6 +149,7 @@ class HybridDaemon:
         self.discovery = discovery
         self.discovery_structure_limit = max(0, int(discovery_structure_limit))
         self.discovery_symbols = ()
+        self.discovery_candidates = ()
         self.discovery_report = None
         self.discovery_error = None
         self.run_id = uuid.uuid4().hex
@@ -196,7 +197,9 @@ class HybridDaemon:
             "discovery_exhaustive": False,
             "discovery": self.discovery_report,
             "discovery_error": self.discovery_error,
+            "discovery_candidates": list(self.discovery_candidates),
             "discovery_symbol_count": len(self.discovery_symbols),
+            "discovery_structure_limit": self.discovery_structure_limit,
             "structural_symbol_count": len(self.structural),
             "capability_gaps": [
                 "market_breadth_not_integrated",
@@ -249,9 +252,25 @@ class HybridDaemon:
             try:
                 self.discovery_report = self.discovery.tick()
                 candidates = self.discovery.candidates(limit=self.discovery_structure_limit)
+                self.discovery_candidates = tuple({
+                    "symbol": item["symbol"],
+                    "conid": item["conid"],
+                    "exchange": item.get("exchange"),
+                    "company_name": item.get("company_name"),
+                    "scan_hits": item.get("scan_hits", {}),
+                    "first_seen": item.get("first_seen"),
+                    "last_seen": item.get("last_seen"),
+                    "structural_enriched": item["symbol"] in self.structural,
+                } for item in candidates)
                 self.discovery_symbols = tuple(
                     item["symbol"] for item in candidates if item["symbol"] not in self.symbols
                 )
+                base_symbols = set((*self.symbols, "SPY", "QQQ"))
+                active_dynamic = set(self.discovery_symbols)
+                self.contracts = {
+                    symbol: contract for symbol, contract in self.contracts.items()
+                    if symbol in base_symbols or symbol in active_dynamic
+                }
                 for item in candidates:
                     self.contracts.setdefault(item["symbol"], {
                         "symbol": item["symbol"],
