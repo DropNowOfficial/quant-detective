@@ -12,6 +12,7 @@ def daily():
         "ma20_direction": "UP",
         "atr5": 10.0,
         "prior_close": 100.0,
+        "median_dollar_volume_20d": 250_000_000.0,
     }
 
 
@@ -49,7 +50,11 @@ def test_entry_armed_is_visible_before_full_confirmation():
 
 
 def test_entry_confirmed_requires_two_completed_bars_above_vwap_and_ma5():
-    result = classify(daily(), intra(d5_atr=0.05, two_completed_5m_above_vwap_and_ma5=True, same_time_rvol=1.1))
+    result = classify(
+        daily(),
+        intra(d5_atr=0.05, two_completed_5m_above_vwap_and_ma5=True, same_time_rvol=1.1),
+        liquidity_floor=50_000_000,
+    )
     assert result["state"] == "ENTRY_CONFIRMED"
 
 
@@ -209,3 +214,36 @@ def test_sector_proxy_regime_is_explicitly_not_market_breadth():
     assert out["sector_proxy"]["positive"]==2
     assert out["sector_proxy"]["negative"]==1
     assert out["indexes"]["SPY"]["change_pct"]==1.0
+
+
+def test_unconfigured_liquidity_policy_blocks_entry_confirmation():
+    result = classify(
+        daily(),
+        intra(
+            d5_atr=0.05,
+            open_gap_atr=0.1,
+            price_vs_vwap_atr=0.1,
+            two_completed_5m_above_vwap_and_ma5=True,
+            same_time_rvol=1.2,
+        ),
+    )
+    assert result["state"] == "ENTRY_ARMED"
+    assert "liquidity_policy_unconfigured" in result["entry_blockers"]
+
+
+def test_configured_liquidity_floor_blocks_thin_candidate():
+    thin=daily()
+    thin["median_dollar_volume_20d"]=10_000_000
+    result = classify(
+        thin,
+        intra(
+            d5_atr=0.05,
+            open_gap_atr=0.1,
+            price_vs_vwap_atr=0.1,
+            two_completed_5m_above_vwap_and_ma5=True,
+            same_time_rvol=1.2,
+        ),
+        liquidity_floor=50_000_000,
+    )
+    assert result["state"] == "ENTRY_ARMED"
+    assert "liquidity_below_configured_floor" in result["entry_blockers"]
