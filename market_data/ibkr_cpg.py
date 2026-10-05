@@ -17,7 +17,7 @@ from urllib.request import Request, urlopen
 
 ALLOWED_PATHS = {
     "/iserver/auth/status": {"GET", "POST"},
-    "/tickle": {"POST"},
+    "/tickle": {"GET"},
     "/iserver/accounts": {"GET"},
     "/iserver/secdef/search": {"GET"},
     "/iserver/marketdata/snapshot": {"GET"},
@@ -133,7 +133,7 @@ class ClientPortalGateway:
         raise last_error or CPGError("IBKR auth status unavailable")
 
     def tickle(self):
-        return self._request("POST", "/tickle")
+        return self._request("GET", "/tickle")
 
     def ensure_accounts(self):
         data = self._request("GET", "/iserver/accounts")
