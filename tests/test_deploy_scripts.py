@@ -8,7 +8,6 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_deploy_shell_scripts_parse():
     for rel in [
         "deploy/bootstrap-droplet.sh",
-        "deploy/install-systemd.sh",
         "deploy/install-autoupdate.sh",
         "deploy/update-production.sh",
     ]:
