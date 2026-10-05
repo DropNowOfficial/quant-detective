@@ -18,7 +18,7 @@ import uuid
 from .ibkr_cpg import ClientPortalGateway
 from .market_discovery import IBKRMarketDiscovery
 from .us_watch import scan_once
-from .universe import CORE_FALLBACK_SYMBOLS, COVERAGE_CORE_FALLBACK, COVERAGE_IBKR_DYNAMIC
+from .universe import CORE_FALLBACK_SYMBOLS, COVERAGE_CORE_FALLBACK, COVERAGE_IBKR_DYNAMIC, LIVE_CAPABILITY_GAPS
 
 
 def _finite(v):
@@ -208,14 +208,7 @@ class HybridDaemon:
             "discovery_symbol_count": len(self.discovery_symbols),
             "discovery_structure_limit": self.discovery_structure_limit,
             "structural_symbol_count": len(self.structural),
-            "capability_gaps": [
-                "market_breadth_not_integrated",
-                "sector_industry_relative_strength_not_integrated",
-                "news_first_market_discovery_not_integrated",
-                "historical_3y_confidence_not_integrated",
-                "value_price_return_pendulum_not_integrated",
-                "external_push_notification_not_configured",
-            ],
+            "capability_gaps": list(LIVE_CAPABILITY_GAPS),
             "snapshot_seconds": self.snapshot_seconds,
             "structure_seconds": self.structure_seconds,
             "rows": [],
@@ -375,14 +368,7 @@ class HybridDaemon:
             "discovery_symbol_count": len(self.discovery_symbols),
             "discovery_structure_limit": self.discovery_structure_limit,
             "structural_symbol_count": len(self.structural),
-            "capability_gaps": [
-                "market_breadth_not_integrated",
-                "sector_industry_relative_strength_not_integrated",
-                "news_first_market_discovery_not_integrated",
-                "historical_3y_confidence_not_integrated",
-                "value_price_return_pendulum_not_integrated",
-                "external_push_notification_not_configured",
-            ],
+            "capability_gaps": list(LIVE_CAPABILITY_GAPS),
             "snapshot_seconds": self.snapshot_seconds,
             "structure_seconds": self.structure_seconds,
             "last_structure_age_seconds": max(0.0, self.clock() - self.last_structure),
