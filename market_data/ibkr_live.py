@@ -371,10 +371,15 @@ class HybridDaemon:
             self.previous_states[row["symbol"]] = new
 
         current_multi = {
-            item["symbol"] for item in self.discovery_candidates if item.get("multi_scan")
+            item["symbol"] for item in self.discovery_candidates
+            if item.get("multi_scan") and item.get("eligible_stock_type")
         }
         for item in self.discovery_candidates:
-            if not item.get("multi_scan") or item["symbol"] in self.previous_discovery_multi:
+            if (
+                not item.get("multi_scan")
+                or not item.get("eligible_stock_type")
+                or item["symbol"] in self.previous_discovery_multi
+            ):
                 continue
             event = {
                 "at_utc": now_iso,
