@@ -29,7 +29,6 @@ from .universe import (
 )
 
 ET = ZoneInfo("America/New_York")
-DEFAULT_SYMBOLS = CORE_FALLBACK_SYMBOLS
 OUTPUT_ENV = "QD_WATCH_OUTPUT"
 _DAILY_CACHE = {}
 _NEWS_CACHE = {}
@@ -456,7 +455,7 @@ def _scan_symbol(symbol, fetcher, now, broad_market_change=None, qqq_change=None
     }
 
 
-def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
+def scan_once(symbols=CORE_FALLBACK_SYMBOLS, fetcher=fetch, now=None, workers=8):
     now = now or datetime.now(timezone.utc)
     symbols = tuple(dict.fromkeys(s.upper() for s in symbols))
     market_context = _market_context(fetcher, now)
@@ -548,7 +547,7 @@ def _write(report, output=None):
         path.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
 
 
-def run(*, symbols=DEFAULT_SYMBOLS, poll_seconds=60, duration_minutes=0, github_alerts=False,
+def run(*, symbols=CORE_FALLBACK_SYMBOLS, poll_seconds=60, duration_minutes=0, github_alerts=False,
         once=False, output=None, fetcher=fetch):
     if isinstance(poll_seconds, bool) or not 15 <= int(poll_seconds) <= 3600:
         raise ValueError("poll_seconds must be 15..3600")
