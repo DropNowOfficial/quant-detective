@@ -27,6 +27,7 @@ from .universe import (
     MARKET_CONTEXT_SYMBOLS,
     COVERAGE_CORE_FALLBACK,
     LIVE_CAPABILITY_GAPS,
+    SECTOR_PROXY_SYMBOLS,
 )
 
 ET = ZoneInfo("America/New_York")
@@ -141,6 +142,34 @@ def _market_proxy(fetcher, symbol, now):
     except Exception as exc:
         return {"ok": False, "symbol": symbol, "role": "MARKET_CONTEXT_PROXY",
                 "error": f"{type(exc).__name__}: {str(exc)[:200]}"}
+
+
+def _market_regime_summary(context):
+    sector_rows=[]
+    for symbol in SECTOR_PROXY_SYMBOLS:
+        row=context.get(symbol) or {}
+        change=row.get("change_pct")
+        if row.get("ok") and not row.get("stale") and _finite(change):
+            sector_rows.append((symbol, float(change)))
+    changes=[x[1] for x in sector_rows]
+    sector_proxy={
+        "available": len(sector_rows),
+        "expected": len(SECTOR_PROXY_SYMBOLS),
+        "positive": sum(v > 0 for v in changes),
+        "negative": sum(v < 0 for v in changes),
+        "median_change_pct": statistics.median(changes) if changes else None,
+        "strongest": max(sector_rows, key=lambda x:x[1]) if sector_rows else None,
+        "weakest": min(sector_rows, key=lambda x:x[1]) if sector_rows else None,
+        "label": "SECTOR_ETF_PROXY_NOT_MARKET_BREADTH",
+    }
+    indexes={}
+    for symbol in ("SPY","QQQ","IWM"):
+        row=context.get(symbol) or {}
+        indexes[symbol]={
+            "change_pct":row.get("change_pct") if row.get("ok") and not row.get("stale") else None,
+            "stale":bool(row.get("stale")),
+        }
+    return {"indexes":indexes,"sector_proxy":sector_proxy}
 
 
 def _market_context(fetcher, now):
@@ -561,6 +590,7 @@ def scan_once(symbols=CORE_FALLBACK_SYMBOLS, fetcher=fetch, now=None, workers=8)
         "trading_enabled": False,
         "sources": ["Yahoo Finance public chart", "Yahoo Finance public search/news"],
         "market_context": market_context,
+        "market_regime": _market_regime_summary(market_context),
         "symbols_requested": list(symbols),
         "rows": rows,
         "alerts": alerts,
