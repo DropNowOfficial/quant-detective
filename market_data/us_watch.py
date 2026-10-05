@@ -31,6 +31,8 @@ DEFAULT_SYMBOLS = (
     "AAOI","QCOM","MPWR","MCHP","NXPI","ETN","VST","CEG","HPE","WDC","STX",
 )
 OUTPUT_ENV = "QD_WATCH_OUTPUT"
+_DAILY_CACHE = {}
+_NEWS_CACHE = {}
 
 
 def _finite(v):
@@ -106,6 +108,9 @@ def _chart(fetcher, symbol, *, range_value, interval, include_prepost):
 
 
 def _news(fetcher, symbol, now):
+    cached = _NEWS_CACHE.get(symbol)
+    if cached and (now.timestamp() - cached[0]) < 900:
+        return cached[1]
     try:
         wrapped = fetcher(_news_url(symbol), kind="json")
         data, receipt = wrapped["data"], wrapped["receipt"]
@@ -123,10 +128,14 @@ def _news(fetcher, symbol, now):
                 "age_hours": round(age_h, 2) if _finite(age_h) else None,
                 "link": item.get("link"),
             })
-        return {"ok": True, "known_at": receipt.get("received_at_utc"), "items": out,
-                "fresh_36h_count": sum(_finite(x["age_hours"]) and 0 <= x["age_hours"] <= 36 for x in out)}
+        result = {"ok": True, "known_at": receipt.get("received_at_utc"), "items": out,
+                  "fresh_36h_count": sum(_finite(x["age_hours"]) and 0 <= x["age_hours"] <= 36 for x in out)}
+        _NEWS_CACHE[symbol] = (now.timestamp(), result)
+        return result
     except Exception as exc:
-        return {"ok": False, "error": f"{type(exc).__name__}: {str(exc)[:200]}", "items": [], "fresh_36h_count": 0}
+        result = {"ok": False, "error": f"{type(exc).__name__}: {str(exc)[:200]}", "items": [], "fresh_36h_count": 0}
+        _NEWS_CACHE[symbol] = (now.timestamp(), result)
+        return result
 
 
 def _completed_daily(rows, now):
@@ -310,9 +319,15 @@ def classify(daily, intra):
 
 
 def _scan_symbol(symbol, fetcher, now):
-    daily_rows, _, daily_receipt = _chart(fetcher, symbol, range_value="3mo", interval="1d", include_prepost=False)
+    cache_key = (symbol, now.astimezone(ET).date().isoformat())
+    cached = _DAILY_CACHE.get(cache_key)
+    if cached is None:
+        daily_rows, _, daily_receipt = _chart(fetcher, symbol, range_value="3mo", interval="1d", include_prepost=False)
+        daily = _daily_metrics(daily_rows, now)
+        cached = (daily, daily_receipt.get("received_at_utc"))
+        _DAILY_CACHE[cache_key] = cached
+    daily, daily_known_at = cached
     intraday_rows, _, intra_receipt = _chart(fetcher, symbol, range_value="5d", interval="5m", include_prepost=True)
-    daily = _daily_metrics(daily_rows, now)
     intra = _intraday_metrics(intraday_rows, daily, now)
     state = classify(daily, intra)
     previous = datetime.fromisoformat(daily["previous_session_date"]).date()
@@ -323,7 +338,7 @@ def _scan_symbol(symbol, fetcher, now):
         "status": "OK",
         "source": "Yahoo Finance public chart",
         "known_at": intra_receipt.get("received_at_utc"),
-        "daily_known_at": daily_receipt.get("received_at_utc"),
+        "daily_known_at": daily_known_at,
         "calendar_days_since_previous_session": calendar_gap,
         "monday_weekend_context": current.weekday() == 0 and calendar_gap >= 3,
         "daily": daily,
@@ -414,7 +429,16 @@ def run(*, symbols=DEFAULT_SYMBOLS, poll_seconds=60, duration_minutes=0, github_
     while True:
         report = scan_once(symbols=symbols, fetcher=fetcher)
         _write(report, output)
-        print(json.dumps(report, ensure_ascii=False, allow_nan=False), flush=True)
+        compact = {
+            "generated_at_et": report.get("generated_at_et"),
+            "alerts": [
+                {"symbol": a.get("symbol"), "state": a.get("state"), "change_pct": a.get("change_pct"),
+                 "d5_atr": a.get("d5_atr")}
+                for a in report.get("alerts", [])
+            ],
+            "errors": [r.get("symbol") for r in report.get("rows", []) if r.get("status") == "ERROR"],
+        }
+        print(json.dumps(compact, ensure_ascii=False, allow_nan=False), flush=True)
         if github_alerts:
             from .github_alerts import publish
             publish(report)
