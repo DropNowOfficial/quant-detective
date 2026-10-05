@@ -5,7 +5,7 @@
 ## Start the LIVE screener
 
 ```bash
-git clone --branch feature/live-screener-20261004 https://github.com/DropNowOfficial/quant-detective.git
+git clone https://github.com/DropNowOfficial/quant-detective.git
 cd quant-detective
 python -m market_data serve
 ```
@@ -13,6 +13,7 @@ python -m market_data serve
 Open `http://127.0.0.1:8767/`. Python 3.11+ and `curl` are required; the LIVE runtime uses only the standard library. On Windows, run `start-live.cmd` from the repository. The reproducible developer environment remains `uv sync --frozen` and `uv run qd-market serve`.
 
 - **LIVE / SCREENER / STOCK:** ongoing provider GET requests, editable thresholds, ranked candidates, whole-row selection, source-specific charts and check-by-check explanations.
+- **Coverage honesty:** the public/Yahoo headless fallback watches a fixed core list and is **not** whole-market coverage. Market-wide discovery requires a provider scanner (currently the read-only IBKR U.S.-major scanner path), then HARNESS enrichment runs only on the ranked candidate subset.
 - **Binance spot mirror, Gate USDT perpetual, OKX perpetual** public adapters; US/A-share and other original public directory adapters remain available. Live crypto comparisons use USDT-quoted instruments, not synthetic cross-currency returns. Derivative contracts never stand in for cash stocks.
 - Target **12-second batch cadence**, 12 symbols per batch, four concurrent GETs. Each GET stops at 12 seconds. Slow requests/other active tabs can lengthen actual cadence; the UI reports cycle duration, coverage and each observation's age. Whole-directory rotation is NOT a claim that every instrument updates every 12 seconds.
 - Current-price display includes explicitly marked unfinished candles. **MINUTE_MA5_V1** ranking uses completed bars only: MA5/MA20, ATR14, rolling VWAP60, RVOL20 and time-aligned same-source relative strength. These are minute-bar features, **not the original daily HARNESS** or a verified profit forecast.
