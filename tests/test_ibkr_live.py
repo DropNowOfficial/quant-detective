@@ -150,3 +150,95 @@ def test_failed_ibkr_auth_is_backed_off_for_30_seconds(tmp_path):
     now[0] += 1
     d.cycle()
     assert gw.calls == 2
+
+
+class FakeDiscovery:
+    def __init__(self, symbol="XYZ"):
+        self.symbol=symbol
+    def tick(self):
+        return {"active":True,"paced":False,"scan_display_name":"Top % Gainers","returned":1}
+    def candidates(self, limit=24):
+        return [{
+            "symbol":self.symbol,
+            "conid":99,
+            "exchange":"NASDAQ",
+            "company_name":self.symbol+" INC",
+            "first_seen":1.0,
+            "last_seen":2.0,
+            "scan_hits":{"Top % Gainers":{"rank":0}},
+            "scan_hit_count":1,
+            "best_rank":0,
+            "multi_scan":False,
+        }]
+
+
+class DiscoveryGateway(FakeGateway):
+    def __init__(self, stock_type="Common"):
+        super().__init__(True)
+        self.stock_type=stock_type
+    def snapshots(self, contracts):
+        out={
+            "QQQ":{"last":200.0,"change_pct":0.5,"market_data_availability":"R","last_status":"TRADE","stock_type":"ETF"},
+            "NVDA":{"last":115.0,"change_pct":2.0,"market_data_availability":"R","last_status":"TRADE","stock_type":"Common"},
+        }
+        if "XYZ" in contracts:
+            out["XYZ"]={"last":50.0,"change_pct":3.0,"market_data_availability":"R","last_status":"TRADE","stock_type":self.stock_type}
+        return out
+
+
+def dynamic_scan(symbols):
+    rows=[]
+    for symbol in symbols:
+        rows.append({
+            "symbol":symbol,"status":"OK","state":"WATCH","known_at":"2026-10-05T16:00:00Z",
+            "daily":{"ma5":49.0 if symbol=="XYZ" else 100.0,"atr5":5.0 if symbol=="XYZ" else 10.0},
+            "intraday":{"rth_vwap_approx":49.5 if symbol=="XYZ" else 101.0,"same_time_rvol":1.1,"d5_atr":0.1},
+        })
+    return {"rows":rows}
+
+
+def test_discovered_stock_flows_into_harness_on_next_structure_refresh(tmp_path):
+    now=[1000.0]
+    d=HybridDaemon(
+        symbols=("NVDA",),gateway=DiscoveryGateway("Common"),scan_fn=dynamic_scan,
+        discovery=FakeDiscovery("XYZ"),discovery_structure_limit=24,
+        state_path=tmp_path/"state.json",events_path=tmp_path/"events.jsonl",
+        snapshot_seconds=2,structure_seconds=60,clock=lambda:now[0],
+    )
+    d.initialize()
+    first=d.cycle()
+    assert first["discovery_current"] is True
+    assert first["discovery_scope"]=="IBKR_US_MAJOR_TOP_N"
+    assert first["discovery_candidates"][0]["symbol"]=="XYZ"
+    assert first["discovery_candidates"][0]["eligible_stock_type"] is True
+    assert first["discovery_candidates"][0]["structural_enriched"] is False
+    assert "XYZ" not in {row["symbol"] for row in first["rows"]}
+
+    now[0]+=61
+    second=d.cycle()
+    assert "XYZ" in {row["symbol"] for row in second["rows"]}
+
+
+def test_etf_discovery_does_not_enter_stock_harness(tmp_path):
+    d=HybridDaemon(
+        symbols=("NVDA",),gateway=DiscoveryGateway("ETF"),scan_fn=dynamic_scan,
+        discovery=FakeDiscovery("XYZ"),discovery_structure_limit=24,
+        state_path=tmp_path/"state.json",events_path=tmp_path/"events.jsonl",
+        snapshot_seconds=2,structure_seconds=60,
+    )
+    d.initialize()
+    out=d.cycle()
+    candidate=out["discovery_candidates"][0]
+    assert candidate["stock_type"]=="ETF"
+    assert candidate["eligible_stock_type"] is False
+    assert "XYZ" not in d.discovery_symbols
+    assert "XYZ" not in {row["symbol"] for row in out["rows"]}
+
+
+def test_halted_quote_cannot_drive_realtime_state():
+    from market_data.ibkr_live import _realtime_quote
+    assert not _realtime_quote({
+        "last":115.0,
+        "last_status":"HALTED",
+        "market_data_availability":"R",
+    })
