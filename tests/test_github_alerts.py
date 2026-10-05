@@ -15,6 +15,9 @@ def _report(alerts=None):
 def test_heartbeat_updates_even_without_material_alerts(monkeypatch):
     monkeypatch.setenv("GITHUB_REPOSITORY","owner/repo")
     monkeypatch.setenv("GITHUB_TOKEN","token")
+    monkeypatch.setenv("GITHUB_EVENT_NAME","schedule")
+    monkeypatch.setenv("GITHUB_RUN_ID","12345")
+    monkeypatch.setenv("GITHUB_SHA","abcdef1234567890")
     calls=[]
     issue={"number":7,"title":"Market Watch | 2026-10-05 ET","body":"","html_url":"https://example/7"}
     heartbeat={"id":99,"body":"<!-- qd-heartbeat --> old"}
@@ -36,6 +39,10 @@ def test_heartbeat_updates_even_without_material_alerts(monkeypatch):
     patches=[c for c in calls if c[0]=="PATCH"]
     assert len(patches)==1
     assert "Last hosted fallback scan" in patches[0][2]["body"]
+    assert "Trigger: **schedule**" in patches[0][2]["body"]
+    assert "12345" in patches[0][2]["body"]
+    assert "abcdef123456" in patches[0][2]["body"]
+    assert "https://github.com/owner/repo/actions/runs/12345" in patches[0][2]["body"]
 
 
 def test_heartbeat_created_when_missing(monkeypatch):
