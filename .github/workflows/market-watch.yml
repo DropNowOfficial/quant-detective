@@ -1,6 +1,13 @@
 name: continuous-market-watch
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'market_data/us_watch.py'
+      - 'market_data/github_alerts.py'
+      - 'market_data/transport.py'
+      - '.github/workflows/market-watch*.yml'
   schedule:
     # Three overlapping long-lived hosted jobs cover 04:00-20:00 ET on weekdays.
     # The runner loops every 60s internally; schedule itself is only the handoff.
