@@ -2,9 +2,10 @@
 Description=Poll Quant Detective main branch for production updates
 
 [Timer]
-OnBootSec=2min
-OnUnitActiveSec=5min
-RandomizedDelaySec=30s
+OnBootSec=5s
+OnUnitInactiveSec=1s
+AccuracySec=100ms
+RandomizedDelaySec=0
 Persistent=true
 Unit=quant-detective-update.service
 
