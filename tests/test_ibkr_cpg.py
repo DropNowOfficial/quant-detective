@@ -93,3 +93,13 @@ def test_last_price_markers_are_preserved_as_status():
     assert _last_price("H 123.45") == (123.45, "HALTED")
     assert _last_price("C 122.00") == (122.0, "PREVIOUS_CLOSE")
     assert _last_price("124.10") == (124.1, "TRADE")
+
+
+def test_tickle_uses_documented_get_method():
+    opener=opener_for([
+        ("/tickle", {"session":"ok"}),
+    ])
+    gw=ClientPortalGateway(opener=opener, sleeper=lambda _:None)
+    out=gw.tickle()
+    assert out["session"]=="ok"
+    assert opener.calls[-1][0]=="GET"
