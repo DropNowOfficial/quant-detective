@@ -6,7 +6,8 @@ import re
 from . import providers
 from .server import make_server
 from .transport import fetch
-from .us_watch import DEFAULT_SYMBOLS, run as run_us_watch
+from .us_watch import run as run_us_watch
+from .universe import CORE_FALLBACK_SYMBOLS
 from .ibkr_cpg import ClientPortalGateway
 from .ibkr_live import HybridDaemon
 
@@ -50,7 +51,7 @@ def main():
     serve.add_argument('--port', type=int, default=8767)
 
     watch = sub.add_parser('watch')
-    watch.add_argument('--symbols', default=','.join(DEFAULT_SYMBOLS))
+    watch.add_argument('--symbols', default=','.join(CORE_FALLBACK_SYMBOLS))
     watch.add_argument('--poll-seconds', type=int, default=60)
     watch.add_argument('--duration-minutes', type=int, default=0)
     watch.add_argument('--once', action='store_true')
