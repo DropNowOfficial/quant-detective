@@ -90,3 +90,20 @@ def test_delayed_ibkr_quote_cannot_drive_fast_path(tmp_path):
     out=d.cycle()
     assert out["mode"]=="DEGRADED_PUBLIC_ONLY"
     assert "no realtime-subscribed quotes" in out["ibkr_error"]
+
+
+def test_initialize_writes_bootstrapping_state_before_structure_scan(tmp_path):
+    state_path=tmp_path/"state.json"
+    observed={}
+    def scan(symbols):
+        import json
+        observed.update(json.loads(state_path.read_text()))
+        return {"rows":[structural()]}
+    d=HybridDaemon(
+        symbols=("NVDA",),gateway=FakeGateway(False),scan_fn=scan,
+        state_path=state_path,events_path=tmp_path/"events.jsonl",
+        snapshot_seconds=2,structure_seconds=60,
+    )
+    d.initialize()
+    assert observed["mode"]=="BOOTSTRAPPING"
+    assert observed["phase"]=="initial_structure_scan"
