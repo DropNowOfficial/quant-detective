@@ -191,3 +191,21 @@ def test_stale_public_data_blocks_all_alert_states():
     assert result["state"] == "STALE"
     assert not result["leader_detected"]
     assert "stale_public_market_data" in result["entry_blockers"]
+
+
+def test_sector_proxy_regime_is_explicitly_not_market_breadth():
+    from market_data.us_watch import _market_regime_summary
+    context={
+        "SPY":{"ok":True,"stale":False,"change_pct":1.0},
+        "QQQ":{"ok":True,"stale":False,"change_pct":2.0},
+        "IWM":{"ok":True,"stale":False,"change_pct":0.5},
+        "XLK":{"ok":True,"stale":False,"change_pct":2.5},
+        "XLF":{"ok":True,"stale":False,"change_pct":-0.2},
+        "SOXX":{"ok":True,"stale":False,"change_pct":4.0},
+    }
+    out=_market_regime_summary(context)
+    assert out["sector_proxy"]["label"]=="SECTOR_ETF_PROXY_NOT_MARKET_BREADTH"
+    assert out["sector_proxy"]["available"]==3
+    assert out["sector_proxy"]["positive"]==2
+    assert out["sector_proxy"]["negative"]==1
+    assert out["indexes"]["SPY"]["change_pct"]==1.0
