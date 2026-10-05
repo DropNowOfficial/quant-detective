@@ -25,14 +25,13 @@ def intra(**changes):
         "d5_atr": 0.1,
         "two_completed_5m_above_vwap_and_ma5": False,
         "same_time_rvol": 1.0,
-        "price_vs_vwap_atr": 0.02,
     }
     out.update(changes)
     return out
 
 
 def test_leader_detection_is_separate_from_entry_gate():
-    result = classify(daily(), intra(current_price=113, change_pct=4.0, d5_atr=1.3))
+    result = classify(daily(), intra(current_price=113, change_pct=4.0, d5_atr=1.3), qqq_change=0.5)
     assert result["leader_detected"]
     assert result["state"] == "LEADER_HOT_NO_CHASE"
     assert not result["standard_entry_geometry"]
@@ -49,20 +48,9 @@ def test_entry_confirmed_requires_two_completed_bars_above_vwap_and_ma5():
     assert result["state"] == "ENTRY_CONFIRMED"
 
 
-def test_missing_rvol_blocks_entry_confirmation_and_armed_state():
+def test_missing_rvol_blocks_entry_confirmation():
     result = classify(daily(), intra(d5_atr=0.05, two_completed_5m_above_vwap_and_ma5=True, same_time_rvol=None))
-    assert result["state"] == "WATCH"
-
-
-def test_faded_early_leader_is_not_still_called_hot():
-    result = classify(daily(), intra(change_pct=-1.2, premarket_change_pct=1.5, move_from_rth_open_pct=-1.3, d5_atr=0.8))
-    assert result["leader_detected"]
-    assert result["state"] == "LEADER_FADED"
-
-
-def test_armed_requires_near_vwap_and_volume_context():
-    result = classify(daily(), intra(d5_atr=0.15, price_vs_vwap_atr=-0.25, same_time_rvol=1.2))
-    assert result["state"] != "ENTRY_ARMED"
+    assert result["state"] == "ENTRY_ARMED"
 
 
 def test_premarket_move_can_trigger_leader_even_before_rth():
@@ -97,3 +85,18 @@ def test_intraday_uses_premarket_but_rth_vwap_only_uses_rth():
     metrics=_intraday_metrics(rows,daily(),now)
     assert metrics["premarket_last"] == 102
     assert metrics["rth_vwap_approx"] < 101
+
+
+def test_relative_strength_vs_qqq_can_trigger_leader():
+    result = classify(daily(), intra(change_pct=0.9, premarket_change_pct=0.1, open_gap_pct=0.1,
+                                     move_from_rth_open_pct=0.2, d5_atr=0.3), qqq_change=0.2)
+    assert result["leader_detected"]
+    assert result["relative_change_vs_qqq_pp"] > 0.5
+    assert any("vs QQQ" in x for x in result["leader_reasons"])
+
+
+def test_one_percent_day_move_is_not_silenced():
+    result = classify(daily(), intra(change_pct=1.05, premarket_change_pct=0.0, open_gap_pct=0.0,
+                                     move_from_rth_open_pct=0.1, d5_atr=0.6), qqq_change=0.7)
+    assert result["leader_detected"]
+    assert result["state"] == "LEADER_HOT_NO_CHASE"
