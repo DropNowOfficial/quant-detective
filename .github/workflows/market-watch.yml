@@ -9,7 +9,7 @@ on:
   schedule:
     # Redundant public-data fallback. The VPS watcher is a separate runtime.
     # Short five-minute jobs avoid an hours-long blind spot if one schedule is dropped.
-    - cron: '2-57/5 4-19 * * 1-5'
+    - cron: '2,7,12,17,22,27,32,37,42,47,52,57 4-19 * * 1-5'
       timezone: 'America/New_York'
     - cron: '2 20 * * 1-5'
       timezone: 'America/New_York'
