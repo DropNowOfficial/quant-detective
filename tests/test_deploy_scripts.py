@@ -33,3 +33,14 @@ def test_production_updater_requires_new_run_id():
     assert "old_run_id=" in text
     assert '"$run_id" != "$old_run_id"' in text
     assert "BOOTSTRAPPING" in text
+
+
+def test_watchdog_assets_and_updater_install_path_exist():
+    assert (ROOT/"deploy/watchdog.py").exists()
+    service=(ROOT/"deploy/systemd/quant-detective-watchdog.service").read_text()
+    timer=(ROOT/"deploy/systemd/quant-detective-watchdog.timer").read_text()
+    updater=(ROOT/"deploy/update-production.sh").read_text()
+    assert "watchdog.py 180 45" in service
+    assert "OnUnitInactiveSec=60s" in timer
+    assert "quant-detective-watchdog.timer" in updater
+    assert "quant-detective-watchdog.service" in updater
