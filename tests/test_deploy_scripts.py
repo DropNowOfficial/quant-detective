@@ -25,3 +25,10 @@ def test_auto_update_service_runs_fixed_local_script():
     text=(ROOT/"deploy/systemd/quant-detective-update.service").read_text()
     assert "ExecStart=/usr/local/sbin/quant-detective-update" in text
     assert "curl" not in text.lower()
+
+
+def test_production_updater_requires_new_run_id():
+    text=(ROOT/"deploy/update-production.sh").read_text()
+    assert "old_run_id=" in text
+    assert '"$run_id" != "$old_run_id"' in text
+    assert "BOOTSTRAPPING" in text

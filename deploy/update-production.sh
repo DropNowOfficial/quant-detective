@@ -72,6 +72,16 @@ if [ ! -d "$release/.git" ]; then
   fi
   chown -R quantdetective:quantdetective "$release"
 fi
+old_run_id="$(python3 - <<'PY'
+import json
+from pathlib import Path
+try:
+    print(json.loads(Path("/var/lib/quant-detective/state.json").read_text()).get("run_id",""))
+except Exception:
+    print("")
+PY
+)"
+
 ln -sfn "$release" "$CURRENT"
 install -m 0644 "$release/deploy/systemd/quant-detective-live.service" /etc/systemd/system/quant-detective-live.service
 install -m 0755 "$release/deploy/update-production.sh" /usr/local/sbin/quant-detective-update
@@ -83,16 +93,17 @@ systemctl restart quant-detective-live.service
 ready=0
 for _ in $(seq 1 90); do
   if systemctl is-active --quiet quant-detective-live.service && [ -f /var/lib/quant-detective/state.json ]; then
-    mode="$(python3 - <<'PY'
+    read -r run_id mode <<<"$(python3 - <<'PY'
 import json
 from pathlib import Path
 try:
-    print(json.loads(Path("/var/lib/quant-detective/state.json").read_text()).get("mode",""))
+    d=json.loads(Path("/var/lib/quant-detective/state.json").read_text())
+    print((d.get("run_id") or ""), (d.get("mode") or ""))
 except Exception:
-    print("")
+    print("", "")
 PY
 )"
-    if [ -n "$mode" ] && [ "$mode" != "BOOTSTRAPPING" ]; then
+    if [ -n "$run_id" ] && [ "$run_id" != "$old_run_id" ] && [ -n "$mode" ] && [ "$mode" != "BOOTSTRAPPING" ]; then
       if "$release/.venv/bin/python" "$release/deploy/healthcheck.py" /var/lib/quant-detective/state.json 30 >/dev/null 2>&1; then
         ready=1
         break
