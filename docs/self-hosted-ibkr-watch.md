@@ -7,7 +7,8 @@ public-data scanning remains the fallback.
 
 The production process is a host service, not a five-day GitHub Actions job.
 
-- **2-second fast path:** local IBKR Client Portal Gateway snapshots.
+- **Discovery path:** provider-native IBKR U.S.-major market scanners rotate across current supported scan types; results are ranked top-N candidates, not exhaustive coverage.
+- **2-second fast path:** local IBKR Client Portal Gateway snapshots for core + discovered candidates.
 - **60-second structural path:** completed-RTH daily state, 5-minute VWAP,
   same-time RVOL and news from the existing public structural watcher.
 - **Persistent state:** `/var/lib/quant-detective/state.json`.
@@ -15,7 +16,7 @@ The production process is a host service, not a five-day GitHub Actions job.
 - **Explicit degradation:** if IBKR authentication/session/quotes fail, mode is
   `DEGRADED_PUBLIC_ONLY`. The service never relabels public Yahoo data as IBKR.
 
-No order API is implemented in `ibkr_cpg.py`.
+No order API is implemented in `ibkr_cpg.py`. The scanner POST endpoint is read-only market discovery and remains on the explicit endpoint whitelist.
 
 ## Important IBKR limitation
 
