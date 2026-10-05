@@ -49,8 +49,13 @@ if [ ! -f /etc/quant-detective/market-watch.env ]; then
   install -o root -g quantdetective -m 0640     "$CURRENT/deploy/systemd/market-watch.env.example"     /etc/quant-detective/market-watch.env
 fi
 
+install -m 0755 "$CURRENT/deploy/update-production.sh" /usr/local/sbin/quant-detective-update
+install -m 0644 "$CURRENT/deploy/systemd/quant-detective-update.service" /etc/systemd/system/quant-detective-update.service
+install -m 0644 "$CURRENT/deploy/systemd/quant-detective-update.timer" /etc/systemd/system/quant-detective-update.timer
+
 systemctl daemon-reload
 systemctl enable --now quant-detective-live.service
+systemctl enable --now quant-detective-update.timer
 
 echo
 echo "Waiting for first structural scan (up to 180s)..."

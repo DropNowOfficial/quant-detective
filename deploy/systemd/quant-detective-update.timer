@@ -1,0 +1,12 @@
+[Unit]
+Description=Poll Quant Detective main branch for production updates
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+RandomizedDelaySec=30s
+Persistent=true
+Unit=quant-detective-update.service
+
+[Install]
+WantedBy=timers.target
