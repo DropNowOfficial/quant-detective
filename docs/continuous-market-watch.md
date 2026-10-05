@@ -13,8 +13,7 @@ Market leadership and entry eligibility are separate.
 
 - `LEADER_HOT_NO_CHASE`: a material move is happening, but price is too far above completed-day MA5.
 - `LEADER_WATCH`: a material move is happening, but the entry gate is not complete.
-- `LEADER_FADED`: a premarket/gap/early leader signal existed, but current RTH price action has materially reversed; this is a caution event, not a hot-leader label.
-- `ENTRY_ARMED`: completed-day trend and MA5/ATR geometry are valid, price is no more than 0.10 ATR below RTH VWAP, and same-time RVOL is at least 0.6; full confirmation is incomplete.
+- `ENTRY_ARMED`: completed-day trend and MA5/ATR geometry are valid; intraday confirmation is incomplete.
 - `ENTRY_CONFIRMED`: completed-day trend, MA5/ATR geometry, two completed 5-minute closes above RTH VWAP + MA5, and same-time historical RVOL >= 0.8.
 - `EXTENDED` / `WATCH`: no alert-grade transition.
 
@@ -45,7 +44,8 @@ Single-stock public Yahoo data do not provide the full 20:00-04:00 ET overnight 
 The watcher therefore adds:
 
 - Nasdaq-100 futures (`NQ=F`) as an overnight growth/tech regime proxy;
-- S&P 500 futures (`ES=F`) as a broad overnight regime proxy.
+- S&P 500 futures (`ES=F`) as a broad overnight regime proxy;
+- QQQ as a same-session relative-strength benchmark when available.
 
 True single-stock overnight coverage requires a provider that exposes those prints, for example a self-hosted broker/data gateway. This repository does not contain broker credentials.
 
@@ -61,25 +61,15 @@ Material states query Yahoo's public search/news endpoint. News is context, not 
 
 ## GitHub execution
 
-Two workflows provide redundancy after these files exist on the repository default branch.
+After this workflow exists on the repository default branch, `continuous-market-watch` starts three overlapping long-running GitHub-hosted shifts:
 
-### `continuous-market-watch`
+- 04:07 ET: 355 minutes
+- 09:57 ET: 355 minutes
+- 15:47 ET: 258 minutes
 
-A one-shot scan every five minutes from 04:00 through 20:00 ET on weekdays.
+Inside a shift, the watcher polls every 60 seconds. The overlap reduces handoff gaps if a scheduled job starts slightly late. Daily and volume-profile inputs are cached for that ET date, and news is cached for 15 minutes.
 
-This is the robust fallback. GitHub scheduled workflows cannot run more frequently than every five minutes.
-
-### `market-watch-daemon`
-
-Long-running GitHub-hosted shifts:
-
-- 04:00 ET: 350 minutes
-- 09:45 ET: 350 minutes
-- 15:30 ET: 270 minutes
-
-Inside a shift, the watcher polls every 60 seconds. Daily and volume-profile inputs are cached for that ET date, and news is cached for 15 minutes.
-
-GitHub-hosted jobs have a finite execution limit, so a hosted workflow cannot be a permanent daemon. A self-hosted runner/service is the path for a true always-on process.
+GitHub schedule is only the handoff trigger. GitHub's documented minimum scheduled interval is five minutes, but the already-running process can poll more frequently inside the job. GitHub-hosted jobs still have a six-hour execution limit and scheduled runs can be delayed, so this is near-continuous hosted scanning rather than an exchange-grade streaming service. A self-hosted runner/service is the path for a true always-on process.
 
 ## Alerts
 
