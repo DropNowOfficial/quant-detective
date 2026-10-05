@@ -133,8 +133,8 @@ def _market_proxy(fetcher, symbol, now):
 
 
 def _market_context(fetcher, now):
-    symbols = ("NQ=F", "ES=F")
-    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="qd-regime") as pool:
+    symbols = ("NQ=F", "ES=F", "QQQ")
+    with ThreadPoolExecutor(max_workers=3, thread_name_prefix="qd-regime") as pool:
         futures = {pool.submit(_market_proxy, fetcher, symbol, now): symbol for symbol in symbols}
         return {symbol: future.result() for future, symbol in ((f, futures[f]) for f in as_completed(futures))}
 
@@ -323,7 +323,7 @@ def _intraday_metrics(rows, daily, now, history_rows=None):
     return result
 
 
-def classify(daily, intra):
+def classify(daily, intra, qqq_change=None):
     trend_ok = daily["ma5_slope_1d"] > 0 and daily["ma5_3point_slope"] >= 0
     d5 = intra["d5_atr"]
     chg = intra.get("change_pct")
@@ -378,7 +378,7 @@ def classify(daily, intra):
     }
 
 
-def _scan_symbol(symbol, fetcher, now):
+def _scan_symbol(symbol, fetcher, now, qqq_change=None):
     cache_key = (symbol, now.astimezone(ET).date().isoformat())
     cached = _DAILY_CACHE.get(cache_key)
     if cached is None:
@@ -395,7 +395,7 @@ def _scan_symbol(symbol, fetcher, now):
     volume_rows, volume_known_at = volume_cached
     intraday_rows, _, intra_receipt = _chart(fetcher, symbol, range_value="5d", interval="5m", include_prepost=True)
     intra = _intraday_metrics(intraday_rows, daily, now, history_rows=volume_rows)
-    state = classify(daily, intra)
+    state = classify(daily, intra, qqq_change=qqq_change)
     previous = datetime.fromisoformat(daily["previous_session_date"]).date()
     current = now.astimezone(ET).date()
     calendar_gap = (current - previous).days
@@ -420,7 +420,7 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
     market_context = _market_context(fetcher, now)
     rows = []
     with ThreadPoolExecutor(max_workers=max(1, min(workers, 12)), thread_name_prefix="qd-us-watch") as pool:
-        futures = {pool.submit(_scan_symbol, s, fetcher, now): s for s in symbols}
+        futures = {pool.submit(_scan_symbol, s, fetcher, now, qqq_change): s for s in symbols}
         for future in as_completed(futures):
             symbol = futures[future]
             try:
@@ -466,7 +466,7 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
             "d5_atr": r["intraday"]["d5_atr"],
             "rth_vwap_approx": r["intraday"]["rth_vwap_approx"],
             "same_time_rvol": r["intraday"]["same_time_rvol"],
-            "same_time_rvol_samples": r["intraday"]["same_time_rvol_samples"],
+            "same_time_rvol_samples": r["intraday"]["same_time_rvol_samples"],\n            "relative_change_vs_qqq_pp": r.get("relative_change_vs_qqq_pp"),
             "market_context": market_context,
             "news": (r.get("news") or {}).get("items", [])[:3],
         })
