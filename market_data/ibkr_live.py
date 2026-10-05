@@ -16,7 +16,9 @@ import time
 import uuid
 
 from .ibkr_cpg import ClientPortalGateway
-from .us_watch import DEFAULT_SYMBOLS, scan_once
+from .market_discovery import IBKRMarketDiscovery
+from .us_watch import scan_once
+from .universe import CORE_FALLBACK_SYMBOLS, COVERAGE_CORE_FALLBACK, COVERAGE_IBKR_DYNAMIC
 
 
 def _finite(v):
@@ -51,19 +53,20 @@ def _realtime_quote(quote):
     return bool(quote and _finite(quote.get("last")) and availability.startswith("R"))
 
 
-def _live_state(symbol, quote, structural, qqq_change):
+def _live_state(symbol, quote, structural, broad_market_change, qqq_change):
     price = quote.get("last")
     change = quote.get("change_pct")
     daily = structural.get("daily") or {}
     intra = structural.get("intraday") or {}
     ma5, atr5 = daily.get("ma5"), daily.get("atr5")
     d5 = (price - ma5) / atr5 if _finite(price) and _finite(ma5) and _finite(atr5) and atr5 > 0 else None
-    rs = change - qqq_change if _finite(change) and _finite(qqq_change) else None
+    rs_spy = change - broad_market_change if _finite(change) and _finite(broad_market_change) else None
+    rs_qqq = change - qqq_change if _finite(change) and _finite(qqq_change) else None
     leader_reasons = []
     if _finite(change) and change >= 1.0:
         leader_reasons.append(f"IBKR day +{change:.2f}%")
-    if _finite(rs) and rs >= 0.5:
-        leader_reasons.append(f"IBKR vs QQQ +{rs:.2f}pp")
+    if _finite(rs_spy) and rs_spy >= 0.5:
+        leader_reasons.append(f"IBKR vs SPY +{rs_spy:.2f}pp")
     public_state = structural.get("state")
     vwap = intra.get("rth_vwap_approx")
     above_vwap = _finite(price) and _finite(vwap) and price >= vwap
@@ -95,7 +98,8 @@ def _live_state(symbol, quote, structural, qqq_change):
         "ask": quote.get("ask"),
         "volume": quote.get("volume"),
         "d5_atr": d5,
-        "relative_change_vs_qqq_pp": rs,
+        "relative_change_vs_spy_pp": rs_spy,
+        "relative_change_vs_qqq_pp": rs_qqq,
         "leader_reasons": leader_reasons,
         "structural_state": public_state,
         "structural_known_at": structural.get("known_at"),
@@ -109,7 +113,7 @@ def _live_state(symbol, quote, structural, qqq_change):
 class HybridDaemon:
     def __init__(
         self,
-        symbols=DEFAULT_SYMBOLS,
+        symbols=CORE_FALLBACK_SYMBOLS,
         gateway=None,
         snapshot_seconds=2.0,
         structure_seconds=60.0,
@@ -118,6 +122,8 @@ class HybridDaemon:
         scan_fn=scan_once,
         clock=time.time,
         sleeper=time.sleep,
+        discovery=None,
+        discovery_structure_limit=24,
     ):
         if snapshot_seconds < 1.0:
             raise ValueError("snapshot_seconds must be >= 1")
@@ -140,6 +146,11 @@ class HybridDaemon:
         self.last_tickle = 0.0
         self.last_auth = 0.0
         self.auth = {"authenticated": False, "connected": False}
+        self.discovery = discovery
+        self.discovery_structure_limit = max(0, int(discovery_structure_limit))
+        self.discovery_symbols = ()
+        self.discovery_report = None
+        self.discovery_error = None
         self.run_id = uuid.uuid4().hex
         self.previous_states = {}
         try:
@@ -160,8 +171,10 @@ class HybridDaemon:
             self.auth = self.gateway.auth_status()
             if self.auth.get("authenticated"):
                 self.gateway.ensure_accounts()
-                wanted = tuple(dict.fromkeys((*self.symbols, "QQQ")))
+                wanted = tuple(dict.fromkeys((*self.symbols, "SPY", "QQQ")))
                 self.contracts, self.contract_errors = self.gateway.resolve_symbols(wanted)
+                if self.discovery is None:
+                    self.discovery = IBKRMarketDiscovery(self.gateway)
         except Exception as exc:
             self.auth = {
                 "authenticated": False,
@@ -178,6 +191,13 @@ class HybridDaemon:
             "ibkr_auth": self.auth,
             "contracts_resolved": len(self.contracts),
             "contract_errors": self.contract_errors,
+            "coverage_scope": COVERAGE_IBKR_DYNAMIC if self.discovery_report else COVERAGE_CORE_FALLBACK,
+            "market_wide_discovery": bool(self.discovery_report),
+            "discovery_exhaustive": False,
+            "discovery": self.discovery_report,
+            "discovery_error": self.discovery_error,
+            "discovery_symbol_count": len(self.discovery_symbols),
+            "structural_symbol_count": len(self.structural),
             "snapshot_seconds": self.snapshot_seconds,
             "structure_seconds": self.structure_seconds,
             "rows": [],
@@ -189,7 +209,8 @@ class HybridDaemon:
         now = self.clock()
         if not force and now - self.last_structure < self.structure_seconds:
             return
-        report = self.scan_fn(symbols=self.symbols)
+        targets = tuple(dict.fromkeys((*self.symbols, *self.discovery_symbols)))
+        report = self.scan_fn(symbols=targets)
         self.structural_report = report
         self.structural = _row_map(report)
         self.last_structure = now
@@ -213,8 +234,25 @@ class HybridDaemon:
             if not self.auth.get("authenticated"):
                 raise RuntimeError("IBKR gateway session is not authenticated")
             if not self.contracts:
-                wanted = tuple(dict.fromkeys((*self.symbols, "QQQ")))
+                wanted = tuple(dict.fromkeys((*self.symbols, "SPY", "QQQ")))
                 self.contracts, self.contract_errors = self.gateway.resolve_symbols(wanted)
+            if self.discovery is None:
+                self.discovery = IBKRMarketDiscovery(self.gateway)
+            try:
+                self.discovery_report = self.discovery.tick()
+                candidates = self.discovery.candidates(limit=self.discovery_structure_limit)
+                self.discovery_symbols = tuple(
+                    item["symbol"] for item in candidates if item["symbol"] not in self.symbols
+                )
+                for item in candidates:
+                    self.contracts.setdefault(item["symbol"], {
+                        "symbol": item["symbol"],
+                        "conid": item["conid"],
+                        "exchange": item.get("exchange"),
+                    })
+                self.discovery_error = None
+            except Exception as discovery_exc:
+                self.discovery_error = f"{type(discovery_exc).__name__}: {str(discovery_exc)[:240]}"
             quotes = self.gateway.snapshots(self.contracts)
             if not quotes:
                 raise RuntimeError("IBKR snapshot returned no resolved quotes")
@@ -225,14 +263,16 @@ class HybridDaemon:
         except Exception as exc:
             error = f"{type(exc).__name__}: {str(exc)[:240]}"
 
+        broad_market_change = (quotes.get("SPY") or {}).get("change_pct")
         qqq_change = (quotes.get("QQQ") or {}).get("change_pct")
+        active_symbols = tuple(dict.fromkeys((*self.symbols, *self.discovery_symbols)))
         rows = []
         if mode.startswith("IBKR_"):
-            for symbol in self.symbols:
+            for symbol in active_symbols:
                 structural = self.structural.get(symbol)
                 quote = quotes.get(symbol)
                 if structural and _realtime_quote(quote):
-                    rows.append(_live_state(symbol, quote, structural, qqq_change))
+                    rows.append(_live_state(symbol, quote, structural, broad_market_change, qqq_change))
                 elif structural:
                     availability = (quote or {}).get("market_data_availability")
                     rows.append({
@@ -244,7 +284,7 @@ class HybridDaemon:
                         "market_data_availability": availability,
                     })
         else:
-            for symbol in self.symbols:
+            for symbol in active_symbols:
                 structural = self.structural.get(symbol)
                 if structural:
                     rows.append({
@@ -276,6 +316,7 @@ class HybridDaemon:
                     "price": row.get("price"),
                     "change_pct": row.get("change_pct"),
                     "d5_atr": row.get("d5_atr"),
+                    "relative_change_vs_spy_pp": row.get("relative_change_vs_spy_pp"),
                     "relative_change_vs_qqq_pp": row.get("relative_change_vs_qqq_pp"),
                 }
                 _append_jsonl(self.events_path, event)
