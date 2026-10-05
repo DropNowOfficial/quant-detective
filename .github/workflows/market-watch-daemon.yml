@@ -1,0 +1,84 @@
+name: market-watch-daemon
+
+on:
+  schedule:
+    - cron: '0 4 * * 1-5'
+      timezone: 'America/New_York'
+    - cron: '45 9 * * 1-5'
+      timezone: 'America/New_York'
+    - cron: '30 15 * * 1-5'
+      timezone: 'America/New_York'
+  workflow_dispatch:
+    inputs:
+      duration_minutes:
+        description: Continuous scan duration (max 350 on GitHub-hosted runner)
+        required: false
+        default: '60'
+      poll_seconds:
+        description: Poll interval
+        required: false
+        default: '60'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: market-watch-daemon
+  cancel-in-progress: true
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          enable-cache: false
+
+      - name: Sync locked environment
+        run: uv sync --frozen
+
+      - name: Resolve shift duration
+        id: shift
+        shell: bash
+        env:
+          DISPATCH_DURATION: ${{ inputs.duration_minutes }}
+          DISPATCH_POLL: ${{ inputs.poll_seconds }}
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            DURATION="${DISPATCH_DURATION:-60}"
+            POLL="${DISPATCH_POLL:-60}"
+          elif [ "$SCHEDULE" = "0 4 * * 1-5" ]; then
+            DURATION=350
+            POLL=60
+          elif [ "$SCHEDULE" = "45 9 * * 1-5" ]; then
+            DURATION=350
+            POLL=60
+          else
+            DURATION=270
+            POLL=60
+          fi
+          if [ "$DURATION" -gt 350 ]; then DURATION=350; fi
+          if [ "$POLL" -lt 30 ]; then POLL=30; fi
+          echo "duration=$DURATION" >> "$GITHUB_OUTPUT"
+          echo "poll=$POLL" >> "$GITHUB_OUTPUT"
+
+      - name: Continuous headless market watch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QD_WATCH_OUTPUT: market-watch-latest.json
+        run: |
+          uv run python -m market_data.cli watch \
+            --duration-minutes "${{ steps.shift.outputs.duration }}" \
+            --poll-seconds "${{ steps.shift.outputs.poll }}" \
+            --github-alerts \
+            --output market-watch-latest.json \
+            --symbols "NVDA,TSM,MSFT,AMD,AVGO,MU,INTC,SNDK,MRVL,GLW,GOOG,META,ARM,ASML,AMAT,LRCX,KLAC,ANET,VRT,ORCL,CRCL,MSTR,AMZN,DELL,AAPL,SMCI,CRDO,ALAB,COHR,LITE,AAOI,QCOM,MPWR,MCHP,NXPI,ETN,VST,CEG,HPE,WDC,STX"

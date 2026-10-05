@@ -1,9 +1,12 @@
-"""One-shot public K-lines and the continuous public-data screening terminal."""
+"""One-shot public K-lines, local LIVE UI, and headless U.S. watch."""
 import argparse
 import json
+import re
+
 from . import providers
 from .server import make_server
 from .transport import fetch
+from .us_watch import DEFAULT_SYMBOLS, run as run_us_watch
 
 
 def print_candles(result):
@@ -30,7 +33,7 @@ def print_candles(result):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='公开行情与持续分钟扫描；无密钥、无交易执行。candles命令仅展示K线。')
+    parser = argparse.ArgumentParser(description='公开行情、持续分钟扫描和无浏览器美股监控；无交易执行。')
     sub = parser.add_subparsers(dest='command', required=True)
     for name in ['catalog', 'candles']:
         command = sub.add_parser(name)
@@ -40,9 +43,37 @@ def main():
             command.add_argument('--symbol', default='SOLUSDT')
             command.add_argument('--interval', choices=providers.INTERVALS, default='1m')
             command.add_argument('--limit', type=int, default=5)
+
     serve = sub.add_parser('serve')
     serve.add_argument('--port', type=int, default=8767)
+
+    watch = sub.add_parser('watch')
+    watch.add_argument('--symbols', default=','.join(DEFAULT_SYMBOLS))
+    watch.add_argument('--poll-seconds', type=int, default=60)
+    watch.add_argument('--duration-minutes', type=int, default=0)
+    watch.add_argument('--once', action='store_true')
+    watch.add_argument('--github-alerts', action='store_true')
+    watch.add_argument('--output')
+
     args = parser.parse_args()
+
+    if args.command == 'watch':
+        symbols = tuple(dict.fromkeys(s.strip().upper() for s in args.symbols.split(',') if s.strip()))
+        if not symbols or len(symbols) > 60 or any(not re.fullmatch(r'[A-Z0-9][A-Z0-9._-]{0,15}', s) for s in symbols):
+            parser.exit(2, 'watch symbols invalid or too many (max 60)\n')
+        try:
+            run_us_watch(
+                symbols=symbols,
+                poll_seconds=args.poll_seconds,
+                duration_minutes=args.duration_minutes,
+                github_alerts=args.github_alerts,
+                once=args.once,
+                output=args.output,
+            )
+        except (ValueError, TypeError, OSError) as exc:
+            parser.exit(2, f'watch failed: {exc}\n')
+        return
+
     if args.command == 'serve':
         app = make_server(args.port)
         print(f'Quant Detective LIVE：http://127.0.0.1:{app.server_port}/（公开行情分批12秒轮询，页面打开后启动扫描）', flush=True)
@@ -53,6 +84,7 @@ def main():
         finally:
             app.server_close()
         return
+
     try:
         result = (providers.get_catalog(args.market, fetch) if args.command == 'catalog' else
                   providers.get_candles(args.market, args.symbol, args.interval, args.limit, fetch))
