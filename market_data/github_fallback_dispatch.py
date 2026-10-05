@@ -71,11 +71,12 @@ def _request(method, path, *, token=None, body=None, opener=urlopen, timeout=12)
         raise DispatchError("GitHub returned invalid JSON") from exc
 
 
-def latest_native_schedule(repo=DEFAULT_REPO, workflow=DEFAULT_WORKFLOW, *, opener=urlopen):
+def latest_native_schedule(repo=DEFAULT_REPO, workflow=DEFAULT_WORKFLOW, *, token=None, opener=urlopen):
     query = urlencode({"event": "schedule", "per_page": 1})
     data = _request(
         "GET",
         f"/repos/{repo}/actions/workflows/{workflow}/runs?{query}",
+        token=token or None,
         opener=opener,
     )
     runs = data.get("workflow_runs") or []
@@ -141,7 +142,7 @@ def run_once(
     now = now or datetime.now(timezone.utc)
     token = token if token is not None else os.getenv("QD_GITHUB_FALLBACK_TOKEN", "").strip()
 
-    last = latest_native_schedule(repo, workflow, opener=opener)
+    last = latest_native_schedule(repo, workflow, token=token or None, opener=opener)
     do_dispatch, reason = should_dispatch(
         last,
         now=now,
