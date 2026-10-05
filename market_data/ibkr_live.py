@@ -16,6 +16,7 @@ import time
 import uuid
 
 from .ibkr_cpg import ClientPortalGateway
+from .market_discovery import ALLOWED_STOCK_TYPES, IBKRMarketDiscovery
 from .us_watch import DEFAULT_SYMBOLS, scan_once
 
 
@@ -48,7 +49,12 @@ def _row_map(report):
 
 def _realtime_quote(quote):
     availability = str((quote or {}).get("market_data_availability") or "")
-    return bool(quote and _finite(quote.get("last")) and availability.startswith("R"))
+    return bool(
+        quote
+        and _finite(quote.get("last"))
+        and quote.get("last_status", "TRADE") == "TRADE"
+        and availability.startswith("R")
+    )
 
 
 def _live_state(symbol, quote, structural, qqq_change):
@@ -118,6 +124,8 @@ class HybridDaemon:
         scan_fn=scan_once,
         clock=time.time,
         sleeper=time.sleep,
+        discovery=None,
+        discovery_structure_limit=24,
     ):
         if snapshot_seconds < 1.0:
             raise ValueError("snapshot_seconds must be >= 1")
@@ -140,6 +148,12 @@ class HybridDaemon:
         self.last_tickle = 0.0
         self.last_auth = 0.0
         self.auth = {"authenticated": False, "connected": False}
+        self.discovery = discovery
+        self.discovery_structure_limit = max(0, int(discovery_structure_limit))
+        self.discovery_symbols = ()
+        self.discovery_candidates = ()
+        self.discovery_report = None
+        self.discovery_error = None
         self.run_id = uuid.uuid4().hex
         self.previous_states = {}
         try:
@@ -162,6 +176,8 @@ class HybridDaemon:
                 self.gateway.ensure_accounts()
                 wanted = tuple(dict.fromkeys((*self.symbols, "QQQ")))
                 self.contracts, self.contract_errors = self.gateway.resolve_symbols(wanted)
+                if self.discovery is None:
+                    self.discovery = IBKRMarketDiscovery(self.gateway)
         except Exception as exc:
             self.auth = {
                 "authenticated": False,
@@ -178,6 +194,13 @@ class HybridDaemon:
             "ibkr_auth": self.auth,
             "contracts_resolved": len(self.contracts),
             "contract_errors": self.contract_errors,
+            "discovery_current": False,
+            "discovery_exhaustive": False,
+            "discovery_scope": "CORE_WATCHLIST_ONLY",
+            "discovery_error": self.discovery_error,
+            "discovery": self.discovery_report,
+            "discovery_candidates": [],
+            "discovery_symbol_count": 0,
             "snapshot_seconds": self.snapshot_seconds,
             "structure_seconds": self.structure_seconds,
             "rows": [],
@@ -189,7 +212,8 @@ class HybridDaemon:
         now = self.clock()
         if not force and now - self.last_structure < self.structure_seconds:
             return
-        report = self.scan_fn(symbols=self.symbols)
+        targets = tuple(dict.fromkeys((*self.symbols, *self.discovery_symbols)))
+        report = self.scan_fn(symbols=targets)
         self.structural_report = report
         self.structural = _row_map(report)
         self.last_structure = now
@@ -208,6 +232,8 @@ class HybridDaemon:
         quotes = {}
         mode = "DEGRADED_PUBLIC_ONLY"
         error = None
+        discovery_current = False
+        raw_discovery_symbols = ()
         try:
             self._refresh_auth()
             if not self.auth.get("authenticated"):
@@ -215,9 +241,46 @@ class HybridDaemon:
             if not self.contracts:
                 wanted = tuple(dict.fromkeys((*self.symbols, "QQQ")))
                 self.contracts, self.contract_errors = self.gateway.resolve_symbols(wanted)
+            if self.discovery is None:
+                self.discovery = IBKRMarketDiscovery(self.gateway)
+
+            try:
+                self.discovery_report = self.discovery.tick()
+                candidates = self.discovery.candidates(limit=self.discovery_structure_limit)
+                raw_discovery_symbols = tuple(
+                    item["symbol"] for item in candidates if item["symbol"] not in self.symbols
+                )
+                base_symbols = set((*self.symbols, "QQQ"))
+                self.contracts = {
+                    symbol: contract for symbol, contract in self.contracts.items()
+                    if symbol in base_symbols or symbol in raw_discovery_symbols
+                }
+                for item in candidates:
+                    self.contracts.setdefault(item["symbol"], {
+                        "symbol": item["symbol"],
+                        "conid": item["conid"],
+                        "exchange": item.get("exchange"),
+                    })
+                self.discovery_error = None
+                discovery_current = True
+            except Exception as discovery_exc:
+                self.discovery_error = f"{type(discovery_exc).__name__}: {str(discovery_exc)[:240]}"
+
             quotes = self.gateway.snapshots(self.contracts)
             if not quotes:
                 raise RuntimeError("IBKR snapshot returned no resolved quotes")
+
+            self.discovery_symbols = tuple(
+                symbol for symbol in raw_discovery_symbols
+                if (quotes.get(symbol) or {}).get("stock_type") in ALLOWED_STOCK_TYPES
+            )
+            self.discovery_candidates = tuple({
+                **item,
+                "stock_type": (quotes.get(item["symbol"]) or {}).get("stock_type"),
+                "eligible_stock_type": (quotes.get(item["symbol"]) or {}).get("stock_type") in ALLOWED_STOCK_TYPES,
+                "structural_enriched": item["symbol"] in self.structural,
+            } for item in (self.discovery.candidates(limit=self.discovery_structure_limit) if discovery_current else []))
+
             realtime_count = sum(_realtime_quote(q) for q in quotes.values())
             if realtime_count == 0:
                 raise RuntimeError("IBKR returned no realtime-subscribed quotes (field 6509 is not Realtime)")
@@ -226,9 +289,10 @@ class HybridDaemon:
             error = f"{type(exc).__name__}: {str(exc)[:240]}"
 
         qqq_change = (quotes.get("QQQ") or {}).get("change_pct")
+        active_symbols = tuple(dict.fromkeys((*self.symbols, *self.discovery_symbols))) if mode.startswith("IBKR_") else self.symbols
         rows = []
         if mode.startswith("IBKR_"):
-            for symbol in self.symbols:
+            for symbol in active_symbols:
                 structural = self.structural.get(symbol)
                 quote = quotes.get(symbol)
                 if structural and _realtime_quote(quote):
@@ -244,7 +308,7 @@ class HybridDaemon:
                         "market_data_availability": availability,
                     })
         else:
-            for symbol in self.symbols:
+            for symbol in active_symbols:
                 structural = self.structural.get(symbol)
                 if structural:
                     rows.append({
@@ -291,6 +355,13 @@ class HybridDaemon:
             "ibkr_auth": self.auth,
             "contracts_resolved": len(self.contracts),
             "contract_errors": self.contract_errors,
+            "discovery_current": bool(discovery_current and mode.startswith("IBKR_")),
+            "discovery_exhaustive": False,
+            "discovery_scope": "IBKR_US_MAJOR_TOP_N" if discovery_current and mode.startswith("IBKR_") else "CORE_WATCHLIST_ONLY",
+            "discovery_error": self.discovery_error,
+            "discovery": self.discovery_report,
+            "discovery_candidates": list(self.discovery_candidates),
+            "discovery_symbol_count": len(self.discovery_symbols),
             "snapshot_seconds": self.snapshot_seconds,
             "structure_seconds": self.structure_seconds,
             "last_structure_age_seconds": max(0.0, self.clock() - self.last_structure),
