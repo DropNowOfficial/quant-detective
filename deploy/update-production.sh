@@ -82,17 +82,14 @@ except Exception:
 PY
 )"
 
+systemctl stop quant-detective-watchdog.timer >/dev/null 2>&1 || true
 ln -sfn "$release" "$CURRENT"
 install -m 0644 "$release/deploy/systemd/quant-detective-live.service" /etc/systemd/system/quant-detective-live.service
 install -m 0755 "$release/deploy/update-production.sh" /usr/local/sbin/quant-detective-update
 install -m 0644 "$release/deploy/systemd/quant-detective-update.service" /etc/systemd/system/quant-detective-update.service
 install -m 0644 "$release/deploy/systemd/quant-detective-update.timer" /etc/systemd/system/quant-detective-update.timer
-install -m 0644 "$release/deploy/systemd/quant-detective-watchdog.service" /etc/systemd/system/quant-detective-watchdog.service
-install -m 0644 "$release/deploy/systemd/quant-detective-watchdog.timer" /etc/systemd/system/quant-detective-watchdog.timer
 systemctl daemon-reload
-systemctl enable quant-detective-watchdog.timer >/dev/null 2>&1 || true
 systemctl restart quant-detective-live.service
-systemctl restart quant-detective-watchdog.timer
 
 ready=0
 for _ in $(seq 1 90); do
@@ -118,8 +115,14 @@ PY
 done
 
 if [ "$ready" -ne 1 ]; then
+  systemctl start quant-detective-watchdog.timer >/dev/null 2>&1 || true
   rollback
 fi
+
+install -m 0644 "$release/deploy/systemd/quant-detective-watchdog.service" /etc/systemd/system/quant-detective-watchdog.service
+install -m 0644 "$release/deploy/systemd/quant-detective-watchdog.timer" /etc/systemd/system/quant-detective-watchdog.timer
+systemctl daemon-reload
+systemctl enable --now quant-detective-watchdog.timer
 
 systemctl try-restart quant-detective-update.timer || true
 echo "deployed $remote_sha successfully"
