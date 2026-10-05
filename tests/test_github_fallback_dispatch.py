@@ -105,6 +105,8 @@ def test_recent_native_success_is_healthy_by_result_time(tmp_path):
     )
     assert out["status"]=="NATIVE_SCHEDULE_SUCCESS"
     assert out["validation"]["native_scan_succeeded"] is True
+    assert out["native_result_fresh"] is True
+    assert out["native_result_age_seconds"]==120.0
     assert out["last_native_scan_success_at_utc"]=="2026-10-05T23:38:00+00:00"
     assert not any(method=="POST" for method,_,_,_ in opener.calls)
 
@@ -209,6 +211,8 @@ def test_recent_successful_dispatch_is_scan_success_not_dispatch_acceptance(tmp_
     )
     assert out["status"]=="FALLBACK_SCAN_SUCCESS"
     assert out["validation"]["fallback_scan_succeeded"] is True
+    assert out["fallback_result_fresh"] is True
+    assert out["fallback_result_age_seconds"]==120.0
     assert out["validation"]["heartbeat_fresh"] is None
     assert out["validation"]["notification_delivered"] is None
     assert not any(method=="POST" for method,_,_,_ in opener.calls)
