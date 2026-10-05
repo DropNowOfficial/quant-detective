@@ -1,6 +1,14 @@
 name: continuous-market-watch
+# A main-branch watcher change also triggers an immediate production one-shot scan.
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'market_data/us_watch.py'
+      - 'market_data/github_alerts.py'
+      - 'market_data/transport.py'
+      - '.github/workflows/market-watch*.yml'
   schedule:
     - cron: '*/5 4-19 * * 1-5'
       timezone: 'America/New_York'
