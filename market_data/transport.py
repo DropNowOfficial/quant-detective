@@ -32,7 +32,8 @@ def validate_url(url):
     path = unquote(parsed.path)
     allowed = path in ENDPOINTS.get(parsed.hostname, set())
     if parsed.hostname == 'query1.finance.yahoo.com':
-        allowed = path.startswith('/v8/finance/chart/') and '..' not in path
+        allowed = ((path.startswith('/v8/finance/chart/') and '..' not in path)
+                   or path == '/v1/finance/search')
     if not (parsed.scheme == 'https' and allowed and parsed.port in {None, 443}):
         raise ValueError('Only approved public HTTPS market-data endpoints are allowed')
     if parsed.username or parsed.password or parsed.fragment:
