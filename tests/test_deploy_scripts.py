@@ -15,10 +15,11 @@ def test_deploy_shell_scripts_parse():
         subprocess.run(["bash", "-n", str(ROOT / rel)], check=True)
 
 
-def test_auto_update_timer_is_not_high_frequency():
+def test_auto_update_timer_runs_every_second():
     text=(ROOT/"deploy/systemd/quant-detective-update.timer").read_text()
-    assert "OnUnitActiveSec=5min" in text
-    assert "OnUnitActiveSec=1min" not in text
+    assert "OnUnitInactiveSec=1s" in text
+    assert "AccuracySec=100ms" in text
+    assert "RandomizedDelaySec=0" in text
 
 
 def test_auto_update_service_runs_fixed_local_script():
