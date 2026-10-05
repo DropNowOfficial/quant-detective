@@ -143,11 +143,18 @@ class HybridDaemon:
         self.started_at = datetime.now(timezone.utc).isoformat()
 
     def initialize(self):
-        self.auth = self.gateway.auth_status()
-        if self.auth.get("authenticated"):
-            self.gateway.ensure_accounts()
-            wanted = tuple(dict.fromkeys((*self.symbols, "QQQ")))
-            self.contracts, self.contract_errors = self.gateway.resolve_symbols(wanted)
+        try:
+            self.auth = self.gateway.auth_status()
+            if self.auth.get("authenticated"):
+                self.gateway.ensure_accounts()
+                wanted = tuple(dict.fromkeys((*self.symbols, "QQQ")))
+                self.contracts, self.contract_errors = self.gateway.resolve_symbols(wanted)
+        except Exception as exc:
+            self.auth = {
+                "authenticated": False,
+                "connected": False,
+                "initialization_error": f"{type(exc).__name__}: {str(exc)[:240]}",
+            }
         self.refresh_structure(force=True)
 
     def refresh_structure(self, force=False):
