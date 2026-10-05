@@ -18,5 +18,7 @@ mode=data.get("mode")
 if mode not in {"IBKR_LIVE_PLUS_PUBLIC_STRUCTURE","DEGRADED_PUBLIC_ONLY"}:
     raise SystemExit(f"unknown mode: {mode}")
 print(json.dumps({"ok":True,"age_seconds":round(age,2),"mode":mode,
+                  "run_id":data.get("run_id"),
+                  "started_at_utc":data.get("started_at_utc"),
                   "contracts_resolved":data.get("contracts_resolved"),
                   "ibkr_authenticated":(data.get("ibkr_auth") or {}).get("authenticated")},ensure_ascii=False))

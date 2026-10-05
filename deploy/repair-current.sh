@@ -16,9 +16,23 @@ if [ ! -d "$REAL_CURRENT/.git" ]; then
   exit 3
 fi
 
+echo "== capture current run identity =="
+old_run_id="$(python3 - <<'PY'
+import json
+from pathlib import Path
+p=Path("/var/lib/quant-detective/state.json")
+try:
+    print(json.loads(p.read_text()).get("run_id",""))
+except Exception:
+    print("")
+PY
+)"
+printf 'old_run_id=%s\n' "$old_run_id"
+
 echo "== update source as repository owner =="
 sudo -u quantdetective git -C "$REAL_CURRENT" fetch --prune origin main
 sudo -u quantdetective git -C "$REAL_CURRENT" reset --hard origin/main
+"$CURRENT/.venv/bin/pip" install -q -e "$CURRENT"
 
 echo "== restart service =="
 systemctl daemon-reload
@@ -28,18 +42,19 @@ echo "== wait for readiness =="
 ready=0
 for _ in $(seq 1 90); do
   if [ -f "$STATE" ]; then
-    mode="$(python3 - <<'PY'
+    read -r run_id mode <<<"$(python3 - <<'PY'
 import json
 from pathlib import Path
 p=Path("/var/lib/quant-detective/state.json")
 try:
-    print(json.loads(p.read_text()).get("mode",""))
+    d=json.loads(p.read_text())
+    print((d.get("run_id") or ""), (d.get("mode") or ""))
 except Exception:
-    print("")
+    print("", "")
 PY
 )"
-    printf 'mode=%s\n' "$mode"
-    if [ -n "$mode" ] && [ "$mode" != "BOOTSTRAPPING" ]; then
+    printf 'run_id=%s mode=%s\n' "$run_id" "$mode"
+    if [ -n "$run_id" ] && [ "$run_id" != "$old_run_id" ] && [ -n "$mode" ] && [ "$mode" != "BOOTSTRAPPING" ]; then
       ready=1
       break
     fi
@@ -70,6 +85,7 @@ d=json.loads(p.read_text())
 print(json.dumps({
   "generated_at_utc": d.get("generated_at_utc"),
   "started_at_utc": d.get("started_at_utc"),
+  "run_id": d.get("run_id"),
   "mode": d.get("mode"),
   "phase": d.get("phase"),
   "ibkr_error": d.get("ibkr_error"),
@@ -91,6 +107,6 @@ journalctl -u "$SERVICE" -n 50 --no-pager || true
 
 if [ "$ready" -ne 1 ]; then
   echo
-  echo "WARNING: service did not leave BOOTSTRAPPING within 180 seconds." >&2
+  echo "WARNING: a new daemon run did not become ready within 180 seconds." >&2
   exit 4
 fi
