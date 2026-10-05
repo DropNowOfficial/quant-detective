@@ -45,6 +45,11 @@ def _row_map(report):
     return {r["symbol"]: r for r in report.get("rows", []) if r.get("status") == "OK" and r.get("symbol")}
 
 
+def _realtime_quote(quote):
+    availability = str((quote or {}).get("market_data_availability") or "")
+    return bool(quote and _finite(quote.get("last")) and availability.startswith("R"))
+
+
 def _live_state(symbol, quote, structural, qqq_change):
     price = quote.get("last")
     change = quote.get("change_pct")
@@ -178,6 +183,9 @@ class HybridDaemon:
             quotes = self.gateway.snapshots(self.contracts)
             if not quotes:
                 raise RuntimeError("IBKR snapshot returned no resolved quotes")
+            realtime_count = sum(_realtime_quote(q) for q in quotes.values())
+            if realtime_count == 0:
+                raise RuntimeError("IBKR returned no realtime-subscribed quotes (field 6509 is not Realtime)")
             mode = "IBKR_LIVE_PLUS_PUBLIC_STRUCTURE"
         except Exception as exc:
             error = f"{type(exc).__name__}: {str(exc)[:240]}"
@@ -188,15 +196,17 @@ class HybridDaemon:
             for symbol in self.symbols:
                 structural = self.structural.get(symbol)
                 quote = quotes.get(symbol)
-                if structural and quote and _finite(quote.get("last")):
+                if structural and _realtime_quote(quote):
                     rows.append(_live_state(symbol, quote, structural, qqq_change))
                 elif structural:
+                    availability = (quote or {}).get("market_data_availability")
                     rows.append({
                         "symbol": symbol,
                         "state": structural.get("state", "WATCH"),
-                        "reason": "IBKR quote unavailable for this symbol; showing structural state only",
+                        "reason": "IBKR realtime quote unavailable/not subscribed for this symbol; showing structural state only",
                         "structural_state": structural.get("state"),
                         "ibkr_quote_missing": True,
+                        "market_data_availability": availability,
                     })
         else:
             for symbol in self.symbols:
