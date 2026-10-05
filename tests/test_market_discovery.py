@@ -71,3 +71,24 @@ def test_market_context_etfs_are_not_discovery_candidates():
     )
     d.tick()
     assert "SPY" not in {row["symbol"] for row in d.candidates()}
+
+
+def test_discovery_pacing_prevents_scanner_overrun():
+    now=[1000.0]
+    gw=Gateway()
+    d=IBKRMarketDiscovery(
+        gw,
+        scan_names=("Top % Gainers","Hot Contracts by Volume"),
+        min_scan_interval_seconds=1.05,
+        clock=lambda:now[0],
+    )
+    first=d.tick()
+    assert first.get("paced") is not True
+    calls=len(gw.run_calls)
+    now[0]+=0.5
+    paced=d.tick()
+    assert paced["paced"] is True
+    assert len(gw.run_calls)==calls
+    now[0]+=0.6
+    d.tick()
+    assert len(gw.run_calls)==calls+1
