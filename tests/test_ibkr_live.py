@@ -10,16 +10,16 @@ def structural(state="WATCH"):
 
 
 def test_live_leader_no_chase_uses_ibkr_price():
-    row=_live_state("NVDA",{"last":115.0,"change_pct":2.2,"bid":114.9,"ask":115.1,"market_data_availability":"R"},structural(),0.8)
+    row=_live_state("NVDA",{"last":115.0,"change_pct":2.2,"bid":114.9,"ask":115.1,"market_data_availability":"R"},structural(),0.7,0.8)
     assert row["state"]=="LEADER_HOT_NO_CHASE"
     assert row["d5_atr"]==1.5
-    assert row["relative_change_vs_qqq_pp"] > 1.0
+    assert row["relative_change_vs_spy_pp"] > 1.0
 
 
 def test_entry_confirmation_must_already_exist_structurally():
-    row=_live_state("NVDA",{"last":101.0,"change_pct":0.8,"market_data_availability":"R"},structural("ENTRY_CONFIRMED"),0.5)
+    row=_live_state("NVDA",{"last":101.0,"change_pct":0.8,"market_data_availability":"R"},structural("ENTRY_CONFIRMED"),0.4,0.5)
     assert row["state"]=="ENTRY_CONFIRMED"
-    row2=_live_state("NVDA",{"last":101.0,"change_pct":0.8},structural("WATCH"),0.5)
+    row2=_live_state("NVDA",{"last":101.0,"change_pct":0.8},structural("WATCH"),0.4,0.5)
     assert row2["state"]!="ENTRY_CONFIRMED"
 
 
@@ -36,6 +36,7 @@ class FakeGateway:
         return {}
     def snapshots(self, contracts):
         return {
+            "SPY":{"last":700.0,"change_pct":0.4,"market_data_availability":"R"},
             "QQQ":{"last":200.0,"change_pct":0.5,"market_data_availability":"R"},
             "NVDA":{"last":115.0,"change_pct":2.0,"bid":114.9,"ask":115.1,"market_data_availability":"R"},
         }
@@ -78,6 +79,7 @@ def test_delayed_ibkr_quote_cannot_drive_fast_path(tmp_path):
     class DelayedGateway(FakeGateway):
         def snapshots(self, contracts):
             return {
+                "SPY":{"last":700.0,"change_pct":0.4,"market_data_availability":"D"},
                 "QQQ":{"last":200.0,"change_pct":0.5,"market_data_availability":"D"},
                 "NVDA":{"last":115.0,"change_pct":2.0,"market_data_availability":"D"},
             }
