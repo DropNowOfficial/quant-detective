@@ -133,8 +133,8 @@ def _market_proxy(fetcher, symbol, now):
 
 
 def _market_context(fetcher, now):
-    symbols = ("NQ=F", "ES=F")
-    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="qd-regime") as pool:
+    symbols = ("NQ=F", "ES=F", "QQQ")
+    with ThreadPoolExecutor(max_workers=3, thread_name_prefix="qd-regime") as pool:
         futures = {pool.submit(_market_proxy, fetcher, symbol, now): symbol for symbol in symbols}
         return {symbol: future.result() for future, symbol in ((f, futures[f]) for f in as_completed(futures))}
 
@@ -304,7 +304,6 @@ def _intraday_metrics(rows, daily, now, history_rows=None):
         "open_gap_pct": _pct(rth_open, prior),
         "rth_vwap_approx": current_vwap,
         "price_vs_vwap_pct": _pct(current, current_vwap),
-        "price_vs_vwap_atr": ((current-current_vwap)/daily["atr5"] if _finite(current_vwap) else None),
         "two_completed_5m_above_vwap_and_ma5": two_above,
         "rth_completed_bars": len(completed_rth),
         "premarket_bars": len(pre),
@@ -324,7 +323,7 @@ def _intraday_metrics(rows, daily, now, history_rows=None):
     return result
 
 
-def classify(daily, intra):
+def classify(daily, intra, qqq_change=None):
     trend_ok = daily["ma5_slope_1d"] > 0 and daily["ma5_3point_slope"] >= 0
     d5 = intra["d5_atr"]
     chg = intra.get("change_pct")
@@ -332,8 +331,11 @@ def classify(daily, intra):
     gap = intra.get("open_gap_pct")
     from_open = intra.get("move_from_rth_open_pct")
     leader_reasons = []
-    if _finite(chg) and chg >= 1.5:
+    rs_qqq = chg - qqq_change if _finite(chg) and _finite(qqq_change) else None
+    if _finite(chg) and chg >= 1.0:
         leader_reasons.append(f"day +{chg:.2f}%")
+    if _finite(rs_qqq) and rs_qqq >= 0.5:
+        leader_reasons.append(f"vs QQQ +{rs_qqq:.2f}pp")
     if _finite(pre) and pre >= 0.8:
         leader_reasons.append(f"premarket +{pre:.2f}%")
     if _finite(gap) and gap >= 0.8:
@@ -345,27 +347,16 @@ def classify(daily, intra):
     standard_geometry = -0.10 <= d5 <= 0.20
     observation_geometry = -0.35 <= d5 <= 0.40
     rvol = intra.get("same_time_rvol")
-    vwap_atr = intra.get("price_vs_vwap_atr")
     confirmed = (trend_ok and standard_geometry
                  and intra.get("two_completed_5m_above_vwap_and_ma5", False)
                  and _finite(rvol) and rvol >= 0.8)
-    armed = (trend_ok and observation_geometry
-             and _finite(vwap_atr) and vwap_atr >= -0.10
-             and _finite(rvol) and rvol >= 0.6)
-    faded = leader and (
-        (_finite(chg) and chg < 0)
-        or (_finite(from_open) and from_open <= -1.0)
-    )
 
     if confirmed:
         state = "ENTRY_CONFIRMED"
         reason = "daily trend + MA5/ATR geometry + two completed 5m closes above session VWAP/MA5 + same-time RVOL >= 0.8"
-    elif armed:
+    elif trend_ok and observation_geometry:
         state = "ENTRY_ARMED"
-        reason = "daily trend/geometry valid and price is within 0.10 ATR below RTH VWAP with same-time RVOL >= 0.6; full confirmation incomplete"
-    elif faded:
-        state = "LEADER_FADED"
-        reason = "premarket/gap/early leader signal existed but current RTH price action has materially faded"
+        reason = "daily trend and MA5/ATR geometry valid; VWAP/5m or same-time RVOL confirmation incomplete"
     elif leader and d5 > 0.35:
         state = "LEADER_HOT_NO_CHASE"
         reason = "strong move detected, but price is too extended above completed-day MA5"
@@ -387,10 +378,11 @@ def classify(daily, intra):
         "daily_trend_gate": trend_ok,
         "standard_entry_geometry": standard_geometry,
         "observation_geometry": observation_geometry,
+        "relative_change_vs_qqq_pp": rs_qqq,
     }
 
 
-def _scan_symbol(symbol, fetcher, now):
+def _scan_symbol(symbol, fetcher, now, qqq_change=None):
     cache_key = (symbol, now.astimezone(ET).date().isoformat())
     cached = _DAILY_CACHE.get(cache_key)
     if cached is None:
@@ -407,7 +399,7 @@ def _scan_symbol(symbol, fetcher, now):
     volume_rows, volume_known_at = volume_cached
     intraday_rows, _, intra_receipt = _chart(fetcher, symbol, range_value="5d", interval="5m", include_prepost=True)
     intra = _intraday_metrics(intraday_rows, daily, now, history_rows=volume_rows)
-    state = classify(daily, intra)
+    state = classify(daily, intra, qqq_change=qqq_change)
     previous = datetime.fromisoformat(daily["previous_session_date"]).date()
     current = now.astimezone(ET).date()
     calendar_gap = (current - previous).days
@@ -430,9 +422,10 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
     now = now or datetime.now(timezone.utc)
     symbols = tuple(dict.fromkeys(s.upper() for s in symbols))
     market_context = _market_context(fetcher, now)
+    qqq_change = (market_context.get("QQQ") or {}).get("change_pct")
     rows = []
     with ThreadPoolExecutor(max_workers=max(1, min(workers, 12)), thread_name_prefix="qd-us-watch") as pool:
-        futures = {pool.submit(_scan_symbol, s, fetcher, now): s for s in symbols}
+        futures = {pool.submit(_scan_symbol, s, fetcher, now, qqq_change): s for s in symbols}
         for future in as_completed(futures):
             symbol = futures[future]
             try:
@@ -441,13 +434,13 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
                 rows.append({"symbol": symbol, "status": "ERROR", "error": f"{type(exc).__name__}: {str(exc)[:240]}"})
     rows.sort(key=lambda r: (
         {"ENTRY_CONFIRMED": 0, "ENTRY_ARMED": 1, "LEADER_HOT_NO_CHASE": 2, "LEADER_WATCH": 3,
-         "LEADER_FADED": 4, "EXTENDED": 5, "WATCH": 6}.get(r.get("state"), 9),
+         "EXTENDED": 4, "WATCH": 5}.get(r.get("state"), 9),
         -(r.get("intraday", {}).get("change_pct") or -999),
         r["symbol"],
     ))
 
     interesting = [r["symbol"] for r in rows if r.get("state") in {
-        "ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH", "LEADER_FADED"
+        "ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH"
     }]
     news = {}
     if interesting:
@@ -460,7 +453,7 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
             row["news"] = news[row["symbol"]]
 
     et_date = now.astimezone(ET).date().isoformat()
-    alert_states = {"ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH", "LEADER_FADED"}
+    alert_states = {"ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH"}
     alerts = []
     for r in rows:
         if r.get("state") not in alert_states:
@@ -479,6 +472,7 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
             "rth_vwap_approx": r["intraday"]["rth_vwap_approx"],
             "same_time_rvol": r["intraday"]["same_time_rvol"],
             "same_time_rvol_samples": r["intraday"]["same_time_rvol_samples"],
+            "relative_change_vs_qqq_pp": r.get("relative_change_vs_qqq_pp"),
             "market_context": market_context,
             "news": (r.get("news") or {}).get("items", [])[:3],
         })
