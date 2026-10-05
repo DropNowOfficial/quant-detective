@@ -26,6 +26,9 @@ def intra(**changes):
         "d5_atr": 0.1,
         "two_completed_5m_above_vwap_and_ma5": False,
         "same_time_rvol": 1.0,
+        "open_gap_atr": 0.1,
+        "price_vs_vwap_atr": 0.1,
+        "rth_completed_bars": 20,
     }
     out.update(changes)
     return out
@@ -121,3 +124,51 @@ def test_old_premarket_gap_does_not_keep_failed_rth_move_as_leader():
     assert "premarket +1.40%" in result["event_context"]
     assert "open gap +1.10%" in result["event_context"]
     assert result["state"] == "ENTRY_ARMED"
+
+
+def test_caution_gap_cannot_promote_without_reclaim_retest_evidence():
+    result = classify(
+        daily(),
+        intra(
+            d5_atr=0.05,
+            open_gap_atr=0.65,
+            price_vs_vwap_atr=0.1,
+            two_completed_5m_above_vwap_and_ma5=True,
+            same_time_rvol=1.2,
+        ),
+    )
+    assert result["state"] == "ENTRY_ARMED"
+    assert result["gap_regime"] == "CAUTION"
+    assert "gap_requires_reclaim_retest" in result["entry_blockers"]
+
+
+def test_shock_gap_first_hour_is_blocked():
+    result = classify(
+        daily(),
+        intra(
+            d5_atr=0.05,
+            open_gap_atr=1.0,
+            rth_completed_bars=6,
+            price_vs_vwap_atr=0.1,
+            two_completed_5m_above_vwap_and_ma5=True,
+            same_time_rvol=1.4,
+        ),
+    )
+    assert result["state"] == "ENTRY_ARMED"
+    assert result["gap_regime"] == "SHOCK"
+    assert "shock_gap_first_60m" in result["entry_blockers"]
+
+
+def test_vwap_extension_blocks_entry_confirmation():
+    result = classify(
+        daily(),
+        intra(
+            d5_atr=0.05,
+            open_gap_atr=0.1,
+            price_vs_vwap_atr=0.30,
+            two_completed_5m_above_vwap_and_ma5=True,
+            same_time_rvol=1.2,
+        ),
+    )
+    assert result["state"] == "ENTRY_ARMED"
+    assert "vwap_distance_outside_confirmation_band" in result["entry_blockers"]
