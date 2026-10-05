@@ -152,3 +152,60 @@ def test_failed_ibkr_auth_is_backed_off_for_30_seconds(tmp_path):
     now[0] += 1
     d.cycle()
     assert gw.calls == 2
+
+
+class FakeDiscovery:
+    def __init__(self):
+        self.round=0
+    def tick(self):
+        self.round += 1
+        return {
+            "coverage_scope":"IBKR_US_MAJOR_DYNAMIC",
+            "market_wide_discovery":True,
+            "exhaustive":False,
+            "scan_display_name":"Top % Gainers",
+            "returned":1,
+        }
+    def candidates(self, limit=60):
+        symbol="XYZ" if self.round == 1 else "ABC"
+        return [{
+            "symbol":symbol,
+            "conid":99 if symbol=="XYZ" else 100,
+            "exchange":"NASDAQ",
+            "company_name":symbol+" INC",
+            "first_seen":1.0,
+            "last_seen":2.0,
+            "scan_hits":{"Top % Gainers":{"rank":0}},
+        }]
+
+
+def test_discovery_candidate_is_visible_before_structural_enrichment(tmp_path):
+    d=HybridDaemon(
+        symbols=("NVDA",),gateway=FakeGateway(True),scan_fn=fake_scan,
+        discovery=FakeDiscovery(),discovery_structure_limit=24,
+        state_path=tmp_path/"state.json",events_path=tmp_path/"events.jsonl",
+        snapshot_seconds=2,structure_seconds=60,
+    )
+    d.initialize()
+    out=d.cycle()
+    assert out["market_wide_discovery"] is True
+    assert out["discovery_exhaustive"] is False
+    assert out["discovery_candidates"][0]["symbol"]=="XYZ"
+    assert out["discovery_candidates"][0]["structural_enriched"] is False
+    assert "XYZ" not in {r["symbol"] for r in out["rows"]}
+
+
+def test_stale_dynamic_contracts_are_pruned(tmp_path):
+    discovery=FakeDiscovery()
+    d=HybridDaemon(
+        symbols=("NVDA",),gateway=FakeGateway(True),scan_fn=fake_scan,
+        discovery=discovery,discovery_structure_limit=24,
+        state_path=tmp_path/"state.json",events_path=tmp_path/"events.jsonl",
+        snapshot_seconds=2,structure_seconds=60,
+    )
+    d.initialize()
+    d.cycle()
+    assert "XYZ" in d.contracts
+    d.cycle()
+    assert "XYZ" not in d.contracts
+    assert "ABC" in d.contracts
