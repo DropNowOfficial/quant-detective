@@ -331,8 +331,11 @@ def classify(daily, intra, qqq_change=None):
     gap = intra.get("open_gap_pct")
     from_open = intra.get("move_from_rth_open_pct")
     leader_reasons = []
-    if _finite(chg) and chg >= 1.5:
+    rs_qqq = chg - qqq_change if _finite(chg) and _finite(qqq_change) else None
+    if _finite(chg) and chg >= 1.0:
         leader_reasons.append(f"day +{chg:.2f}%")
+    if _finite(rs_qqq) and rs_qqq >= 0.5:
+        leader_reasons.append(f"vs QQQ +{rs_qqq:.2f}pp")
     if _finite(pre) and pre >= 0.8:
         leader_reasons.append(f"premarket +{pre:.2f}%")
     if _finite(gap) and gap >= 0.8:
@@ -375,6 +378,7 @@ def classify(daily, intra, qqq_change=None):
         "daily_trend_gate": trend_ok,
         "standard_entry_geometry": standard_geometry,
         "observation_geometry": observation_geometry,
+        "relative_change_vs_qqq_pp": rs_qqq,
     }
 
 
