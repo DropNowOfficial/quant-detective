@@ -1,0 +1,26 @@
+name: schedule-canary
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/schedule-canary.yml'
+  schedule:
+    # Explicit UTC minutes; no timezone extension, no range/step expression.
+    - cron: '3,8,13,18,23,28,33,38,43,48,53,58 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Record trigger
+        run: |
+          echo "event=${{ github.event_name }}"
+          echo "run_id=${{ github.run_id }}"
+          echo "sha=${{ github.sha }}"
+          date -u
