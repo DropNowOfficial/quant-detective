@@ -55,10 +55,16 @@ def _event_markdown(event):
         f"- RTH open gap: **{_fmt(event.get('open_gap_pct'))}%**",
         f"- Distance from completed-day MA5: **{_fmt(event.get('d5_atr'))} ATR**",
         f"- RTH VWAP (volume-weighted HLC3 approximation): **{_fmt(event.get('rth_vwap_approx'))}**",
+        f"- Same-time RVOL: **{_fmt(event.get('same_time_rvol'))}** ({event.get('same_time_rvol_samples', 0)} historical sessions)",
         f"- State reason: {event.get('reason')}",
     ]
     if event.get("leader_reasons"):
         lines.append("- Leader trigger: " + "; ".join(event["leader_reasons"]))
+    context = event.get("market_context") or {}
+    if context:
+        nq = context.get("NQ=F") or {}
+        es = context.get("ES=F") or {}
+        lines.append(f"- Overnight regime: NQ={_fmt(nq.get('change_pct'))}% | ES={_fmt(es.get('change_pct'))}%")
     news = event.get("news") or []
     if news:
         lines.append("- Recent news context:")
