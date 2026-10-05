@@ -52,13 +52,38 @@ fi
 systemctl daemon-reload
 systemctl enable --now quant-detective-live.service
 
-sleep 8
+echo
+echo "Waiting for first structural scan (up to 180s)..."
+ready=0
+for _ in $(seq 1 90); do
+  if [ -f /var/lib/quant-detective/state.json ]; then
+    mode="$(python3 - <<'PY'
+import json
+from pathlib import Path
+p=Path("/var/lib/quant-detective/state.json")
+try:
+    print(json.loads(p.read_text()).get("mode",""))
+except Exception:
+    print("")
+PY
+)"
+    if [ "$mode" != "BOOTSTRAPPING" ] && [ -n "$mode" ]; then
+      ready=1
+      break
+    fi
+  fi
+  sleep 2
+done
+
 echo
 echo "=== service ==="
 systemctl --no-pager --full status quant-detective-live.service || true
 echo
 echo "=== health ==="
-"$CURRENT/.venv/bin/python" "$CURRENT/deploy/healthcheck.py"   /var/lib/quant-detective/state.json 30 || true
+"$CURRENT/.venv/bin/python" "$CURRENT/deploy/healthcheck.py" /var/lib/quant-detective/state.json 30 || true
+if [ "$ready" -ne 1 ]; then
+  echo "Initial scan did not become ready within 180s; inspect journalctl -u quant-detective-live -n 100 --no-pager" >&2
+fi
 echo
 echo "=== latest state ==="
 python3 - <<'PY'
