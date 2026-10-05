@@ -33,15 +33,18 @@ class IBKRMarketDiscovery:
         scan_names=IBKR_DISCOVERY_SCAN_NAMES,
         params_ttl_seconds=960,
         candidate_ttl_seconds=90,
+        min_scan_interval_seconds=1.05,
         clock=time.time,
     ):
         self.gateway = gateway
         self.scan_names = tuple(scan_names)
         self.params_ttl_seconds = float(params_ttl_seconds)
         self.candidate_ttl_seconds = float(candidate_ttl_seconds)
+        self.min_scan_interval_seconds = max(1.0, float(min_scan_interval_seconds))
         self.clock = clock
         self._scan_specs = ()
         self._params_loaded_at = 0.0
+        self._last_scan_at = 0.0
         self._cursor = 0
         self._pool = {}
         self._excluded_symbols = {s for s in MARKET_CONTEXT_SYMBOLS if "=" not in s}
@@ -80,6 +83,17 @@ class IBKRMarketDiscovery:
 
     def tick(self):
         specs = self._load_specs()
+        now = self.clock()
+        if self._last_scan_at and now - self._last_scan_at < self.min_scan_interval_seconds:
+            return {
+                "coverage_scope": COVERAGE_IBKR_DYNAMIC,
+                "market_wide_discovery": True,
+                "exhaustive": False,
+                "paced": True,
+                "next_scan_in_seconds": self.min_scan_interval_seconds - (now - self._last_scan_at),
+                "candidate_pool_size": len(self._pool),
+                "available_scan_count": len(specs),
+            }
         display_name, code = specs[self._cursor]
         self._cursor = (self._cursor + 1) % len(specs)
         payload = self.gateway.scanner_run(
@@ -88,6 +102,7 @@ class IBKRMarketDiscovery:
             scan_type=code,
         )
         now = self.clock()
+        self._last_scan_at = now
         contracts = payload.get("contracts") or []
         for rank, row in enumerate(contracts):
             if not isinstance(row, dict):
