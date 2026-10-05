@@ -86,3 +86,10 @@ def test_market_scanner_is_read_only_and_sends_json():
     out=gw.scanner_run(instrument="STK", location="STK.US.MAJOR", scan_type="TOP_PERC_GAIN")
     assert out["contracts"][0]["symbol"] == "NVDA"
     assert all("order" not in url.lower() for _,url in opener.calls)
+
+
+def test_last_price_markers_are_preserved_as_status():
+    from market_data.ibkr_cpg import _last_price
+    assert _last_price("H 123.45") == (123.45, "HALTED")
+    assert _last_price("C 122.00") == (122.0, "PREVIOUS_CLOSE")
+    assert _last_price("124.10") == (124.1, "TRADE")
