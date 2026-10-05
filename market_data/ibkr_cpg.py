@@ -21,6 +21,8 @@ ALLOWED_PATHS = {
     "/iserver/accounts": {"GET"},
     "/iserver/secdef/search": {"GET"},
     "/iserver/marketdata/snapshot": {"GET"},
+    "/iserver/scanner/params": {"GET"},
+    "/iserver/scanner/run": {"POST"},
 }
 
 
@@ -62,19 +64,24 @@ class ClientPortalGateway:
         self._accounts_ready = False
         self._snapshot_warmed = set()
 
-    def _request(self, method, path, params=None):
+    def _request(self, method, path, params=None, json_body=None):
         if method not in ALLOWED_PATHS.get(path, set()):
             raise ValueError("IBKR adapter blocks non-read-only/non-keepalive endpoint")
         url = self.base_url + path
         if params:
             url += "?" + urlencode(params)
-        req = Request(url, method=method, headers={
+        headers = {
             "Accept": "application/json",
-            "User-Agent": "quant-detective-read-only/0.2",
-        })
-        data = b"" if method == "POST" else None
-        if data is not None:
-            req.data = data
+            "User-Agent": "quant-detective-read-only/0.3",
+        }
+        if json_body is not None:
+            if method != "POST":
+                raise ValueError("JSON body is allowed only for POST")
+            data = json.dumps(json_body, separators=(",", ":")).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+        else:
+            data = b"" if method == "POST" else None
+        req = Request(url, data=data, method=method, headers=headers)
         try:
             with self._open(req, timeout=self.timeout, context=self._ssl) as response:
                 raw = response.read()
@@ -145,6 +152,28 @@ class ClientPortalGateway:
                 self._sleep(pause_seconds)
         return out, errors
 
+    def scanner_params(self):
+        """Return IBKR current scanner capabilities; callers must cache this."""
+        data = self._request("GET", "/iserver/scanner/params")
+        if not isinstance(data, dict):
+            raise CPGError("IBKR scanner params returned invalid payload")
+        return data
+
+    def scanner_run(self, *, instrument, location, scan_type, filters=None):
+        """Run one read-only IBKR whole-market scanner request."""
+        for name, value in (("instrument", instrument), ("location", location), ("scan_type", scan_type)):
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{name} must be a non-empty string")
+        payload = {
+            "instrument": instrument,
+            "location": location,
+            "type": scan_type,
+            "filter": list(filters or []),
+        }
+        data = self._request("POST", "/iserver/scanner/run", json_body=payload)
+        if not isinstance(data, dict) or not isinstance(data.get("contracts"), list):
+            raise CPGError("IBKR scanner returned invalid payload")
+        return data
     def snapshots(self, contracts, fields=("31", "82", "83", "84", "86", "7762")):
         if not contracts:
             return {}
