@@ -266,3 +266,32 @@ def test_multi_scan_discovery_emits_one_prequalification_event(tmp_path):
     assert hits[0]["symbol"]=="XYZ"
     second=d.cycle()
     assert not [e for e in second["events_this_cycle"] if e.get("state")=="DISCOVERY_MULTI_HIT"]
+
+
+def test_old_discovery_is_not_reported_as_current_after_broker_failure(tmp_path):
+    class FlakyGateway(FakeGateway):
+        def __init__(self):
+            super().__init__(True)
+            self.fail=False
+        def auth_status(self):
+            if self.fail:
+                raise RuntimeError("session lost")
+            return super().auth_status()
+
+    gw=FlakyGateway()
+    d=HybridDaemon(
+        symbols=("NVDA",),gateway=gw,scan_fn=fake_scan,
+        discovery=MultiHitDiscovery(),discovery_structure_limit=24,
+        state_path=tmp_path/"state.json",events_path=tmp_path/"events.jsonl",
+        snapshot_seconds=2,structure_seconds=60,
+    )
+    d.initialize()
+    first=d.cycle()
+    assert first["market_wide_discovery"] is True
+    gw.fail=True
+    d.last_auth=0
+    second=d.cycle()
+    assert second["mode"]=="DEGRADED_PUBLIC_ONLY"
+    assert second["market_wide_discovery"] is False
+    assert second["coverage_scope"]=="CORE_FALLBACK"
+    assert second["discovery_stale"] is True
