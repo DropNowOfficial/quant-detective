@@ -64,7 +64,7 @@ def _news_url(symbol):
     })
 
 
-def _chart(fetcher, symbol, *, range_value, interval, include_prepost):
+def _chart(fetcher, symbol, *, range_value, interval, include_prepost, require_us_equity=True):
     wrapped = fetcher(_yahoo_url(symbol, range_value=range_value, interval=interval,
                                  include_prepost=include_prepost), kind="json")
     data, receipt = wrapped["data"], wrapped["receipt"]
@@ -79,10 +79,11 @@ def _chart(fetcher, symbol, *, range_value, interval, include_prepost):
     expected = symbol.replace(".", "-").upper()
     if str(meta.get("symbol", "")).upper() != expected:
         raise ValueError("Yahoo returned a different symbol")
-    if meta.get("instrumentType") not in {"EQUITY", "ETF"}:
-        raise ValueError("Yahoo asset is not an equity/ETF")
-    if meta.get("exchangeTimezoneName") != "America/New_York" or meta.get("currency") != "USD":
-        raise ValueError("Yahoo market identity does not match U.S. USD equity")
+    if require_us_equity:
+        if meta.get("instrumentType") not in {"EQUITY", "ETF"}:
+            raise ValueError("Yahoo asset is not an equity/ETF")
+        if meta.get("exchangeTimezoneName") != "America/New_York" or meta.get("currency") != "USD":
+            raise ValueError("Yahoo market identity does not match U.S. USD equity")
     times = item.get("timestamp") or []
     quote_rows = ((item.get("indicators") or {}).get("quote") or [])
     if not quote_rows or not isinstance(quote_rows[0], dict):
@@ -106,6 +107,36 @@ def _chart(fetcher, symbol, *, range_value, interval, include_prepost):
     if not rows:
         raise ValueError("Yahoo returned no valid bars")
     return rows, meta, receipt
+
+
+def _market_proxy(fetcher, symbol, now):
+    try:
+        rows, meta, receipt = _chart(fetcher, symbol, range_value="5d", interval="5m",
+                                     include_prepost=True, require_us_equity=False)
+        last = rows[-1]
+        prior = next((float(meta[k]) for k in ("regularMarketPreviousClose", "chartPreviousClose", "previousClose")
+                      if _finite(meta.get(k))), None)
+        return {
+            "ok": True,
+            "symbol": symbol,
+            "instrument_type": meta.get("instrumentType"),
+            "price": last["close"],
+            "change_pct": _pct(last["close"], prior),
+            "prior_reference": prior,
+            "last_bar_utc": datetime.fromtimestamp(last["t"], timezone.utc).isoformat(),
+            "known_at": receipt.get("received_at_utc"),
+            "role": "OVERNIGHT_REGIME_PROXY",
+        }
+    except Exception as exc:
+        return {"ok": False, "symbol": symbol, "role": "OVERNIGHT_REGIME_PROXY",
+                "error": f"{type(exc).__name__}: {str(exc)[:200]}"}
+
+
+def _market_context(fetcher, now):
+    symbols = ("NQ=F", "ES=F")
+    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="qd-regime") as pool:
+        futures = {pool.submit(_market_proxy, fetcher, symbol, now): symbol for symbol in symbols}
+        return {symbol: future.result() for future, symbol in ((f, futures[f]) for f in as_completed(futures))}
 
 
 def _news(fetcher, symbol, now):
@@ -386,6 +417,7 @@ def _scan_symbol(symbol, fetcher, now):
 def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
     now = now or datetime.now(timezone.utc)
     symbols = tuple(dict.fromkeys(s.upper() for s in symbols))
+    market_context = _market_context(fetcher, now)
     rows = []
     with ThreadPoolExecutor(max_workers=max(1, min(workers, 12)), thread_name_prefix="qd-us-watch") as pool:
         futures = {pool.submit(_scan_symbol, s, fetcher, now): s for s in symbols}
@@ -443,6 +475,7 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
         "mode": "PUBLIC_HEADLESS_OBSERVATION",
         "trading_enabled": False,
         "sources": ["Yahoo Finance public chart", "Yahoo Finance public search/news"],
+        "market_context": market_context,
         "symbols_requested": list(symbols),
         "rows": rows,
         "alerts": alerts,
