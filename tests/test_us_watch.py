@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from market_data.us_watch import classify, _daily_metrics, _intraday_metrics
 
@@ -57,10 +57,11 @@ def test_daily_metrics_exclude_current_incomplete_day():
     now = datetime(2026, 10, 5, 15, 0, tzinfo=timezone.utc)
     rows = []
     # Enough prior completed sessions plus a deliberately absurd current-day bar.
-    start = 1790000000
+    start = datetime(2026, 9, 1, 13, 30, tzinfo=timezone.utc)
     for i in range(24):
         close = 100 + i
-        rows.append({"t": start + i * 86400, "open": close-1, "high": close+2, "low": close-2, "close": close, "volume": 1000})
+        stamp = int((start + timedelta(days=i)).timestamp())
+        rows.append({"t": stamp, "open": close-1, "high": close+2, "low": close-2, "close": close, "volume": 1000})
     # 2026-10-05 intraday/daily in-progress bar must not contaminate completed-day MA values.
     rows.append({"t": int(datetime(2026,10,5,13,30,tzinfo=timezone.utc).timestamp()), "open": 999, "high": 1001, "low": 998, "close": 1000, "volume": 9999})
     metrics = _daily_metrics(rows, now)
