@@ -1,0 +1,10 @@
+[Unit]
+Description=Update Quant Detective production release
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/quant-detective-update
+Nice=10
+IOSchedulingClass=idle
