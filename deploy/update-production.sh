@@ -31,19 +31,35 @@ if [ -n "$current_target" ] && [ -d "$current_target/.git" ]; then
   current_sha="$(runuser -u quantdetective -- git -C "$current_target" rev-parse HEAD 2>/dev/null || true)"
 fi
 
-reconcile_watchdog() {
-  if [ -n "$current_target" ] \
-    && [ -f "$current_target/deploy/systemd/quant-detective-watchdog.service" ] \
-    && [ -f "$current_target/deploy/systemd/quant-detective-watchdog.timer" ]; then
-    install -m 0644 "$current_target/deploy/systemd/quant-detective-watchdog.service" /etc/systemd/system/quant-detective-watchdog.service
-    install -m 0644 "$current_target/deploy/systemd/quant-detective-watchdog.timer" /etc/systemd/system/quant-detective-watchdog.timer
-    systemctl daemon-reload
-    systemctl enable --now quant-detective-watchdog.timer >/dev/null 2>&1 || true
+reconcile_operational_units() {
+  local source="$1"
+  [ -n "$source" ] && [ -d "$source" ] || return 0
+
+  if [ -f "$source/deploy/systemd/quant-detective-watchdog.service" ] \
+    && [ -f "$source/deploy/systemd/quant-detective-watchdog.timer" ]; then
+    install -m 0644 "$source/deploy/systemd/quant-detective-watchdog.service" /etc/systemd/system/quant-detective-watchdog.service
+    install -m 0644 "$source/deploy/systemd/quant-detective-watchdog.timer" /etc/systemd/system/quant-detective-watchdog.timer
   fi
+
+  if [ -f "$source/deploy/systemd/quant-detective-github-fallback.service" ] \
+    && [ -f "$source/deploy/systemd/quant-detective-github-fallback.timer" ]; then
+    install -m 0644 "$source/deploy/systemd/quant-detective-github-fallback.service" /etc/systemd/system/quant-detective-github-fallback.service
+    install -m 0644 "$source/deploy/systemd/quant-detective-github-fallback.timer" /etc/systemd/system/quant-detective-github-fallback.timer
+    install -d -o root -g quantdetective -m 0750 /etc/quant-detective
+    if [ ! -f /etc/quant-detective/github-fallback.env ]; then
+      install -o root -g quantdetective -m 0640 \
+        "$source/deploy/systemd/github-fallback.env.example" \
+        /etc/quant-detective/github-fallback.env
+    fi
+  fi
+
+  systemctl daemon-reload
+  systemctl enable --now quant-detective-watchdog.timer >/dev/null 2>&1 || true
+  systemctl enable --now quant-detective-github-fallback.timer >/dev/null 2>&1 || true
 }
 
 if [ "$current_sha" = "$remote_sha" ]; then
-  reconcile_watchdog
+  reconcile_operational_units "$current_target"
   echo "already current: $remote_sha"
   exit 0
 fi
@@ -131,10 +147,7 @@ if [ "$ready" -ne 1 ]; then
   rollback
 fi
 
-install -m 0644 "$release/deploy/systemd/quant-detective-watchdog.service" /etc/systemd/system/quant-detective-watchdog.service
-install -m 0644 "$release/deploy/systemd/quant-detective-watchdog.timer" /etc/systemd/system/quant-detective-watchdog.timer
-systemctl daemon-reload
-systemctl enable --now quant-detective-watchdog.timer
+reconcile_operational_units "$release"
 
 systemctl try-restart quant-detective-update.timer || true
 echo "deployed $remote_sha successfully"

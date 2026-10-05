@@ -1,0 +1,18 @@
+[Unit]
+Description=Quant Detective external GitHub fallback dispatcher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=quantdetective
+Group=quantdetective
+EnvironmentFile=-/etc/quant-detective/github-fallback.env
+ExecStart=/opt/quant-detective/current/.venv/bin/python -m market_data.github_fallback_dispatch
+SuccessExitStatus=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/quant-detective
+UMask=0077

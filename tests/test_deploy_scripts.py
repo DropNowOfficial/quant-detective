@@ -45,15 +45,28 @@ def test_watchdog_assets_and_updater_install_path_exist():
     assert "quant-detective-watchdog.service" in updater
 
 
-def test_new_release_watchdog_enable_occurs_after_health_passes():
+def test_new_release_operational_units_reconcile_after_health_passes():
     text=(ROOT/"deploy/update-production.sh").read_text()
     health_pos=text.index('if [ "$ready" -ne 1 ]')
-    final_enable_pos=text.rindex('systemctl enable --now quant-detective-watchdog.timer')
-    assert final_enable_pos > health_pos
+    reconcile_pos=text.rindex('reconcile_operational_units "$release"')
+    assert reconcile_pos > health_pos
 
 
-def test_already_current_release_reconciles_watchdog_units():
+def test_already_current_release_reconciles_operational_units():
     text=(ROOT/"deploy/update-production.sh").read_text()
-    assert "reconcile_watchdog()" in text
+    assert "reconcile_operational_units()" in text
     current_block=text[text.index('if [ "$current_sha" = "$remote_sha" ]'):text.index('release="$RELEASES/$remote_sha"')]
-    assert "reconcile_watchdog" in current_block
+    assert 'reconcile_operational_units "$current_target"' in current_block
+
+
+def test_github_fallback_dispatch_timer_is_wired_safely():
+    service=(ROOT/"deploy/systemd/quant-detective-github-fallback.service").read_text()
+    timer=(ROOT/"deploy/systemd/quant-detective-github-fallback.timer").read_text()
+    env=(ROOT/"deploy/systemd/github-fallback.env.example").read_text()
+    updater=(ROOT/"deploy/update-production.sh").read_text()
+    assert "EnvironmentFile=-/etc/quant-detective/github-fallback.env" in service
+    assert "SuccessExitStatus=3" in service
+    assert "OnUnitInactiveSec=5min" in timer
+    assert "QD_GITHUB_FALLBACK_TOKEN=" in env
+    assert "quant-detective-github-fallback.timer" in updater
+    assert "github-fallback.env.example" in updater

@@ -1,0 +1,13 @@
+[Unit]
+Description=Dispatch GitHub market-watch fallback if native schedule is stale
+
+[Timer]
+OnBootSec=3min
+OnUnitInactiveSec=5min
+AccuracySec=10s
+RandomizedDelaySec=15s
+Persistent=true
+Unit=quant-detective-github-fallback.service
+
+[Install]
+WantedBy=timers.target
