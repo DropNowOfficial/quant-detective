@@ -56,17 +56,28 @@ def _event_markdown(event):
         f"- Distance from completed-day MA5: **{_fmt(event.get('d5_atr'))} ATR**",
         f"- RTH VWAP (volume-weighted HLC3 approximation): **{_fmt(event.get('rth_vwap_approx'))}**",
         f"- Same-time RVOL: **{_fmt(event.get('same_time_rvol'))}** ({event.get('same_time_rvol_samples', 0)} historical sessions)",
+        f"- Relative change vs SPY: **{_fmt(event.get('relative_change_vs_spy_pp'))} pp**",
         f"- Relative change vs QQQ: **{_fmt(event.get('relative_change_vs_qqq_pp'))} pp**",
         f"- State reason: {event.get('reason')}",
     ]
     if event.get("leader_reasons"):
-        lines.append("- Leader trigger: " + "; ".join(event["leader_reasons"]))
+        lines.append("- Current leader trigger: " + "; ".join(event["leader_reasons"]))
+    if event.get("event_context"):
+        lines.append("- Earlier-session context: " + "; ".join(event["event_context"]))
     context = event.get("market_context") or {}
     if context:
+        spy = context.get("SPY") or {}
+        qqq = context.get("QQQ") or {}
+        iwm = context.get("IWM") or {}
+        soxx = context.get("SOXX") or {}
         nq = context.get("NQ=F") or {}
         es = context.get("ES=F") or {}
-        qqq = context.get("QQQ") or {}
-        lines.append(f"- Regime: NQ={_fmt(nq.get('change_pct'))}% | ES={_fmt(es.get('change_pct'))}% | QQQ={_fmt(qqq.get('change_pct'))}%")
+        rty = context.get("RTY=F") or {}
+        lines.append(
+            f"- Regime: SPY={_fmt(spy.get('change_pct'))}% | QQQ={_fmt(qqq.get('change_pct'))}% | "
+            f"IWM={_fmt(iwm.get('change_pct'))}% | SOXX={_fmt(soxx.get('change_pct'))}% | "
+            f"NQ={_fmt(nq.get('change_pct'))}% | ES={_fmt(es.get('change_pct'))}% | RTY={_fmt(rty.get('change_pct'))}%"
+        )
     news = event.get("news") or []
     if news:
         lines.append("- Recent news context:")
