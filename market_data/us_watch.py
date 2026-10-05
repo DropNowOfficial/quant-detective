@@ -22,14 +22,14 @@ from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
 from .transport import fetch
+from .universe import (
+    CORE_FALLBACK_SYMBOLS,
+    MARKET_CONTEXT_SYMBOLS,
+    COVERAGE_CORE_FALLBACK,
+)
 
 ET = ZoneInfo("America/New_York")
-DEFAULT_SYMBOLS = (
-    "NVDA","TSM","MSFT","AMD","AVGO","MU","INTC","SNDK","MRVL","GLW",
-    "GOOG","META","ARM","ASML","AMAT","LRCX","KLAC","ANET","VRT","ORCL",
-    "CRCL","MSTR","AMZN","DELL","AAPL","SMCI","CRDO","ALAB","COHR","LITE",
-    "AAOI","QCOM","MPWR","MCHP","NXPI","ETN","VST","CEG","HPE","WDC","STX",
-)
+DEFAULT_SYMBOLS = CORE_FALLBACK_SYMBOLS
 OUTPUT_ENV = "QD_WATCH_OUTPUT"
 _DAILY_CACHE = {}
 _NEWS_CACHE = {}
@@ -133,7 +133,7 @@ def _market_proxy(fetcher, symbol, now):
 
 
 def _market_context(fetcher, now):
-    symbols = ("NQ=F", "ES=F", "QQQ")
+    symbols = MARKET_CONTEXT_SYMBOLS
     with ThreadPoolExecutor(max_workers=3, thread_name_prefix="qd-regime") as pool:
         futures = {pool.submit(_market_proxy, fetcher, symbol, now): symbol for symbol in symbols}
         return {symbol: future.result() for future, symbol in ((f, futures[f]) for f in as_completed(futures))}
@@ -323,7 +323,7 @@ def _intraday_metrics(rows, daily, now, history_rows=None):
     return result
 
 
-def classify(daily, intra, qqq_change=None):
+def classify(daily, intra, broad_market_change=None, qqq_change=None):
     trend_ok = daily["ma5_slope_1d"] > 0 and daily["ma5_3point_slope"] >= 0
     d5 = intra["d5_atr"]
     chg = intra.get("change_pct")
@@ -331,11 +331,12 @@ def classify(daily, intra, qqq_change=None):
     gap = intra.get("open_gap_pct")
     from_open = intra.get("move_from_rth_open_pct")
     leader_reasons = []
+    rs_spy = chg - broad_market_change if _finite(chg) and _finite(broad_market_change) else None
     rs_qqq = chg - qqq_change if _finite(chg) and _finite(qqq_change) else None
     if _finite(chg) and chg >= 1.0:
         leader_reasons.append(f"day +{chg:.2f}%")
-    if _finite(rs_qqq) and rs_qqq >= 0.5:
-        leader_reasons.append(f"vs QQQ +{rs_qqq:.2f}pp")
+    if _finite(rs_spy) and rs_spy >= 0.5:
+        leader_reasons.append(f"vs SPY +{rs_spy:.2f}pp")
     if _finite(pre) and pre >= 0.8:
         leader_reasons.append(f"premarket +{pre:.2f}%")
     if _finite(gap) and gap >= 0.8:
@@ -378,11 +379,12 @@ def classify(daily, intra, qqq_change=None):
         "daily_trend_gate": trend_ok,
         "standard_entry_geometry": standard_geometry,
         "observation_geometry": observation_geometry,
+        "relative_change_vs_spy_pp": rs_spy,
         "relative_change_vs_qqq_pp": rs_qqq,
     }
 
 
-def _scan_symbol(symbol, fetcher, now, qqq_change=None):
+def _scan_symbol(symbol, fetcher, now, broad_market_change=None, qqq_change=None):
     cache_key = (symbol, now.astimezone(ET).date().isoformat())
     cached = _DAILY_CACHE.get(cache_key)
     if cached is None:
@@ -399,7 +401,7 @@ def _scan_symbol(symbol, fetcher, now, qqq_change=None):
     volume_rows, volume_known_at = volume_cached
     intraday_rows, _, intra_receipt = _chart(fetcher, symbol, range_value="5d", interval="5m", include_prepost=True)
     intra = _intraday_metrics(intraday_rows, daily, now, history_rows=volume_rows)
-    state = classify(daily, intra, qqq_change=qqq_change)
+    state = classify(daily, intra, broad_market_change=broad_market_change, qqq_change=qqq_change)
     previous = datetime.fromisoformat(daily["previous_session_date"]).date()
     current = now.astimezone(ET).date()
     calendar_gap = (current - previous).days
@@ -411,7 +413,6 @@ def _scan_symbol(symbol, fetcher, now, qqq_change=None):
         "daily_known_at": daily_known_at,
         "volume_profile_known_at": volume_known_at,
         "calendar_days_since_previous_session": calendar_gap,
-        "monday_weekend_context": current.weekday() == 0 and calendar_gap >= 3,
         "daily": daily,
         "intraday": intra,
         **state,
@@ -422,10 +423,11 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
     now = now or datetime.now(timezone.utc)
     symbols = tuple(dict.fromkeys(s.upper() for s in symbols))
     market_context = _market_context(fetcher, now)
+    broad_market_change = (market_context.get("SPY") or {}).get("change_pct")
     qqq_change = (market_context.get("QQQ") or {}).get("change_pct")
     rows = []
     with ThreadPoolExecutor(max_workers=max(1, min(workers, 12)), thread_name_prefix="qd-us-watch") as pool:
-        futures = {pool.submit(_scan_symbol, s, fetcher, now, qqq_change): s for s in symbols}
+        futures = {pool.submit(_scan_symbol, s, fetcher, now, broad_market_change, qqq_change): s for s in symbols}
         for future in as_completed(futures):
             symbol = futures[future]
             try:
@@ -472,6 +474,7 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
             "rth_vwap_approx": r["intraday"]["rth_vwap_approx"],
             "same_time_rvol": r["intraday"]["same_time_rvol"],
             "same_time_rvol_samples": r["intraday"]["same_time_rvol_samples"],
+            "relative_change_vs_spy_pp": r.get("relative_change_vs_spy_pp"),
             "relative_change_vs_qqq_pp": r.get("relative_change_vs_qqq_pp"),
             "market_context": market_context,
             "news": (r.get("news") or {}).get("items", [])[:3],
@@ -480,6 +483,9 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
         "generated_at_utc": now.isoformat(),
         "generated_at_et": now.astimezone(ET).isoformat(),
         "mode": "PUBLIC_HEADLESS_OBSERVATION",
+        "coverage_scope": COVERAGE_CORE_FALLBACK,
+        "market_wide": False,
+        "coverage_note": "Fixed fallback/core watchlist only; not whole-market discovery.",
         "trading_enabled": False,
         "sources": ["Yahoo Finance public chart", "Yahoo Finance public search/news"],
         "market_context": market_context,
