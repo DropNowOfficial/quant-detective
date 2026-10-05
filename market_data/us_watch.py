@@ -524,6 +524,13 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
         "coverage_scope": COVERAGE_CORE_FALLBACK,
         "market_wide": False,
         "coverage_note": "Fixed fallback/core watchlist only; not whole-market discovery.",
+        "capability_gaps": [
+            "market_breadth_not_integrated",
+            "sector_industry_relative_strength_not_integrated",
+            "news_first_market_discovery_not_integrated",
+            "historical_3y_confidence_not_integrated",
+            "value_price_return_pendulum_not_integrated",
+        ],
         "trading_enabled": False,
         "sources": ["Yahoo Finance public chart", "Yahoo Finance public search/news"],
         "market_context": market_context,
