@@ -304,6 +304,7 @@ def _intraday_metrics(rows, daily, now, history_rows=None):
         "open_gap_pct": _pct(rth_open, prior),
         "rth_vwap_approx": current_vwap,
         "price_vs_vwap_pct": _pct(current, current_vwap),
+        "price_vs_vwap_atr": ((current-current_vwap)/daily["atr5"] if _finite(current_vwap) else None),
         "two_completed_5m_above_vwap_and_ma5": two_above,
         "rth_completed_bars": len(completed_rth),
         "premarket_bars": len(pre),
@@ -344,16 +345,27 @@ def classify(daily, intra):
     standard_geometry = -0.10 <= d5 <= 0.20
     observation_geometry = -0.35 <= d5 <= 0.40
     rvol = intra.get("same_time_rvol")
+    vwap_atr = intra.get("price_vs_vwap_atr")
     confirmed = (trend_ok and standard_geometry
                  and intra.get("two_completed_5m_above_vwap_and_ma5", False)
                  and _finite(rvol) and rvol >= 0.8)
+    armed = (trend_ok and observation_geometry
+             and _finite(vwap_atr) and vwap_atr >= -0.10
+             and _finite(rvol) and rvol >= 0.6)
+    faded = leader and (
+        (_finite(chg) and chg < 0)
+        or (_finite(from_open) and from_open <= -1.0)
+    )
 
     if confirmed:
         state = "ENTRY_CONFIRMED"
         reason = "daily trend + MA5/ATR geometry + two completed 5m closes above session VWAP/MA5 + same-time RVOL >= 0.8"
-    elif trend_ok and observation_geometry:
+    elif armed:
         state = "ENTRY_ARMED"
-        reason = "daily trend and MA5/ATR geometry valid; VWAP/5m or same-time RVOL confirmation incomplete"
+        reason = "daily trend/geometry valid and price is within 0.10 ATR below RTH VWAP with same-time RVOL >= 0.6; full confirmation incomplete"
+    elif faded:
+        state = "LEADER_FADED"
+        reason = "premarket/gap/early leader signal existed but current RTH price action has materially faded"
     elif leader and d5 > 0.35:
         state = "LEADER_HOT_NO_CHASE"
         reason = "strong move detected, but price is too extended above completed-day MA5"
@@ -429,13 +441,13 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
                 rows.append({"symbol": symbol, "status": "ERROR", "error": f"{type(exc).__name__}: {str(exc)[:240]}"})
     rows.sort(key=lambda r: (
         {"ENTRY_CONFIRMED": 0, "ENTRY_ARMED": 1, "LEADER_HOT_NO_CHASE": 2, "LEADER_WATCH": 3,
-         "EXTENDED": 4, "WATCH": 5}.get(r.get("state"), 9),
+         "LEADER_FADED": 4, "EXTENDED": 5, "WATCH": 6}.get(r.get("state"), 9),
         -(r.get("intraday", {}).get("change_pct") or -999),
         r["symbol"],
     ))
 
     interesting = [r["symbol"] for r in rows if r.get("state") in {
-        "ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH"
+        "ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH", "LEADER_FADED"
     }]
     news = {}
     if interesting:
@@ -448,7 +460,7 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
             row["news"] = news[row["symbol"]]
 
     et_date = now.astimezone(ET).date().isoformat()
-    alert_states = {"ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH"}
+    alert_states = {"ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH", "LEADER_FADED"}
     alerts = []
     for r in rows:
         if r.get("state") not in alert_states:
