@@ -10,19 +10,22 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Optional ADAPT layers — not required for make verify
+# Optional integrations; canonical verification installs research for loader tests.
 openbb = []
 qlib = []
+research = ["exchange-calendars==4.13.2", "pandas==2.2.3", "numpy==2.3.5"]
 
 [project.scripts]
 qd-tm = "time_machine.cli:main"
+qd-lab = "research_lab.cli:main"
+qd-market = "market_data.cli:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["validation_kernel", "time_machine", "schemas"]
+packages = ["validation_kernel", "time_machine", "schemas", "research_lab", "market_data"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

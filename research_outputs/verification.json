@@ -1,0 +1,234 @@
+{
+  "known_at": "2026-10-04T07:09:08.131383+00:00",
+  "local_reproducibility": "LOCAL_REPRODUCIBLE",
+  "scope": "Software correctness and exact frozen numerical replay are separate from economic validity. No alpha or live-trading certification.",
+  "canonical_entrypoint": "make verify",
+  "canonical_observed": {
+    "pytest": 105,
+    "legacy_unittest": 84,
+    "schema_gate": "PASS",
+    "time_machine_fixture": "PASS",
+    "result": "VERIFY_OK"
+  },
+  "cash_portfolio_stress": {
+    "seeded_paths": 250,
+    "checks": [
+      "prefix invariance",
+      "cash nonnegative",
+      "maximum5positions",
+      "equity reconciles realized and open PnL"
+    ]
+  },
+  "legacy_ui": {
+    "whole_row_selection_checks": 240,
+    "random_iterations": 3000,
+    "executed_random_actions": 2249,
+    "browser_clicks": 308,
+    "viewport_widths": [
+      1440,
+      768,
+      390,
+      320
+    ],
+    "errors": []
+  },
+  "research_ui": {
+    "synthetic_behavior": "PASS",
+    "future_chart_extreme_perturbation": "PASS",
+    "actual_payload": {
+      "run_id": "2c575c3c00f0aa88c0ed0213",
+      "scenario_checks": 192,
+      "export_rows": 1192,
+      "layouts": [
+        {
+          "width": 1440,
+          "tab": "bench",
+          "overflow": false
+        },
+        {
+          "width": 1440,
+          "tab": "review",
+          "overflow": false
+        },
+        {
+          "width": 1440,
+          "tab": "principles",
+          "overflow": false
+        },
+        {
+          "width": 1440,
+          "tab": "sources",
+          "overflow": false
+        },
+        {
+          "width": 1440,
+          "tab": "gates",
+          "overflow": false
+        },
+        {
+          "width": 768,
+          "tab": "bench",
+          "overflow": false
+        },
+        {
+          "width": 768,
+          "tab": "review",
+          "overflow": false
+        },
+        {
+          "width": 768,
+          "tab": "principles",
+          "overflow": false
+        },
+        {
+          "width": 768,
+          "tab": "sources",
+          "overflow": false
+        },
+        {
+          "width": 768,
+          "tab": "gates",
+          "overflow": false
+        },
+        {
+          "width": 390,
+          "tab": "bench",
+          "overflow": false
+        },
+        {
+          "width": 390,
+          "tab": "review",
+          "overflow": false
+        },
+        {
+          "width": 390,
+          "tab": "principles",
+          "overflow": false
+        },
+        {
+          "width": 390,
+          "tab": "sources",
+          "overflow": false
+        },
+        {
+          "width": 390,
+          "tab": "gates",
+          "overflow": false
+        },
+        {
+          "width": 320,
+          "tab": "bench",
+          "overflow": false
+        },
+        {
+          "width": 320,
+          "tab": "review",
+          "overflow": false
+        },
+        {
+          "width": 320,
+          "tab": "principles",
+          "overflow": false
+        },
+        {
+          "width": 320,
+          "tab": "sources",
+          "overflow": false
+        },
+        {
+          "width": 320,
+          "tab": "gates",
+          "overflow": false
+        }
+      ],
+      "browser": "153.0.8010.0",
+      "errors": [],
+      "external_requests": []
+    },
+    "visual_inspection": "Desktop bench/principles and mobile bench inspected; no blocking clipping or layout defect."
+  },
+  "market_replay": {
+    "run_id": "2c575c3c00f0aa88c0ed0213",
+    "output": "/workspace/scratch/79fdd442363d/quant-detective/research_lab/runs/2c575c3c00f0aa88c0ed0213",
+    "original_fully_replayed_run_id": "85e511c66a3aac425e767e93",
+    "original_code_sha256": "914a3495e5e20fe3eedacee630bd0917244b521d6dfccba4e1355f3bea84c5a6",
+    "final_code_sha256": "cea581b13368bb2f49f1d8099ef20e78c07d0ac4b6dd4f527632f2e08ddac547",
+    "finalization": "Reused all frozen preexisting numerical results without calculating new signals. Corrected six liquidated benchmark position counters, renamed snapshot timestamp field, updated renderer fingerprint, then resealed canonical content. All returns, equity, scenarios and diagnostics are unchanged.",
+    "performance_values_changed": false,
+    "terminal_position_metadata_corrections": 6,
+    "original_numerical_payload_sha256": "5667f58101ffdf0ec6fe2338e215b4dc0f136a056b7229af6b0731f12dadf603",
+    "final_numerical_payload_sha256": "d96e735c6014ce4ad071fc583f33366479e46a27ed9450506a52eb71ec17a045"
+  },
+  "independent_audit_replays": {
+    "legacy_counts": "EXACT_JSON_MATCH",
+    "cross_source_counts": "EXACT_JSON_MATCH"
+  },
+  "private_bundle_replay": {
+    "legacy_run_id": "0375727de497cf6f83fee2a4",
+    "counts": {
+      "CANDIDATE": 2,
+      "WATCH": 0,
+      "NOT_MATCHED": 40,
+      "DATA_BLOCKED": 1
+    },
+    "input_hashes": "All90 original source file hashes preserved"
+  },
+  "delivery_artifacts": [
+    {
+      "file": "quant-detective-lab.html",
+      "bytes": 16127422,
+      "sha256": "bc3059cda29dc2ed098c7c90982ed0101e6738e9b01a9a83ec1a3673b00d7e3c",
+      "in_public_git": false
+    },
+    {
+      "file": "quant-detective-snapshots-20261004.zip",
+      "bytes": 3927535,
+      "sha256": "909faf2497831fb8f423fa45c870b1188f7170a00d0a7ccf3af3dcc165227062",
+      "in_public_git": false
+    }
+  ],
+  "remote_ci": {
+    "evidence_location": "https://github.com/DropNowOfficial/quant-detective/actions/workflows/verify.yml",
+    "status": "EVIDENCE_EXTERNAL_TO_THIS_RECEIPT",
+    "requirement": "Only a completed fresh GitHub runner for the pushed commit establishes REMOTE_REPRODUCIBLE; local tests cannot self-certify it."
+  },
+  "not_proven": [
+    "point-in-time historical universe",
+    "corporate-action economics",
+    "total-return wealth",
+    "untouched future performance",
+    "full intraday HARNESS",
+    "market impact or capacity",
+    "profit or alpha",
+    "live trading"
+  ],
+  "clean_room": {
+    "source_commit": "d457397e9e12e3ba2750f787569b096d569da168",
+    "fresh_environment": true,
+    "locked_dependencies": true,
+    "result": "CLEAN_ROOM_OK",
+    "canonical_result": "VERIFY_OK",
+    "source_path_leak": "NONE",
+    "private_market_inputs_used": false,
+    "canonical_counts": {
+      "pytest": 105,
+      "legacy_unittest": 84
+    }
+  },
+  "public_market_terminal": {
+    "provider_tests": 60,
+    "transport_and_local_server_tests": 6,
+    "synthetic_browser": "PASS: market selection, search, manual query, stale-response rejection, failure clears old prices, null taker-buy, tiny price precision, 320px",
+    "actual_browser": "PASS: Gate BTC1m and XAU15m; Binance spot ETH5m; full fetched catalogs for Gate, US, CN, Binance spot; visible OKX failure",
+    "actual_source_metadata": "research_outputs/public-markets.json",
+    "viewports": [
+      1440,
+      390,
+      320
+    ],
+    "js_errors": [],
+    "new_signals_computed": false,
+    "read_only": true,
+    "independent_review": "research_outputs/public-markets-code-review.json"
+  }
+}

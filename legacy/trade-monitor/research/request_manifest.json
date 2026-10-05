@@ -1,0 +1,1156 @@
+[
+  {
+    "file": "AAOI_5m.json",
+    "symbol": "AAOI",
+    "request": {
+      "contract_id": 135423662,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "dab3090db77c833ee10c66eb4bfe6526defffdc532baa05570d686ac2005bf66"
+  },
+  {
+    "file": "AAOI_daily.json",
+    "symbol": "AAOI",
+    "request": {
+      "contract_id": 135423662,
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "security_type": "STK",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "229e30f84fe5b5a66ae32927a554c2bf71d7ec9e4ab8891895424dcaf49ecae0"
+  },
+  {
+    "file": "AAPL_5m.json",
+    "symbol": "AAPL",
+    "request": {
+      "contract_id": 265598,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "563294f73619bc81c7c1a8a8d85f8c70b1dc393b5a6cdcdd7415bbab74583503"
+  },
+  {
+    "file": "AAPL_daily.json",
+    "symbol": "AAPL",
+    "request": {
+      "contract_id": 265598,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "f7cbe5f245390cb4b2d2b3451901273541180122c96355beb95483603bac30cb"
+  },
+  {
+    "file": "ALAB_5m.json",
+    "symbol": "ALAB",
+    "request": {
+      "contract_id": 692196414,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "115cfd2d731ee73f8ebed0cab5d626acbb5e04069477ec3848442bfc7efa95bf"
+  },
+  {
+    "file": "ALAB_daily.json",
+    "symbol": "ALAB",
+    "request": {
+      "contract_id": 692196414,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "c2c3ea5fc8ffa4d46f796b9dbd35be560758912dc8ae46aacb3cc5076d0639ac"
+  },
+  {
+    "file": "AMAT_5m.json",
+    "symbol": "AMAT",
+    "request": {
+      "contract_id": 266093,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "586b3d7ecdab9786041ead28163e9d1f50848caef0c3638ae188000d62a9d438"
+  },
+  {
+    "file": "AMAT_daily.json",
+    "symbol": "AMAT",
+    "request": {
+      "contract_id": 266093,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "6ef5187995cb9580ed2aed527936ce085dd6e9d0211adac8c608d9a59a4e0391"
+  },
+  {
+    "file": "AMD_5m.json",
+    "symbol": "AMD",
+    "request": {
+      "contract_id": 4391,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "f2a52cff64d4ed71e8cec8bc79e9c868bfa67b0995319bc96d874408e7686afb"
+  },
+  {
+    "file": "AMD_daily.json",
+    "symbol": "AMD",
+    "request": {
+      "contract_id": 4391,
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "security_type": "STK",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "44f6540dc591da9fe58220ad09fbb6621934aaa368a16271fbe6ea0bc75348df"
+  },
+  {
+    "file": "AMZN_5m.json",
+    "symbol": "AMZN",
+    "request": {
+      "contract_id": 3691937,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "b8b7b12057d1b6dd4ba92f80bd2d1ecac0368f159b290e5fbff25df4e02632a4"
+  },
+  {
+    "file": "AMZN_daily.json",
+    "symbol": "AMZN",
+    "request": {
+      "contract_id": 3691937,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "8d97da391b285ac3d4508d5ea69363f6cb5c9155b132e2f05f29be8ab02b20da"
+  },
+  {
+    "file": "ANET_5m.json",
+    "symbol": "ANET",
+    "request": {
+      "contract_id": 740948854,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "463c8e39e69465516a0d8a8f37c1c04a0c124d50d0b12bcf4042e348dd988f72"
+  },
+  {
+    "file": "ANET_daily.json",
+    "symbol": "ANET",
+    "request": {
+      "contract_id": 740948854,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "f76eabce38f568fb387b3ab868fda2c487e3c4df90c4366f1697b391ee00ea3d"
+  },
+  {
+    "file": "ARM_5m.json",
+    "symbol": "ARM",
+    "request": {
+      "contract_id": 653400472,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "94abe5b89ad66415e02718f5fb53a9f1a37bf3bcb16d0acbbf82eab0dedf7c0f"
+  },
+  {
+    "file": "ARM_daily.json",
+    "symbol": "ARM",
+    "request": {
+      "contract_id": 653400472,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "289603c279feaecbecfe87bb3b0fa0adb35036dbf3d23d5a117be5d148921673"
+  },
+  {
+    "file": "ASML_5m.json",
+    "symbol": "ASML",
+    "request": {
+      "contract_id": 117902840,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "dbc262a91b950aa75bb6717f46b3930490b66490d6dfa5b0d8c8bd8692a054ce"
+  },
+  {
+    "file": "ASML_daily.json",
+    "symbol": "ASML",
+    "request": {
+      "contract_id": 117902840,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "63d7d33081e77f27c4c6a742dd869124a3d373d7b34f2c7f7a7ecdb7044822bf"
+  },
+  {
+    "file": "AVGO_5m.json",
+    "symbol": "AVGO",
+    "request": {
+      "contract_id": 313130367,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "8ced417da6bb9c4d414ab4935e41d41638fd5772b74c8db73c2f20ad30759ee7"
+  },
+  {
+    "file": "AVGO_daily.json",
+    "symbol": "AVGO",
+    "request": {
+      "contract_id": 313130367,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "13d0cfe474be41883acb133eb378ba488992ac757baf4c1662f70327c7ca3d6d"
+  },
+  {
+    "file": "CEG_5m.json",
+    "symbol": "CEG",
+    "request": {
+      "contract_id": 538132976,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "9a0e43673f1f77a2ca71d0b708fd8cb0145494d622999515cc132082fce0fcb3"
+  },
+  {
+    "file": "CEG_daily.json",
+    "symbol": "CEG",
+    "request": {
+      "contract_id": 538132976,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "b1ab8b15a288f684317e11d15cddb5f4ad5862dedc3d989a8937d1d577a3b995"
+  },
+  {
+    "file": "COHR_5m.json",
+    "symbol": "COHR",
+    "request": {
+      "contract_id": 584127832,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "465dfd27c18dc2061335832eee3e4bc2c788e64024b5362120ee8d81f71fa8a2"
+  },
+  {
+    "file": "COHR_daily.json",
+    "symbol": "COHR",
+    "request": {
+      "contract_id": 584127832,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "392bd321fea311e15a2c65e7047bdb925d412497292e2923e11715006f363e45"
+  },
+  {
+    "file": "CRCL_5m.json",
+    "symbol": "CRCL",
+    "request": {
+      "contract_id": 789044667,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "aae1d663faa132cd2a50557e9d50e187eb9c27986417ce92fee57673a33ce754"
+  },
+  {
+    "file": "CRCL_daily.json",
+    "symbol": "CRCL",
+    "request": {
+      "contract_id": 789044667,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "19be42ae8c91c5a0fec9f4c95c739cba80d86028c8e5c0041a7528a75b1f9861"
+  },
+  {
+    "file": "CRDO_5m.json",
+    "symbol": "CRDO",
+    "request": {
+      "contract_id": 541265127,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "2e15e82918b697d2fbc9efd714d2476527772c8ffb4c2d358ff09053488440f9"
+  },
+  {
+    "file": "CRDO_daily.json",
+    "symbol": "CRDO",
+    "request": {
+      "contract_id": 541265127,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "95ac995af59843a183904eb778e59596bf1a7ecef1130a9c3d04123f40b54b08"
+  },
+  {
+    "file": "DELL_5m.json",
+    "symbol": "DELL",
+    "request": {
+      "contract_id": 346218218,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "1bd9a6f807af6452891265ea102ed112b75a83b2435de727ae1212eec1d91445"
+  },
+  {
+    "file": "DELL_daily.json",
+    "symbol": "DELL",
+    "request": {
+      "contract_id": 346218218,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "cb46019c0ebc51d1b64ca564e73f1a583a76d4b45cc8050bba2adf57a8af09f4"
+  },
+  {
+    "file": "ETN_5m.json",
+    "symbol": "ETN",
+    "request": {
+      "contract_id": 118017869,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "7359bfffb86ad69d1a95c828977071cfccfab8b6b2a38bf2aa12d1ce38b0da6f"
+  },
+  {
+    "file": "ETN_daily.json",
+    "symbol": "ETN",
+    "request": {
+      "contract_id": 118017869,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "24e6fe1c102f946569af7938ef3d9918ab67641cb5c594923e899105d2633be8"
+  },
+  {
+    "file": "GLW_5m.json",
+    "symbol": "GLW",
+    "request": {
+      "contract_id": 7655,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "23f3d2bd471c04ee2730c84ec1ff7bed760b384988473d5b7d60885382cb4f62"
+  },
+  {
+    "file": "GLW_daily.json",
+    "symbol": "GLW",
+    "request": {
+      "contract_id": 7655,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "c3aad56129ff6bc8482f5d4bf91b24d2e4863de10c7633bbe6f9e852c25bedec"
+  },
+  {
+    "file": "GOOG_5m.json",
+    "symbol": "GOOG",
+    "request": {
+      "contract_id": 208813720,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "adc1bb4bea0abb26f2fda08a8717813d4ddfa9dc8c05ca18a578e602679be107"
+  },
+  {
+    "file": "GOOG_daily.json",
+    "symbol": "GOOG",
+    "request": {
+      "contract_id": 208813720,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "bf64d94f8ecb819417ce43d9395807c81fdd17e7efd4eb60d3c246f8996d3742"
+  },
+  {
+    "file": "HPE_5m.json",
+    "symbol": "HPE",
+    "request": {
+      "contract_id": 209411798,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "f4afbb624cd56191b8d5533fe23e6536c522d43901e0b04d7498f08ffd706d7a"
+  },
+  {
+    "file": "HPE_daily.json",
+    "symbol": "HPE",
+    "request": {
+      "contract_id": 209411798,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "527ba02eecc0e4da4130a2b1f9d0fb113886bb0af7570e928574d7b6cd6b7078"
+  },
+  {
+    "file": "INTC_5m.json",
+    "symbol": "INTC",
+    "request": {
+      "contract_id": 270639,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "48fb488aa640e5c16f8791a15a5c6f9263f280a91bdab060e00f262e4f507e4c"
+  },
+  {
+    "file": "INTC_daily.json",
+    "symbol": "INTC",
+    "request": {
+      "contract_id": 270639,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "16f0f3f6ea278b2447d3c84c322640be1b8c03fe31a47d47394bb33da5d1c684"
+  },
+  {
+    "file": "KLAC_5m.json",
+    "symbol": "KLAC",
+    "request": {
+      "contract_id": 270957,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "654a01441d4aa6450cee8a98fd885876b66983ffa6c4d912939102bfd7088d5d"
+  },
+  {
+    "file": "KLAC_daily.json",
+    "symbol": "KLAC",
+    "request": {
+      "contract_id": 270957,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "5f62f10d6de1d8fe7491cbef039a0397d737fbc67f38c201aa2d0270de1699ea"
+  },
+  {
+    "file": "LITE_5m.json",
+    "symbol": "LITE",
+    "request": {
+      "contract_id": 201113895,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "14c867b8dcc8e662d1c4a6f5fc3cadd5009dfa079cb47f17908ff8c13beaf189"
+  },
+  {
+    "file": "LITE_daily.json",
+    "symbol": "LITE",
+    "request": {
+      "contract_id": 201113895,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "5e09eb2a31f3d65df6ee601fd1d6337726805f494b200fb11ca6a0ba65697183"
+  },
+  {
+    "file": "LRCX_5m.json",
+    "symbol": "LRCX",
+    "request": {
+      "contract_id": 732440574,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "12a49146973bd6855ac94cee60eb94aaaf08bbdf13c77aa2bf3581d623e29d43"
+  },
+  {
+    "file": "LRCX_daily.json",
+    "symbol": "LRCX",
+    "request": {
+      "contract_id": 732440574,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "5ecd04d25f053d422c7f11b936ff11a26d4ebe3ca04299336ee49557a51b760d"
+  },
+  {
+    "file": "MCHP_5m.json",
+    "symbol": "MCHP",
+    "request": {
+      "contract_id": 271568,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "8536ee954e451cb0040a8bbfc29b7faae6da82f9b8e8266c5fc709ec09d72c51"
+  },
+  {
+    "file": "MCHP_daily.json",
+    "symbol": "MCHP",
+    "request": {
+      "contract_id": 271568,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "576bc4a25a3002a51e175412168be841d3eb93f321f21f0715385d9997bd54a9"
+  },
+  {
+    "file": "META_5m.json",
+    "symbol": "META",
+    "request": {
+      "contract_id": 107113386,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "8c5dc3e93ccbd7f1c1d2f15af824088325004154a29ba53c6f4af949868a8dce"
+  },
+  {
+    "file": "META_daily.json",
+    "symbol": "META",
+    "request": {
+      "contract_id": 107113386,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "f41b8c0226ba6df0ac2fc6e8112f57930540eb0a4116edc158d18cb1e7f218ad"
+  },
+  {
+    "file": "MPWR_5m.json",
+    "symbol": "MPWR",
+    "request": {
+      "contract_id": 32106121,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "1731ceddf2bedc5483cb6dc0c31aa5071abf6df8e88de4a57b95c250aecd75c8"
+  },
+  {
+    "file": "MPWR_daily.json",
+    "symbol": "MPWR",
+    "request": {
+      "contract_id": 32106121,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "293b6a3994c08078c42ab1ee7edd972bff9c805336dde11325c989d6b21d99a5"
+  },
+  {
+    "file": "MRVL_5m.json",
+    "symbol": "MRVL",
+    "request": {
+      "contract_id": 483492393,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "a382e8be512cbf0d4f102473bb786fa444e92894e91fd802f66d796e2fc65867"
+  },
+  {
+    "file": "MRVL_daily.json",
+    "symbol": "MRVL",
+    "request": {
+      "contract_id": 483492393,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "6eaf937cce04aad3f5d330960e10a0ef5342dc65d81e07231ca8ed22a2f03b3b"
+  },
+  {
+    "file": "MSFT_5m.json",
+    "symbol": "MSFT",
+    "request": {
+      "contract_id": 272093,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "82ea196b9e66ea9d8f3efe2b4c646f48c0151c44d54ddef8cfdc5c8eb064fd0c"
+  },
+  {
+    "file": "MSFT_daily.json",
+    "symbol": "MSFT",
+    "request": {
+      "contract_id": 272093,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "c7f28f49febe6c2bef03bd3a0d28cc42c1a5a731f4ecfd30cc8004d05cc51206"
+  },
+  {
+    "file": "MSTR_5m.json",
+    "symbol": "MSTR",
+    "request": {
+      "contract_id": 272110,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "6a9ffb4c793c0f944add4bac6ad82630d9dc7647c63c31ab2d0dfff201f99eb6"
+  },
+  {
+    "file": "MSTR_daily.json",
+    "symbol": "MSTR",
+    "request": {
+      "contract_id": 272110,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "4a26422cdc4ae86633316cb1c6fe926e40176b2cf623a61a35eea062b2c901c9"
+  },
+  {
+    "file": "MU_5m.json",
+    "symbol": "MU",
+    "request": {
+      "contract_id": 9939,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "6755a7b7f1285465de1f2b0beab879fe66908dba37bd0e3f9d0d1e5b0159851b"
+  },
+  {
+    "file": "MU_daily.json",
+    "symbol": "MU",
+    "request": {
+      "contract_id": 9939,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "9da8b8a1d2dc3af23d7a11ce30f8f240fe511c478885766389f43e6ead576a25"
+  },
+  {
+    "file": "NVDA_5m.json",
+    "symbol": "NVDA",
+    "request": {
+      "contract_id": 4815747,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "76feead5a4812a374baedfcfce15d6206d02e96b03245697efc57f98db5895c0"
+  },
+  {
+    "file": "NVDA_daily.json",
+    "symbol": "NVDA",
+    "request": {
+      "contract_id": 4815747,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "58bd90da46b3d128659ff987d11c11f59316817c7169e2a0bb9b5b2752dd3f43"
+  },
+  {
+    "file": "NXPI_5m.json",
+    "symbol": "NXPI",
+    "request": {
+      "contract_id": 77791077,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "011935de7fe38e7a02c86108a88a5c0f60520072472aa4cb1ae75a393763eaa7"
+  },
+  {
+    "file": "NXPI_daily.json",
+    "symbol": "NXPI",
+    "request": {
+      "contract_id": 77791077,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "8bfd3ed99fd3ce7b2dd37f179a47f8f43cf5344364d3807bc6a7c178870cc0eb"
+  },
+  {
+    "file": "ORCL_5m.json",
+    "symbol": "ORCL",
+    "request": {
+      "contract_id": 272800,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "0c96f74ab9bbab5c6c24791d5f782ad9bea18371c2aa9d2c2f327b0f763171c5"
+  },
+  {
+    "file": "ORCL_daily.json",
+    "symbol": "ORCL",
+    "request": {
+      "contract_id": 272800,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "1b335770ab9b6e3b6e4cd2e1a6b38158484bf5bce9de027df3a4502755fb400e"
+  },
+  {
+    "file": "P_5m.json",
+    "symbol": "P",
+    "request": {
+      "contract_id": 208813725,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "8ce26c4017689d402d145bc056108ed860caa89f487d2df85071d460b0e02bad"
+  },
+  {
+    "file": "P_daily.json",
+    "symbol": "P",
+    "request": {
+      "contract_id": 208813725,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "a246b982f009d15425179bcec0dfa27b77d061946fe3cd9dc8fc51693e43e369"
+  },
+  {
+    "file": "QCOM_5m.json",
+    "symbol": "QCOM",
+    "request": {
+      "contract_id": 273544,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "a1774ac65fa201af7b3cfa57429ce5d0b6d7e609509f81c03a691c071db1c403"
+  },
+  {
+    "file": "QCOM_daily.json",
+    "symbol": "QCOM",
+    "request": {
+      "contract_id": 273544,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "f87948088fe0cb408ebfc1984c811a9129d950703d40d1bc78b99be1e1e0c07f"
+  },
+  {
+    "file": "QQQ_5m.json",
+    "symbol": "QQQ",
+    "request": {
+      "contract_id": 320227571,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "22570dd3630f7c10b7fbd1d6ad43ee5f613359f7f92c4013538aa09546ba124d"
+  },
+  {
+    "file": "QQQ_daily.json",
+    "symbol": "QQQ",
+    "request": {
+      "contract_id": 320227571,
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "security_type": "STK",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "13a668bc40a5ec6bac837660bb8b795549670f88d7a397466b935b73df5fbf55"
+  },
+  {
+    "file": "SMCI_5m.json",
+    "symbol": "SMCI",
+    "request": {
+      "contract_id": 731466419,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "7b9e246fbb94cd1f78c2c72e3b41157a3f6c4f3845b6b2e85eb03182d22cf183"
+  },
+  {
+    "file": "SMCI_daily.json",
+    "symbol": "SMCI",
+    "request": {
+      "contract_id": 731466419,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "8f6786138318d4b7154438feb4f1a5270cdcdc9063bac0f528aaf1543f87da06"
+  },
+  {
+    "file": "SNDK_5m.json",
+    "symbol": "SNDK",
+    "request": {
+      "contract_id": 760250490,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "d84f1a8d7ab4040d61c5e0c6c81dbe0720177f18e31bdfb205378b0cba73128b"
+  },
+  {
+    "file": "SNDK_daily.json",
+    "symbol": "SNDK",
+    "request": {
+      "contract_id": 760250490,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "8341e42e036c29e140c67acdd4795c5c5287c44afceacfc9371c46786d41c022"
+  },
+  {
+    "file": "SOXX_5m.json",
+    "symbol": "SOXX",
+    "request": {
+      "contract_id": 12658194,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "7972797a084cac3ae6d25f709d4598d9029feb10bb29f84cb270aad7773151bb"
+  },
+  {
+    "file": "SOXX_daily.json",
+    "symbol": "SOXX",
+    "request": {
+      "contract_id": 12658194,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "7ebf426b0f4f9c365811e54cb6a80dc57366196489223a6ef6cda94e6997029c"
+  },
+  {
+    "file": "SPCX_5m.json",
+    "symbol": "SPCX",
+    "request": {
+      "contract_id": 890493863,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false
+    },
+    "sha256": "2a841ff685abee1fa753959b5ce476a640199c2b821c05d219fa92f144dfa99f"
+  },
+  {
+    "file": "SPCX_daily.json",
+    "symbol": "SPCX",
+    "request": {
+      "contract_id": 890493863,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "b78b2c86401a4dd241a16140167cd0640136bacf6cdae210e729a332a00c5428"
+  },
+  {
+    "file": "STX_5m.json",
+    "symbol": "STX",
+    "request": {
+      "contract_id": 491932113,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "74e0740f51abf2ac9636c9bff1a15936926c8818169f2fe1665ef942a900de08"
+  },
+  {
+    "file": "STX_daily.json",
+    "symbol": "STX",
+    "request": {
+      "contract_id": 491932113,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "2b0007469ccd691f5f3aa2aeda9ca5cfd092e54cffd960f10797f8ebfc1be1dd"
+  },
+  {
+    "file": "TSM_5m.json",
+    "symbol": "TSM",
+    "request": {
+      "contract_id": 6223250,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "c427e3a46de4cf377b2c3cb802892821e2cdfa304bac874ef4e4dc350f967bfc"
+  },
+  {
+    "file": "TSM_daily.json",
+    "symbol": "TSM",
+    "request": {
+      "contract_id": 6223250,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "007801a7467441ecbb769d2674e3828f338551d7b02d12366c495b36b8088804"
+  },
+  {
+    "file": "VRT_5m.json",
+    "symbol": "VRT",
+    "request": {
+      "contract_id": 402783527,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "2596d11748fa6615f23fabf88ddce7bdf38c6ef6082e8ec738cce8fca7874406"
+  },
+  {
+    "file": "VRT_daily.json",
+    "symbol": "VRT",
+    "request": {
+      "contract_id": 402783527,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "54e3408d940dcd613b5bbd434f3e1f2377176ffaa894b24160e9c745c2b18d26"
+  },
+  {
+    "file": "VST_5m.json",
+    "symbol": "VST",
+    "request": {
+      "contract_id": 254457731,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "927ea8e9ddbb15d5edbb0214a48c5c90077107828d165e93a73a422795d24d64"
+  },
+  {
+    "file": "VST_daily.json",
+    "symbol": "VST",
+    "request": {
+      "contract_id": 254457731,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "3882f79149e11cd20b053b101c95e24c4bef1ce472bd399ed29b351d7bc1cd26"
+  },
+  {
+    "file": "WDC_5m.json",
+    "symbol": "WDC",
+    "request": {
+      "contract_id": 13681,
+      "security_type": "STK",
+      "step": "FIVE_MINS",
+      "step_count": 1000,
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "335ddbf88b5897c0da1e39f33d8166a67135f3bf4ae7182b018f565cce57ca5d"
+  },
+  {
+    "file": "WDC_daily.json",
+    "symbol": "WDC",
+    "request": {
+      "contract_id": 13681,
+      "security_type": "STK",
+      "step": "ONE_DAY",
+      "period": "FIVE_YEARS",
+      "outside_rth": false,
+      "include_corporate_actions": true
+    },
+    "sha256": "71ed8e2c69f8aa3bd00fea6048dd4e71bcb408a0670a4806414c2c25aa5a1304"
+  }
+]

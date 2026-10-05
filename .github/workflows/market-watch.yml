@@ -1,0 +1,62 @@
+name: continuous-market-watch
+
+on:
+  schedule:
+    - cron: '*/5 4-19 * * 1-5'
+      timezone: 'America/New_York'
+    - cron: '0 20 * * 1-5'
+      timezone: 'America/New_York'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: continuous-market-watch
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          enable-cache: false
+
+      - name: Sync locked environment
+        run: uv sync --frozen
+
+      - name: Headless market scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QD_WATCH_OUTPUT: market-watch.json
+        run: |
+          uv run python -m market_data.cli watch \
+            --once \
+            --github-alerts \
+            --symbols "NVDA,TSM,MSFT,AMD,AVGO,MU,INTC,SNDK,MRVL,GLW,GOOG,META,ARM,ASML,AMAT,LRCX,KLAC,ANET,VRT,ORCL,CRCL,MSTR,AMZN,DELL,AAPL,SMCI,CRDO,ALAB,COHR,LITE,AAOI,QCOM,MPWR,MCHP,NXPI,ETN,VST,CEG,HPE,WDC,STX"
+
+      - name: Write compact run summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f market-watch.json ]; then
+            uv run python - <<'PY'
+          import json, os
+          data=json.load(open("market-watch.json", encoding="utf-8"))
+          rows=[r for r in data.get("rows",[]) if r.get("state") not in {"WATCH","EXTENDED"}]
+          out=["## Quant Detective Market Watch", "", f"Generated: {data.get('generated_at_et')}"]
+          for r in rows[:20]:
+              i=r.get("intraday",{})
+              out.append(f"- **{r['symbol']}** {r.get('state')} | {i.get('change_pct')}% | d5={i.get('d5_atr')} ATR | {r.get('reason')}")
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as f:
+              f.write("\n".join(out)+"\n")
+          PY
+          fi

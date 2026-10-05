@@ -9,3 +9,7 @@ build/
 .uv/
 validation_kernel/v0_report.json
 validation_kernel/last_prepublish_report.json
+.superpowers/
+market_cache/
+research_lab/runs/
+research_outputs/local/

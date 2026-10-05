@@ -1,0 +1,86 @@
+{
+  "verified_at": "2026-10-04T05:02:04.354929+00:00",
+  "run_id": "78be16b8d3d1c35e87b851d0",
+  "as_of": "2026-10-04T04:56:50.246848+00:00",
+  "session": "2026-10-02",
+  "counts": {
+    "CANDIDATE": 2,
+    "WATCH": 0,
+    "NOT_MATCHED": 40,
+    "DATA_BLOCKED": 1
+  },
+  "candidate_symbols": [
+    "MU",
+    "VST"
+  ],
+  "unit_tests": {
+    "executions": 84,
+    "distinct_test_definitions": 66,
+    "status": "PASS",
+    "log": "validation-tests.log",
+    "malformed_ohlcv_combinations": 45,
+    "invalid_api_requests": 31
+  },
+  "independent_review": {
+    "status": "IMPORTANT_FINDINGS_FIXED",
+    "findings": [
+      "partial source completion rejected",
+      "future duplicate timestamps excluded before judgment",
+      "RS5/SOXX UI and exports completed"
+    ],
+    "scope": "Earlier 0.1.0 review; this bugfix uses regression and browser verification."
+  },
+  "ui_verification": {
+    "static_dom": "PASS",
+    "live_local_api_dom": "PASS",
+    "row_cell_selections": 240,
+    "random_seed": 20261004,
+    "randomized_iterations": 3000,
+    "randomized_actions": 2249,
+    "browser": "Chromium 153.0.8010.0",
+    "viewport_widths": [
+      1440,
+      768,
+      390,
+      320
+    ],
+    "browser_click_touch_actions": 308,
+    "visual_render": "PASS",
+    "javascript_errors": 0,
+    "history_race": "PASS",
+    "calculation_history_race": "PASS",
+    "http_failure_retains_result": "PASS",
+    "malformed_history_cases": 5,
+    "negative_numeric_csv_browser_download": "PASS",
+    "numeric_csv_value_verified": -0.07358550718522028,
+    "evidence": "qa-0.1.1/",
+    "scope": "Chromium only; screenshots use test-only Noto Sans SC."
+  },
+  "reproducibility": {
+    "same_as_of_result_and_id": "IDENTICAL",
+    "immutable_save": "PASS",
+    "frozen_study_feature_stocks": 42,
+    "feature_columns": 5,
+    "rows_and_counts_equal_to_v010": true
+  },
+  "frozen_research_preservation": {
+    "baseline": "01-trading-replay-audited.zip",
+    "research_files_compared": 120,
+    "mismatches": []
+  },
+  "limits": [
+    "Imported provider snapshots; no automatic feed",
+    "43 current-watchlist stocks; not all-market or historical constituent coverage",
+    "Current data vintage; historical reconstructions are not archived point-in-time evidence",
+    "Price adjustment and corporate-action completeness not independently verified",
+    "No proven incremental return advantage for new filters or ordering",
+    "Intraday confirmation not evaluated"
+  ],
+  "dependencies": {
+    "python": "3.12.14",
+    "pandas": "2.2.3",
+    "numpy": "2.3.5",
+    "exchange_calendars": "4.13.2"
+  },
+  "version": "0.1.1"
+}
