@@ -159,6 +159,7 @@ class HybridDaemon:
         self.discovery_candidates = ()
         self.discovery_report = None
         self.discovery_error = None
+        self.previous_discovery_multi = set()
         self.run_id = uuid.uuid4().hex
         self.previous_states = {}
         try:
@@ -258,6 +259,9 @@ class HybridDaemon:
                     "exchange": item.get("exchange"),
                     "company_name": item.get("company_name"),
                     "scan_hits": item.get("scan_hits", {}),
+                    "scan_hit_count": item.get("scan_hit_count", 0),
+                    "best_rank": item.get("best_rank"),
+                    "multi_scan": bool(item.get("multi_scan")),
                     "first_seen": item.get("first_seen"),
                     "last_seen": item.get("last_seen"),
                     "structural_enriched": item["symbol"] in self.structural,
@@ -349,6 +353,27 @@ class HybridDaemon:
                 _append_jsonl(self.events_path, event)
                 events.append(event)
             self.previous_states[row["symbol"]] = new
+
+        current_multi = {
+            item["symbol"] for item in self.discovery_candidates if item.get("multi_scan")
+        }
+        for item in self.discovery_candidates:
+            if not item.get("multi_scan") or item["symbol"] in self.previous_discovery_multi:
+                continue
+            event = {
+                "at_utc": now_iso,
+                "symbol": item["symbol"],
+                "previous": None,
+                "state": "DISCOVERY_MULTI_HIT",
+                "mode": mode,
+                "reason": "appeared in multiple provider-native market scanners",
+                "scan_hit_count": item.get("scan_hit_count"),
+                "best_rank": item.get("best_rank"),
+                "scan_hits": item.get("scan_hits"),
+            }
+            _append_jsonl(self.events_path, event)
+            events.append(event)
+        self.previous_discovery_multi = current_multi
 
         state = {
             "generated_at_utc": now_iso,
