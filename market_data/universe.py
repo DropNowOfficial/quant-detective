@@ -71,3 +71,11 @@ LIVE_CAPABILITY_GAPS = (
     "external_push_notification_not_configured",
     "stale_state_watchdog_not_integrated",
 )
+
+
+IBKR_ALLOWED_STOCK_TYPES = frozenset({
+    "Common",
+    "ADR",
+    "REIT",
+    "CORP",
+})
