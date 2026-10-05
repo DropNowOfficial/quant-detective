@@ -56,6 +56,7 @@ def _event_markdown(event):
         f"- Distance from completed-day MA5: **{_fmt(event.get('d5_atr'))} ATR**",
         f"- RTH VWAP (volume-weighted HLC3 approximation): **{_fmt(event.get('rth_vwap_approx'))}**",
         f"- Same-time RVOL: **{_fmt(event.get('same_time_rvol'))}** ({event.get('same_time_rvol_samples', 0)} historical sessions)",
+        f"- Relative change vs QQQ: **{_fmt(event.get('relative_change_vs_qqq_pp'))} pp**",
         f"- State reason: {event.get('reason')}",
     ]
     if event.get("leader_reasons"):
@@ -64,7 +65,8 @@ def _event_markdown(event):
     if context:
         nq = context.get("NQ=F") or {}
         es = context.get("ES=F") or {}
-        lines.append(f"- Overnight regime: NQ={_fmt(nq.get('change_pct'))}% | ES={_fmt(es.get('change_pct'))}%")
+        qqq = context.get("QQQ") or {}
+        lines.append(f"- Regime: NQ={_fmt(nq.get('change_pct'))}% | ES={_fmt(es.get('change_pct'))}% | QQQ={_fmt(qqq.get('change_pct'))}%")
     news = event.get("news") or []
     if news:
         lines.append("- Recent news context:")
