@@ -59,7 +59,7 @@ def main():
     watch.add_argument('--output')
 
     ibkr = sub.add_parser('ibkr-watch')
-    ibkr.add_argument('--symbols', default=','.join(DEFAULT_SYMBOLS))
+    ibkr.add_argument('--symbols', default=','.join(CORE_FALLBACK_SYMBOLS))
     ibkr.add_argument('--snapshot-seconds', type=float, default=2.0)
     ibkr.add_argument('--structure-seconds', type=float, default=60.0)
     ibkr.add_argument('--gateway-url', default='https://127.0.0.1:5000/v1/api')
