@@ -45,8 +45,15 @@ def test_watchdog_assets_and_updater_install_path_exist():
     assert "quant-detective-watchdog.service" in updater
 
 
-def test_watchdog_is_enabled_only_after_new_release_health_passes():
+def test_new_release_watchdog_enable_occurs_after_health_passes():
     text=(ROOT/"deploy/update-production.sh").read_text()
     health_pos=text.index('if [ "$ready" -ne 1 ]')
-    enable_pos=text.index('systemctl enable --now quant-detective-watchdog.timer')
-    assert enable_pos > health_pos
+    final_enable_pos=text.rindex('systemctl enable --now quant-detective-watchdog.timer')
+    assert final_enable_pos > health_pos
+
+
+def test_already_current_release_reconciles_watchdog_units():
+    text=(ROOT/"deploy/update-production.sh").read_text()
+    assert "reconcile_watchdog()" in text
+    current_block=text[text.index('if [ "$current_sha" = "$remote_sha" ]'):text.index('release="$RELEASES/$remote_sha"')]
+    assert "reconcile_watchdog" in current_block

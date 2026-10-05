@@ -31,7 +31,19 @@ if [ -n "$current_target" ] && [ -d "$current_target/.git" ]; then
   current_sha="$(runuser -u quantdetective -- git -C "$current_target" rev-parse HEAD 2>/dev/null || true)"
 fi
 
+reconcile_watchdog() {
+  if [ -n "$current_target" ] \
+    && [ -f "$current_target/deploy/systemd/quant-detective-watchdog.service" ] \
+    && [ -f "$current_target/deploy/systemd/quant-detective-watchdog.timer" ]; then
+    install -m 0644 "$current_target/deploy/systemd/quant-detective-watchdog.service" /etc/systemd/system/quant-detective-watchdog.service
+    install -m 0644 "$current_target/deploy/systemd/quant-detective-watchdog.timer" /etc/systemd/system/quant-detective-watchdog.timer
+    systemctl daemon-reload
+    systemctl enable --now quant-detective-watchdog.timer >/dev/null 2>&1 || true
+  fi
+}
+
 if [ "$current_sha" = "$remote_sha" ]; then
+  reconcile_watchdog
   echo "already current: $remote_sha"
   exit 0
 fi
