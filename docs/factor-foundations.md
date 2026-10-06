@@ -12,7 +12,7 @@ Install the repository dependencies before starting the Python server:
 
 ```bash
 uv sync --frozen --extra research
-uv run qd-market serve
+uv run --frozen qd-market serve
 ```
 
 Open `http://127.0.0.1:8767/factors`. The default catalog has nine source-bound
@@ -24,8 +24,13 @@ strength hypothesis is an unvalidated candidate with no calculator.
 Import is disabled by default. To explicitly enable the local research importer:
 
 ```bash
-uv run qd-market serve --factor-import --factor-store-path runtime/factors.sqlite
+uv run --frozen qd-market serve --factor-import --factor-store-path runtime/factors/catalog.sqlite3
 ```
+
+The default evidence store is `runtime/factors/catalog.sqlite3`. Explicit
+`--factor-store-path` values still select exactly that path. No existing database
+is moved, deleted or migrated to this new default automatically; if you already
+use `runtime/factors.sqlite` or another location, continue specifying it explicitly.
 
 The browser and server must use the same loopback origin and port. Use the page's
 CSV and JSON file selectors, map each canonical field to a CSV header, inspect
@@ -101,6 +106,7 @@ UV_CACHE_DIR=/tmp/qd-factor-uv-cache UV_LINK_MODE=copy make verify
 UV_CACHE_DIR=/tmp/qd-factor-uv-cache UV_LINK_MODE=copy \
   uv run --extra research pytest -q tests/test_factor_roundtrip.py
 node tests/test_factor_import_state.cjs
+node tests/test_factor_file_bytes.cjs
 node tests/test_factor_history_state.cjs
 ```
 
@@ -114,8 +120,12 @@ installation or a rendered browser. The build needs `uv` and access to its
 cached/official build backend. There is one canonical definition file in source;
 the wheel includes that file as a package resource.
 
-The Node suites execute the actual page script with minimal fixtures. They check
-asynchronous file/read/preview/save and history selection, not DOM rendering,
+The Node suites execute the actual page script with minimal fixtures. The file
+byte suite also uses native Node File reads and real synthetic loopback HTTP to
+verify UTF-8/BOM rejection, original CSV hashes and token-free evidence boundaries.
+Selected CSV/JSON files must use UTF-8 without BOM; resave BOM-producing exports
+before selecting them. These checks cover asynchronous file/read/preview/save
+and history selection, not DOM rendering,
 visuals, responsive layout, native downloads or real-browser JavaScript errors.
 The supported browser entry remains:
 

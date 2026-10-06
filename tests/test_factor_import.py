@@ -360,3 +360,16 @@ def test_incremental_preview_hash_matches_store_canonical_hash(importer, store, 
         stored_hash = database.execute("SELECT content_hash FROM datasets WHERE dataset_id=? AND version=?",
                                        (committed.dataset_id, committed.version)).fetchone()[0]
     assert result.content_hash == stored_hash
+
+
+@pytest.mark.parametrize("map_bom_header", [False, True])
+def test_csv_utf8_bom_is_explicitly_rejected_without_normalization(importer, store, universe, map_bom_header):
+    mapping = dict(MAPPING)
+    if map_bom_header:
+        mapping["instrument_id"] = "\ufeffinstrument_id"
+    result = preview(importer, store, universe, b"\xef\xbb\xbf" + csv_bytes(), mapping=mapping)
+    assert [issue.code for issue in result.errors] == ["UTF8_BOM_NOT_ALLOWED"]
+    assert result.sample_rows == []
+    assert store.revision() == 0
+    with pytest.raises(ValueError, match="PREVIEW_INVALID"):
+        importer.commit_import(result.preview_id, request_id="bom-cannot-save", store=store, now=T)

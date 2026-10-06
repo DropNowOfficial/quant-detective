@@ -99,15 +99,25 @@ def _chart(fetcher, symbol, *, range_value, interval, include_prepost, require_u
         raise ValueError("Yahoo OHLCV length mismatch")
     receipt = dict(receipt)
     captured_at_ms = _receipt_capture_ms(receipt)
-    rows, invalid, duplicates, conflicts = [], [], [], []
-    selected = {}
+    invalid, duplicates, conflicts = [], [], []
+    selected, ambiguous_sessions = {}, set()
     for i, t in enumerate(times):
         stamp = t if type(t) is int and t >= 0 else None
+        # Convert once at the adapter boundary. Unlocatable timestamps cannot
+        # prove themselves outside a consumed dependency window.
+        try:
+            if stamp is None:
+                raise ValueError
+            datetime.fromtimestamp(stamp, timezone.utc)
+            source_day = datetime.fromtimestamp(stamp, ET)
+        except (ValueError, OverflowError, OSError):
+            invalid.append({"index": i, "t": None, "reason": "INVALID_TIMESTAMP"})
+            continue
         values = [v[i] for v in fields]
         reason = None
         try:
-            if stamp is None or any(isinstance(x, bool) for x in values):
-                raise ValueError("invalid timestamp or boolean value")
+            if any(isinstance(x, bool) for x in values):
+                raise ValueError("boolean value")
             o, h, l, c, volume = [float(x) for x in values]
             if not all(math.isfinite(x) for x in (o, h, l, c, volume)) or volume < 0:
                 raise ValueError("nonfinite OHLCV or negative volume")
@@ -119,18 +129,29 @@ def _chart(fetcher, symbol, *, range_value, interval, include_prepost, require_u
             invalid.append({"index": i, "t": stamp, "reason": reason})
             continue
         end_ms = stamp*1000 + 300_000
+        identity = stamp
         if interval == "1d":
-            day_schedule = _historical_schedule(datetime.fromtimestamp(stamp, ET))
+            day_schedule = _historical_schedule(source_day)
+            if day_schedule.open_ms is None or day_schedule.close_ms is None:
+                invalid.append({"index": i, "t": stamp, "reason": "INVALID_DAILY_SESSION"})
+                continue
+            identity = source_day.date().isoformat()
             end_ms = day_schedule.close_ms
         row = {"t": stamp, "open": o, "high": h, "low": l, "close": c, "volume": volume,
                "closed_at_capture": end_ms is not None and end_ms <= captured_at_ms}
-        if stamp in selected:
-            duplicates.append({"index": i, "t": stamp})
-            if any(selected[stamp][k] != row[k] for k in ("open", "high", "low", "close", "volume")):
-                conflicts.append({"index": i, "t": stamp, "reason": "conflicting duplicate OHLCV"})
+        if identity in selected:
+            evidence = {"index": i, "t": stamp}
+            if interval == "1d":
+                evidence["session"] = identity
+                ambiguous_sessions.add(identity)
+            duplicates.append(evidence)
+            if any(selected[identity][k] != row[k] for k in ("open", "high", "low", "close", "volume")):
+                conflicts.append({**evidence, "reason": "conflicting duplicate OHLCV"})
             continue
-        selected[stamp] = row
-        rows.append(row)
+        selected[identity] = row
+    # No choice between ambiguous daily observations is a valid calculation
+    # input. Retain defect evidence; required-session checks veto this scan.
+    rows = [row for identity, row in selected.items() if identity not in ambiguous_sessions]
     receipt.update(captured_at_ms=captured_at_ms, invalid_rows=len(invalid),
                    invalid_row_evidence=invalid, duplicate_rows=len(duplicates),
                    duplicate_row_evidence=duplicates, duplicate_conflicts=len(conflicts),

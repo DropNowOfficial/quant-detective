@@ -36,7 +36,7 @@
 <h2 id="import-title">4 · CSV + JSON → 映射 → 预览 → 明确保存</h2>
 <p class="muted">只接收外部数值与严格元数据。公式文字不会执行。导入不会升级 PIT、验证或生产资格</p>
 <div id="import-status" role="status">Checking local import session…</div>
-<details><summary>文件与元数据要求</summary><p>CSV 必须映射每个列名且恰好一次。必需字段：instrument_id、observed_at、source_published_at、provider_available_at、value、unit、factor_id、factor_version。可选：missing_reason、effective_available_at</p><p>JSON 顶层必须是 definition 与 manifest。definition 需明确 ref、name、purpose、market、frequency、unit、formula_text、calculator_key（null）、input_fields、min_history、missing_policy、window、lag、direction。manifest 需 dataset_id、version、source_ref、universe_version、adjustment、provider、permission_basis、source_timezone、corporate_action_basis、history_version、coverage_gaps</p><p>来源与 provider 时间必须为带时区的原始来源记录。不能填报告生成时间或重新下载时间来冒充历史可用时刻。版本与来源不明时先补证据</p></details>
+<details><summary>文件与元数据要求</summary><p>CSV 与 JSON 必须使用不含 BOM 的 UTF-8；无效编码将拒绝，不会自动修复。带 BOM 的导出文件请另存为 UTF-8（无 BOM）后重选。CSV 必须映射每个列名且恰好一次。必需字段：instrument_id、observed_at、source_published_at、provider_available_at、value、unit、factor_id、factor_version。可选：missing_reason、effective_available_at</p><p>JSON 顶层必须是 definition 与 manifest。definition 需明确 ref、name、purpose、market、frequency、unit、formula_text、calculator_key（null）、input_fields、min_history、missing_policy、window、lag、direction。manifest 需 dataset_id、version、source_ref、universe_version、adjustment、provider、permission_basis、source_timezone、corporate_action_basis、history_version、coverage_gaps</p><p>来源与 provider 时间必须为带时区的原始来源记录。不能填报告生成时间或重新下载时间来冒充历史可用时刻。版本与来源不明时先补证据</p></details>
 <details><summary>Server-owned universe and limits</summary><pre id="universe-info"></pre></details>
 <div class="grid"><div><label for="csv-file">CSV data file</label><input id="csv-file" type="file" accept=".csv,text/csv" disabled></div><div><label for="definition-file">Definition + manifest JSON file</label><input id="definition-file" type="file" accept=".json,application/json" disabled></div></div>
 <p id="definition-name" class="muted"></p><div id="mapping-fields" class="fields"></div>
@@ -79,7 +79,11 @@ async function filesChanged(kind){
  status('import-status','Reading selected '+kind+' file…');
  try{
   if(file.size>(kind==='csv'?session.limits.request_bytes:session.limits.definition_bytes))throw new Error('FILE_TOO_LARGE');
-  const text=await file.text();if(!current())return;
+  const bytes=new Uint8Array(await file.arrayBuffer());if(!current())return;
+  // Accept UTF-8 without a BOM only. Never repair invalid bytes or strip a BOM:
+  // re-encoding an accepted CSV on the server must preserve its source-file SHA.
+  if(bytes.length>=3&&bytes[0]===0xef&&bytes[1]===0xbb&&bytes[2]===0xbf)throw new Error('UTF8_BOM_NOT_ALLOWED');
+  let text;try{text=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);}catch{throw new Error('INVALID_UTF8');}
   if(kind==='csv'){const parsedHeaders=csvHeader(text);csvText=text;headers=parsedHeaders;}else{documentJson=JSON.parse(text);}
   filePending[kind]=false;resetPreview();
   if(kind==='csv')renderMapping();else write('definition-name',documentJson?.definition?.name||'Definition name missing');

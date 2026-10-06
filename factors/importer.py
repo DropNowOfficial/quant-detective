@@ -262,7 +262,9 @@ def preview_import(csv_bytes: bytes, definition_json: dict, mapping: dict[str, s
             except UnicodeDecodeError:
                 error("INVALID_UTF8")
             else:
-                if "\x00" in text:
+                if text.startswith("\ufeff"):
+                    error("UTF8_BOM_NOT_ALLOWED")
+                elif "\x00" in text:
                     error("INVALID_CSV")
                 else:
                     reader = csv.reader(io.StringIO(text, newline=""), strict=True)

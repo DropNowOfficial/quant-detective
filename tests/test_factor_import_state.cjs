@@ -8,7 +8,7 @@ const definition=label=>JSON.stringify({definition:{name:label,ref:{factor_id:'e
 const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};};
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 
-async function fixture(){
+async function fixture({origin=null}={}){
  const elements=new Map(),requests=[],timers=new Map();let timerId=0,previewReply=null;
  class Element{
   constructor(tag='div',id=''){this.tag=tag;this.id=id;this.children=[];this.value='';this.textContent='';this.dataset={};this.listeners={};this.disabled=false;this.files=[];}
@@ -24,19 +24,24 @@ async function fixture(){
  const get=id=>{if(!elements.has(id))elements.set(id,new Element('div',id));return elements.get(id);};
  const preview=()=>({ok:true,preview_id:'synthetic-preview',expires_at:'2099-01-01T00:00:00Z',errors:[],warnings:[],sample_rows:[],proposed_manifest:{},content_hash:'synthetic',expected_revision:0});
  const fetch=async(url,options)=>{
+  if(origin&&url==='/api/factors/session')return globalThis.fetch(origin+url);
   if(url==='/api/factors/session')return {ok:true,json:async()=>({ok:true,csrf_token:'synthetic-memory-token',limits:{request_bytes:5242880,definition_bytes:65536},universe:{version:'synthetic'}})};
   if(url==='/api/factors')return {ok:true,json:async()=>({ok:true,factors:[],hypotheses:[]})};
   requests.push({url,payload:JSON.parse(options.body)});
+  if(origin)return globalThis.fetch(origin+url,{...options,headers:{...options.headers,Origin:origin}});
   if(url.endsWith('/preview')){const pending=previewReply;previewReply=null;const body=pending?await pending.promise:preview();return {ok:true,json:async()=>body};}
   if(url.endsWith('/commit'))return {ok:true,json:async()=>({ok:true,result:{replayed:false},manifest:{}})};
   throw new Error('Unexpected fixture request '+url);
  };
+ get('csv-file').disabled=true;get('definition-file').disabled=true;
  vm.runInNewContext(script,{document:{getElementById:get,createElement:tag=>new Element(tag)},fetch,
-  Date,URLSearchParams,crypto:{randomUUID:()=> 'synthetic-request'},
+  Date,URLSearchParams,TextDecoder,crypto:{randomUUID:()=> 'synthetic-request'},
   setTimeout:callback=>{const id=++timerId;timers.set(id,callback);return id;},clearTimeout:id=>timers.delete(id)});
  await flush();
- const file=(name,text)=>({name,size:20,text:()=>typeof text==='string'?Promise.resolve(text):text.promise});
- const select=(kind,text)=>{const input=get(kind==='csv'?'csv-file':'definition-file');input.files=text===null?[]:[file(kind+'.file',text)];return input.dispatch('change');};
+ if(origin){const deadline=Date.now()+3000;while(get('csv-file').disabled){if(Date.now()>deadline)throw new Error('Synthetic HTTP session did not initialize');await flush();}}
+ const file=(name,text)=>({name,size:20,text:()=>typeof text==='string'?Promise.resolve(text):text.promise,
+  arrayBuffer:async()=>{const bytes=Buffer.from(typeof text==='string'?text:await text.promise);return bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength);}});
+ const select=(kind,text)=>{const input=get(kind==='csv'?'csv-file':'definition-file');input.files=text===null?[]:[typeof text?.arrayBuffer==='function'?text:file(kind+'.file',text)];return input.dispatch('change');};
  const loaded=async()=>{await select('csv',csv('OLD'));await select('definition',definition('old'));};
  return {get,requests,select,loaded,preview,delayPreview:pending=>{previewReply=pending;},
          click:id=>get(id).dispatch('click')};
@@ -98,4 +103,5 @@ async function tests(){
  j.resolve(definition('both'));await jr;assert.equal(f.get('preview-import').disabled,false);
  console.log('PASS: actual page async-state unit tests: CSV/JSON replacements, pending-read guards, late read errors/clears, late previews, concurrent files, exact explicit save');
 }
-tests().catch(error=>{console.error(error);process.exitCode=1;});
+module.exports={fixture};
+if(require.main===module)tests().catch(error=>{console.error(error);process.exitCode=1;});

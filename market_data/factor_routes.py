@@ -98,6 +98,22 @@ class FactorRoutes:
                            "csv_fields": {"required": sorted(REQUIRED_FIELDS), "optional": sorted(OPTIONAL_FIELDS)},
                            "pit_grade": "RECONSTRUCTED"})
 
+    def _body_contains_token(self, payload):
+        # Inspect parsed keys and values, so JSON escaping cannot hide the
+        # current process capability in metadata, CSV cells or commit IDs.
+        pending = [payload]
+        while pending:
+            value = pending.pop()
+            if isinstance(value, str):
+                if self._csrf_token and self._csrf_token in value:
+                    return True
+            elif isinstance(value, dict):
+                pending.extend(value.keys())
+                pending.extend(value.values())
+            elif isinstance(value, list):
+                pending.extend(value)
+        return False
+
     def _body(self, handler):
         content_type = self._one_header(handler, "Content-Type")
         if (not content_type or content_type.lower().strip() not in {
@@ -120,6 +136,9 @@ class FactorRoutes:
                                  parse_constant=_not_json_constant)
             if not isinstance(payload, dict):
                 raise ValueError("INVALID_JSON")
+            if self._body_contains_token(payload):
+                handler.send_json({"ok": False, "error": "SESSION_TOKEN_IN_BODY"}, 400)
+                return None
             return payload
         except (ValueError, RecursionError, OverflowError, socket.timeout):
             handler.send_json({"ok": False, "error": "INVALID_JSON"}, 400)

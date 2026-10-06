@@ -187,7 +187,7 @@ def make_server(port=8767, fetcher=fetch, *, factor_store_path=None, enable_fact
     server.factor_reports = deepcopy(factor_reports or {})
     try:
         if enable_factor_import:
-            path = factor_store_path if factor_store_path is not None else Path("runtime/factors.sqlite")
+            path = factor_store_path if factor_store_path is not None else Path("runtime/factors/catalog.sqlite3")
             server.factor_routes = FactorRoutes(path, factor_universe)
             server.factor_store_path = server.factor_routes.path
         return server

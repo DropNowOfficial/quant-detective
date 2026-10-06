@@ -9,9 +9,12 @@ them. Catalog registration alone does not establish lifecycle eligibility.
 
 ## Enable and controlled instrument identity
 
-`qd-market serve --factor-import [--factor-store-path runtime/factors.sqlite]`
+`uv run --frozen qd-market serve --factor-import [--factor-store-path runtime/factors/catalog.sqlite3]`
 opts into the two write routes. Without the flag, their POSTs remain 405, the
-session endpoint is 404, and the factor DB is not opened. Old `make_server(port,
+session endpoint is 404, and the factor DB is not opened. The default store is
+`runtime/factors/catalog.sqlite3`; explicit paths remain unchanged. No existing
+DB at a different path is moved, deleted or migrated to this default automatically.
+Old `make_server(port,
 fetcher)` calls still work. Optional application-only keywords are
 `factor_store_path`, `enable_factor_import`, and `factor_universe`.
 
@@ -46,6 +49,10 @@ Only `POST /api/factors/import/preview` and
 - `Content-Type: application/json` (optional UTF-8 charset), one decimal
   Content-Length, no Transfer-Encoding, and no query string
 - UTF-8 JSON object, no duplicate keys and no NaN/Infinity constants
+- No current process CSRF token in any parsed body key or string value. Both POST
+  routes reject it with HTTP 400 `SESSION_TOKEN_IN_BODY` before import handling,
+  preview retention or store access, including JSON-escaped spellings, metadata,
+  CSV cells and commit request IDs. Accepted financial evidence is never redacted
 
 The whole JSON body is at most 5 MiB and is rejected before reading when its
 length exceeds the limit. Body reading has a five-second timeout. Definition
@@ -68,13 +75,30 @@ display-only; controlled calculator keys are checked by B1 and never executed by
 this external-value importer. Diagnostics do not log request paths, queries,
 headers or bodies, and HTTP parser errors do not echo user input.
 
+## File encoding and original CSV bytes
+
+Selected CSV and JSON files must be UTF-8 **without a leading BOM**. The page
+reads `File.arrayBuffer()` and decodes fatally: malformed bytes return
+`INVALID_UTF8`; a leading UTF-8 BOM returns `UTF8_BOM_NOT_ALLOWED`. No replacement
+decoding, silent BOM removal or field normalization occurs. Export tools that
+produce a BOM require resaving as UTF-8 without BOM before selecting the file.
+The direct/server CSV importer enforces the same BOM rejection, even if a caller
+tries to map the BOM as part of the first header. The JSON file is validated as
+metadata; `file_sha256` identifies the original accepted **CSV** bytes.
+
+An accepted CSV string round-trips through JSON transport and strict server UTF-8
+encoding to exactly the selected bytes, preserving CRLF, Unicode and whitespace.
+The advertised raw-file SHA therefore describes those original bytes. Canonical
+source-content replay remains separate and can still recognize format-equivalent
+files while preserving the first retained original manifest.
+
 ## Preview JSON and controlled CSV mapping
 
 POST JSON has exactly three fields:
 
 ```
 {
-  "csv_text": "<UTF-8 CSV file decoded by the page>",
+  "csv_text": "<CSV bytes decoded fatally as UTF-8 without BOM>",
   "definition_json": {
     "definition": {
       "ref": {"factor_id": "external.research_value", "version": "1"},
@@ -166,6 +190,7 @@ include `UNKNOWN_INSTRUMENT`, `INSTRUMENT_MARKET_MISMATCH`, `UNIT_MISMATCH`,
 `INVALID_TIMESTAMP`, `IMPOSSIBLE_TIME_ORDER`, `FUTURE_SOURCE_TIME`,
 `AVAILABILITY_BEFORE_DEPENDENCY`, `INVALID_FACTOR_VALUE`, `MISSING_REASON_REQUIRED`,
 `VALUE_WITH_MISSING_REASON`, `DUPLICATE_OBSERVATION`, `INVALID_UTF8`,
+`UTF8_BOM_NOT_ALLOWED`,
 `INVALID_CSV_HEADER`, `INVALID_CSV_ROW`, `INVALID_CSV`, `EMPTY_CSV`,
 `INVALID_MAPPING`, `INVALID_DEFINITION_DOCUMENT`, `INVALID_MANIFEST_FIELDS`,
 `UNIVERSE_VERSION_MISMATCH`, `DEFINITION_VERSION_CONFLICT`, `DEFINITION_TOO_LARGE`,

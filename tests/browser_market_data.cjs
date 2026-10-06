@@ -51,8 +51,8 @@ async function factorWorkflow(browser){
   const origin='http://127.0.0.1:'+port,page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[],writes=[];
   page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(request.method()==='POST')writes.push(request.url());});
   await page.addInitScript(()=>{
-   const original=File.prototype.text;window.factorReadControls=new Map();
-   File.prototype.text=function(){const result=original.call(this);if(!this.name.startsWith('delayed-'))return result;
+   const original=File.prototype.arrayBuffer;window.factorReadControls=new Map();
+   File.prototype.arrayBuffer=function(){const result=original.call(this);if(!this.name.startsWith('delayed-'))return result;
     let resolve;const pending=new Promise(yes=>{resolve=yes;});
     window.factorReadControls.set(this.name,{release:async()=>resolve(await result)});return pending;};
   });
@@ -89,7 +89,7 @@ async function factorWorkflow(browser){
   assert.ok(await page.locator('#save-import').isDisabled());assert.equal(writes.filter(url=>url.endsWith('/commit')).length,0);
   await upload(row);await page.locator('#preview-import').click();
   await page.waitForFunction(()=>document.querySelector('#preview-status').dataset.state==='ready');
-  // Hold real File.text() completions to expose replacement/read ordering.
+  // Hold real File.arrayBuffer() completions to expose replacement/read ordering.
   for(const kind of ['csv','definition']){
    const filename='delayed-replacement-'+kind,input=kind==='csv'?'#csv-file':'#definition-file';
    const buffer=Buffer.from(kind==='csv'?headers.join(',')+'\n'+row.join(',')+'\n':JSON.stringify(document));

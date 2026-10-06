@@ -1,6 +1,7 @@
 """Synthetic loopback HTTP tests; external fetches are forbidden."""
 from contextlib import contextmanager
 from http.client import HTTPConnection
+from pathlib import Path
 import json
 from threading import Thread
 
@@ -549,3 +550,112 @@ def test_virtual_component_local_history_state_is_not_hidden_by_catalog(tmp_path
         _, body = request(app, '/api/factors')
         entry = next(x for x in json.loads(body)['factors'] if x['definition']['ref']==ref.model_dump(mode='json'))
         assert entry['lifecycle_state'] == 'retired' and entry['binding_status'] == 'UNIMPLEMENTED'
+
+
+def test_http_csv_bom_rejected_with_fixed_error(tmp_path):
+    from factors.importer import InstrumentUniverse
+    universe = InstrumentUniverse("synthetic-v1", {"SYNTH": "us_equity"})
+    with running(tmp_path, enable_factor_import=True, factor_universe=universe) as app:
+        payload = valid_payload(universe.version)
+        payload["csv_text"] = "\ufeff" + payload["csv_text"]
+        payload["mapping"] = {**payload["mapping"], "instrument_id": "\ufeffinstrument_id"}
+        headers = {"X-Factor-CSRF": token(app)}
+        status, body = request(app, "/api/factors/import/preview", "POST", payload, headers)
+        result = json.loads(body)
+        assert status == 200 and not result["ok"]
+        assert [error["code"] for error in result["errors"]] == ["UTF8_BOM_NOT_ALLOWED"]
+        assert request(app, "/api/factors/import/commit", "POST", {
+            "preview_id": result["preview_id"], "request_id": "bom-cannot-save"}, headers)[0] == 400
+        with FactorStore(tmp_path / "factors.sqlite") as store:
+            assert store.revision() == 0
+
+
+def test_default_factor_store_uses_catalog_path_without_moving_legacy(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    old_path = tmp_path / "runtime/factors.sqlite"
+    old_path.parent.mkdir()
+    old_path.write_bytes(b"existing evidence must remain untouched")
+    app = make_server(0, lambda *args, **kwargs: pytest.fail("No provider access"), enable_factor_import=True)
+    try:
+        assert app.factor_store_path == Path("runtime/factors/catalog.sqlite3")
+        assert app.factor_store_path.is_file()
+        assert old_path.read_bytes() == b"existing evidence must remain untouched"
+    finally:
+        app.server_close()
+
+
+def test_cli_default_factor_store_matches_catalog_path(monkeypatch, capsys):
+    from market_data import cli
+    calls = []
+    class App:
+        server_port = 8767
+        def serve_forever(self):
+            pass
+        def server_close(self):
+            pass
+    monkeypatch.setattr(cli, "make_server", lambda *args, **kwargs: calls.append(kwargs) or App())
+    monkeypatch.setattr("sys.argv", ["qd-market", "serve", "--factor-import"])
+    cli.main()
+    assert calls == [{"factor_store_path": "runtime/factors/catalog.sqlite3", "enable_factor_import": True}]
+    capsys.readouterr()
+
+
+@pytest.mark.parametrize("location", ["source_ref", "name", "cell", "metadata_key", "nested_list", "mapping_key", "request_id", "commit_key", "preview_id"])
+@pytest.mark.parametrize("escaped", [False, True])
+def test_current_process_csrf_in_body_rejected_before_preview_cache_or_store(tmp_path, capsys, location, escaped):
+    from contextlib import closing
+    import sqlite3
+    from factors import importer
+    from test_factor_import import csv_bytes
+    universe = importer.InstrumentUniverse("synthetic-v1", {"SYNTH": "us_equity"})
+    with running(tmp_path, enable_factor_import=True, factor_universe=universe) as app:
+        secret = token(app)
+        headers = {"X-Factor-CSRF": secret}
+        route = "/api/factors/import/preview"
+        payload = valid_payload(universe.version)
+        marker = "synthetic-prefix-" + secret + "-suffix"
+        if location in {"request_id", "commit_key", "preview_id"}:
+            status, body = request(app, route, "POST", payload, headers)
+            assert status == 200 and json.loads(body)["ok"]
+            payload = {"preview_id": json.loads(body)["preview_id"], "request_id": "synthetic-confirm"}
+            route = "/api/factors/import/commit"
+            if location == "commit_key":
+                payload[marker] = "ordinary"
+            else:
+                payload[location] = marker
+        elif location == "source_ref":
+            payload["definition_json"]["manifest"]["source_ref"] = marker
+        elif location == "name":
+            payload["definition_json"]["definition"]["name"] = marker
+        elif location == "cell":
+            payload["csv_text"] = csv_bytes({"value": "", "missing_reason": marker}).decode()
+        elif location == "metadata_key":
+            payload["definition_json"]["definition"]["min_history"][marker] = 1
+        elif location == "nested_list":
+            payload["definition_json"]["manifest"]["coverage_gaps"] = ["ordinary", marker]
+        else:
+            payload["mapping"] = {**payload["mapping"], marker: "ordinary"}
+        raw = json.dumps(payload).encode()
+        if escaped:
+            encoded_secret = "".join(f"\\u{ord(char):04x}" for char in secret).encode()
+            raw = raw.replace(secret.encode(), encoded_secret)
+        before_cache = len(importer._PREVIEWS)
+        status, body = request(app, route, "POST", headers=headers, raw=raw)
+        # Boolean assertions avoid printing the process token on any regression.
+        response_leaked = secret.encode() in body
+        assert response_leaked is False
+        assert status == 400 and json.loads(body) == {"ok": False, "error": "SESSION_TOKEN_IN_BODY"}
+        assert len(importer._PREVIEWS) == before_cache
+        cache_leaked = secret in repr(importer._PREVIEWS)
+        assert cache_leaked is False
+        with FactorStore(tmp_path / "factors.sqlite") as store:
+            assert store.revision() == 0 and store.definitions() == []
+        with closing(sqlite3.connect(tmp_path / "factors.sqlite")) as database:
+            persisted = secret in "\n".join(database.iterdump())
+        assert persisted is False
+        _, read_body = request(app, "/api/factors")
+        exported = secret.encode() in read_body
+        assert exported is False
+    captured = capsys.readouterr()
+    logged = secret in captured.out + captured.err
+    assert logged is False

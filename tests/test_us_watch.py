@@ -750,3 +750,57 @@ def test_scan_once_propagates_injected_live_clock_with_explicit_start(monkeypatc
     assert report["rows"][0]["quality"]["confirmation_ok"]
     assert report["market_context"]["QQQ"]["quality"]["observation_ok"]
     assert report["generated_at_utc"] == received.isoformat()
+
+
+@pytest.mark.parametrize("conflicting", [False, True])
+def test_daily_same_session_different_timestamps_veto_full_scan(monkeypatch, conflicting):
+    now = at()
+    original = daily_rows(now)
+    duplicate = dict(original[-1], t=original[-1]["t"] + 60)
+    if conflicting:
+        duplicate.update(open=100, high=103, low=97, close=100, volume=1000)
+    result, fetcher = scan_fixture(monkeypatch, now, daily_source=original + [duplicate])
+    assert result["state"] == "DATA_UNAVAILABLE"
+    assert not result["quality"]["confirmation_ok"]
+    assert "INVALID_ROWS" in result["quality"]["reason_codes"]
+    evidence = result["quality_evidence"]["daily"]
+    receipt = evidence["receipt"]
+    assert receipt["duplicate_rows"] == 1
+    assert receipt["duplicate_conflicts"] == int(conflicting)
+    assert receipt["duplicate_row_evidence"][0]["session"] == previous_dates(now, 1)[0]
+    assert evidence["invalid_rows"] > 0
+    # Neither ambiguous observation may enter daily math, even provisionally.
+    parsed, _, _ = us_watch._chart(fetcher, "AAA", range_value="3mo", interval="1d", include_prepost=False)
+    assert not {original[-1]["t"], duplicate["t"]} & {row["t"] for row in parsed}
+    assert ("AAA", now.date().isoformat()) not in us_watch._DAILY_CACHE
+
+
+def test_daily_same_session_duplicate_outside_window_preserves_metrics_and_cache(monkeypatch):
+    now = at()
+    original = daily_rows(now, 25)
+    baseline, _ = scan_fixture(monkeypatch, now, daily_source=original)
+    duplicate = dict(original[0], t=original[0]["t"] + 60, high=150)
+    first, fetcher = scan_fixture(monkeypatch, now, daily_source=original + [duplicate])
+    second = us_watch._scan_symbol("AAA", fetcher, now + timedelta(minutes=1))
+    assert first["daily"] == second["daily"] == baseline["daily"]
+    assert first["quality"]["confirmation_ok"] and second["quality"]["confirmation_ok"]
+    assert first["quality_evidence"]["daily"]["receipt"]["duplicate_rows"] == 1
+    assert first["quality_evidence"]["daily"]["invalid_rows"] == 0
+    assert len(fetcher.calls) == 4
+
+
+@pytest.mark.parametrize("stamp", [10**100, 253402300800, -1, True])
+@pytest.mark.parametrize("dependency", ["daily", "intraday", "history"])
+def test_out_of_range_source_timestamp_retains_structured_quality(monkeypatch, dependency, stamp):
+    now = at()
+    malformed = dict(daily_rows(now)[-1], t=stamp)
+    kwargs = {"daily_source": daily_rows(now) + [malformed]} if dependency == "daily" else {
+        "rows": bars_for(now.date().isoformat()) + [malformed]} if dependency == "intraday" else {
+        "history": [r for day in previous_dates(now, 20) for r in bars_for(day)] + [malformed]}
+    result, _ = scan_fixture(monkeypatch, now, **kwargs)
+    assert result["state"] != "ENTRY_CONFIRMED"
+    assert not result["quality"]["confirmation_ok"]
+    evidence = result["quality_evidence"][dependency]
+    assert evidence["invalid_rows"] > 0
+    assert evidence["receipt"]["invalid_row_evidence"][-1]["t"] is None
+    assert evidence["receipt"]["invalid_row_evidence"][-1]["reason"] == "INVALID_TIMESTAMP"

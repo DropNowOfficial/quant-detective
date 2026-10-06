@@ -4,13 +4,14 @@
 
 ## 启动
 
-仓库分支 `feature/live-screener-20261004`。需要 Python 3.11+ 与 curl（现代 Windows/macOS 通常已带 curl）。
+仓库分支 `feature/live-screener-20261004`。需要 uv、Python 3.11+ 与 curl。找不到 uv 或 curl 命令时，请先安装相应工具并重新打开终端。
 
 ```bash
-python -m market_data serve
+uv sync --frozen
+uv run --frozen qd-market serve
 ```
 
-打开 `http://127.0.0.1:8767/`。Windows 可双击仓库中的 `start-live.cmd`。需保持这个进程运行；一个离线HTML或一次对话响应无法常驻抓取行情。浏览器页面每2秒读取服务状态，后台目标每12秒开始一个批次；慢请求、多页面、来源退避会延长实际批次间隔，界面报告实际耗时。
+打开 `http://127.0.0.1:8767/`。`uv sync --frozen` 把依赖安装到项目的 `.venv`；`uv run --frozen` 会选择该环境，无需先激活。Windows 在同步成功后可双击仓库中的 `start-live.cmd`；它明确运行 `.venv\Scripts\python.exe`，不会调用 PATH 中其他 Python。环境或依赖缺失时，在仓库目录重新执行 `uv sync --frozen`。需保持这个进程运行；一个离线HTML或一次对话响应无法常驻抓取行情。浏览器页面每2秒读取服务状态，后台目标每12秒开始一个批次；慢请求、多页面、来源退避会延长实际批次间隔，界面报告实际耗时。
 
 ## 日常用法
 

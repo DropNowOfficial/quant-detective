@@ -156,6 +156,9 @@ definition reference rather than a subsequently selected file.
 Saved/replayed results display B2's retained original manifest.
 
 Session token exists only in process/page memory and the CSRF request header.
+Both import POSTs reject the current process token in parsed request-body keys
+or strings, including metadata/cells/request IDs and JSON escapes, before any
+preview/cache/store handling (`SESSION_TOKEN_IN_BODY`).
 The metadata JSON download includes preview/evidence fields and optional commit
 result, but excludes the token, session, preview handle, CSV and original upload.
 All user-supplied names, formulas, source citations and file/header text are
@@ -166,13 +169,19 @@ The only generated download URL is an internal Blob URL, revoked afterward.
 the existing mocked market-page checks and adds a real loopback synthetic
 factor-server import workflow. It never fetches a real provider or sends a
 notification. Screenshots go only into the ignored task workspace. Actual
-browser acceptance is separate from `make verify`; see the task report for the
-verified runtime and any browser startup/access blocker.
+browser acceptance is separate from `make verify`; see the
+[dated validation record](factor-foundations-validation-20261006.md) for the
+verified runtime and browser startup/access blocker.
 
 `node tests/test_factor_import_state.cjs` executes the actual page script in a
 minimal DOM/fetch fixture to test asynchronous replacement/read/preview/save
-state. It is a focused unit test, not browser rendering or visual acceptance.
-The supported browser entry additionally holds real `File.text()` completions
+state. `node tests/test_factor_file_bytes.cjs` additionally uses native Node File
+bytes and a synthetic loopback importer to check fatal CSV/JSON decoding, explicit
+BOM rejection, original accepted CSV SHA equality and token-bearing metadata
+rejection before downloadable evidence. It needs Node 20+ and the synced project
+Python (or `QD_FACTOR_PYTHON`). These are focused unit/transport tests, not browser
+rendering, native browser download or visual acceptance.
+The supported browser entry additionally holds real `File.arrayBuffer()` completions
 to cover CSV/JSON replacement and out-of-order completion.
 
 

@@ -49,7 +49,7 @@ def main():
     serve = sub.add_parser('serve')
     serve.add_argument('--port', type=int, default=8767)
     serve.add_argument('--factor-import', action='store_true', help='Enable guarded local CSV factor import')
-    serve.add_argument('--factor-store-path', default='runtime/factors.sqlite')
+    serve.add_argument('--factor-store-path', default='runtime/factors/catalog.sqlite3')
 
     watch = sub.add_parser('watch')
     watch.add_argument('--symbols', default=','.join(DEFAULT_SYMBOLS))
