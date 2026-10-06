@@ -7,13 +7,14 @@ requires-python = ">=3.11"
 dependencies = [
   "pydantic>=2.0,<3",
   "pytest>=8.0,<9",
+  "exchange-calendars==4.13.2",
 ]
 
 [project.optional-dependencies]
 # Optional integrations; canonical verification installs research for loader tests.
 openbb = []
 qlib = []
-research = ["exchange-calendars==4.13.2", "pandas==2.2.3", "numpy==2.3.5"]
+research = ["pandas==2.2.3", "numpy==2.3.5"]
 
 [project.scripts]
 qd-tm = "time_machine.cli:main"
