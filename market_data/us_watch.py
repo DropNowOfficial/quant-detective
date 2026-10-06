@@ -11,7 +11,8 @@ account access, or trading actions exist here.
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from dataclasses import asdict, replace
+from datetime import datetime, timedelta, timezone
 from statistics import fmean, median
 import json
 import math
@@ -21,6 +22,9 @@ import time
 from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
+from .quality import BarFact, BarQualityInput, QualityResult, evaluate_bars
+from .quality_profiles import US_PUBLIC_5M_POLICY
+from .session_clock import schedule_at
 from .transport import fetch
 
 ET = ZoneInfo("America/New_York")
@@ -34,6 +38,7 @@ OUTPUT_ENV = "QD_WATCH_OUTPUT"
 _DAILY_CACHE = {}
 _NEWS_CACHE = {}
 _VOLUME_PROFILE_CACHE = {}
+_SESSION_SCHEDULE_CACHE = {}
 
 
 def _finite(v):
@@ -92,41 +97,133 @@ def _chart(fetcher, symbol, *, range_value, interval, include_prepost, require_u
     fields = [q.get(k) for k in ("open", "high", "low", "close", "volume")]
     if any(not isinstance(v, list) or len(v) != len(times) for v in fields):
         raise ValueError("Yahoo OHLCV length mismatch")
-    rows = []
+    receipt = dict(receipt)
+    captured_at_ms = _receipt_capture_ms(receipt)
+    rows, invalid, duplicates, conflicts = [], [], [], []
+    selected = {}
     for i, t in enumerate(times):
+        stamp = t if type(t) is int and t >= 0 else None
         values = [v[i] for v in fields]
+        reason = None
         try:
+            if stamp is None or any(isinstance(x, bool) for x in values):
+                raise ValueError("invalid timestamp or boolean value")
             o, h, l, c, volume = [float(x) for x in values]
-        except (TypeError, ValueError):
+            if not all(math.isfinite(x) for x in (o, h, l, c, volume)) or volume < 0:
+                raise ValueError("nonfinite OHLCV or negative volume")
+            if min(o, h, l, c) <= 0 or not l <= min(o, c) <= max(o, c) <= h:
+                raise ValueError("invalid OHLC bounds")
+        except (TypeError, ValueError, OverflowError) as exc:
+            reason = str(exc)
+        if reason is not None:
+            invalid.append({"index": i, "t": stamp, "reason": reason})
             continue
-        if not all(math.isfinite(x) for x in (o, h, l, c, volume)) or volume < 0:
+        end_ms = stamp*1000 + 300_000
+        if interval == "1d":
+            day_schedule = _historical_schedule(datetime.fromtimestamp(stamp, ET))
+            end_ms = day_schedule.close_ms
+        row = {"t": stamp, "open": o, "high": h, "low": l, "close": c, "volume": volume,
+               "closed_at_capture": end_ms is not None and end_ms <= captured_at_ms}
+        if stamp in selected:
+            duplicates.append({"index": i, "t": stamp})
+            if any(selected[stamp][k] != row[k] for k in ("open", "high", "low", "close", "volume")):
+                conflicts.append({"index": i, "t": stamp, "reason": "conflicting duplicate OHLCV"})
             continue
-        if not l <= min(o, c) <= max(o, c) <= h:
-            continue
-        rows.append({"t": int(t), "open": o, "high": h, "low": l, "close": c, "volume": volume})
-    if not rows:
-        raise ValueError("Yahoo returned no valid bars")
-    return rows, meta, receipt
+        selected[stamp] = row
+        rows.append(row)
+    receipt.update(captured_at_ms=captured_at_ms, invalid_rows=len(invalid),
+                   invalid_row_evidence=invalid, duplicate_rows=len(duplicates),
+                   duplicate_row_evidence=duplicates, duplicate_conflicts=len(conflicts),
+                   duplicate_conflict_evidence=conflicts)
+    return sorted(rows, key=lambda row: row["t"]), meta, receipt
+
+
+def _receipt_capture_ms(receipt):
+    """Source receipt only; absent or malformed timestamps fail the quality core."""
+    try:
+        stamp = receipt.get("received_at_utc")
+        if not isinstance(stamp, str):
+            return -1
+        captured = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+        if captured.tzinfo is None:
+            return -1
+        return int(captured.timestamp()*1000)
+    except (KeyError, TypeError, ValueError, OverflowError):
+        return -1
+
+
+def _schedule(now, schedule_provider=schedule_at):
+    return schedule_provider(int(now.timestamp()*1000), calendar_name="XNYS",
+                             interval_ms=US_PUBLIC_5M_POLICY.interval_ms,
+                             grace_ms=US_PUBLIC_5M_POLICY.publication_grace_ms)
+
+
+def _bar_facts(rows, captured_at_ms):
+    return tuple(BarFact(r["t"]*1000, r["t"]*1000+300_000,
+                         r.get("closed_at_capture", r["t"]*1000+300_000 <= captured_at_ms),
+                         r.get("is_fill_forward", False)) for r in rows)
+
+
+def _window_invalid(receipt, predicate):
+    # Unlocatable corrupt rows cannot be proved outside a dependency window.
+    return sum(e.get("t") is None or predicate(e["t"])
+               for key in ("invalid_row_evidence", "duplicate_row_evidence")
+               for e in receipt.get(key, []))
+
+
+def _historical_schedule(day, schedule_provider=schedule_at):
+    key = (day.date().isoformat(), schedule_provider)
+    if key not in _SESSION_SCHEDULE_CACHE:
+        result = _schedule(day.replace(hour=12, minute=0, second=0, microsecond=0), schedule_provider)
+        if result.phase == "CALENDAR_ERROR":
+            return result
+        _SESSION_SCHEDULE_CACHE[key] = result
+    return _SESSION_SCHEDULE_CACHE[key]
+
+
+def _required_daily_dates(now):
+    """The last 22 official completed sessions, not the last 22 retained rows."""
+    dates = set()
+    day = now.astimezone(ET).replace(hour=12, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    for _ in range(60):
+        if _historical_schedule(day).open_ms is not None:
+            dates.add(day.date().isoformat())
+        if len(dates) == 22:
+            break
+        day -= timedelta(days=1)
+    return dates
 
 
 def _market_proxy(fetcher, symbol, now):
     try:
         rows, meta, receipt = _chart(fetcher, symbol, range_value="5d", interval="5m",
-                                     include_prepost=True, require_us_equity=False)
+                                     include_prepost=True, require_us_equity=symbol == "QQQ")
         last = rows[-1]
         prior = next((float(meta[k]) for k in ("regularMarketPreviousClose", "chartPreviousClose", "previousClose")
                       if _finite(meta.get(k))), None)
-        return {
-            "ok": True,
-            "symbol": symbol,
-            "instrument_type": meta.get("instrumentType"),
-            "price": last["close"],
-            "change_pct": _pct(last["close"], prior),
+        result = {
+            "ok": True, "symbol": symbol, "instrument_type": meta.get("instrumentType"),
+            "price": last["close"], "change_pct": _pct(last["close"], prior),
             "prior_reference": prior,
             "last_bar_utc": datetime.fromtimestamp(last["t"], timezone.utc).isoformat(),
-            "known_at": receipt.get("received_at_utc"),
-            "role": "OVERNIGHT_REGIME_PROXY",
+            "current_bar_time_utc": datetime.fromtimestamp(last["t"], timezone.utc).isoformat(),
+            "known_at": receipt.get("received_at_utc"), "role": "OVERNIGHT_REGIME_PROXY",
         }
+        if symbol == "QQQ":
+            captured_at_ms = receipt["captured_at_ms"]
+            today = _today_intraday(rows, now, captured_at_ms=captured_at_ms)
+            rth = [r for r in today if r["session"] == "RTH"]
+            current_schedule = _schedule(now)
+            last_due = current_schedule.expected_completed_ends[-1] if current_schedule.expected_completed_ends else None
+            invalid = _window_invalid(receipt, lambda stamp:
+                current_schedule.open_ms is not None and last_due is not None
+                and current_schedule.open_ms <= stamp*1000 < last_due)
+            benchmark_policy = replace(US_PUBLIC_5M_POLICY, policy_id="us_public_5m_benchmark_v1",
+                                       min_rvol_sessions=0, min_completed_bars=1)
+            quality = evaluate_bars(BarQualityInput(int(now.timestamp()*1000), captured_at_ms,
+                _bar_facts(rth, captured_at_ms), invalid, 0, None), benchmark_policy, current_schedule)
+            result.update(quality=asdict(quality), quality_policy_id=benchmark_policy.policy_id)
+        return result
     except Exception as exc:
         return {"ok": False, "symbol": symbol, "role": "OVERNIGHT_REGIME_PROXY",
                 "error": f"{type(exc).__name__}: {str(exc)[:200]}"}
@@ -175,7 +272,7 @@ def _completed_daily(rows, now):
     completed = []
     for r in rows:
         d = datetime.fromtimestamp(r["t"], ET).date()
-        if d < today:
+        if d < today and r.get("closed_at_capture", True):
             completed.append(r)
     return completed
 
@@ -223,7 +320,7 @@ def _session_name(stamp):
     return "OVERNIGHT"
 
 
-def _today_intraday(rows, now):
+def _today_intraday(rows, now, *, captured_at_ms):
     today = now.astimezone(ET).date()
     out = []
     for r in rows:
@@ -232,7 +329,7 @@ def _today_intraday(rows, now):
             continue
         x = dict(r)
         x["session"] = _session_name(r["t"])
-        x["completed"] = now.timestamp() >= r["t"] + 300
+        x["completed"] = r.get("closed_at_capture", captured_at_ms >= (r["t"] + 300)*1000)
         out.append(x)
     return out
 
@@ -251,30 +348,64 @@ def _vwap_path(rows):
     return out
 
 
-def _same_time_rvol(current_rows, history_rows, now):
-    completed = [r for r in current_rows if r.get("session") == "RTH" and r.get("completed")]
-    if not completed:
-        return None, 0
-    target_local = datetime.fromtimestamp(completed[-1]["t"], ET)
-    target_minute = target_local.hour * 60 + target_local.minute
-    current_cumulative = sum(r["volume"] for r in completed)
+def _history_sessions(history_rows, now, schedule_provider):
     today = now.astimezone(ET).date()
     by_date = {}
-    for r in history_rows:
-        local = datetime.fromtimestamp(r["t"], ET)
-        minute = local.hour * 60 + local.minute
-        if local.date() >= today or not 570 <= minute < 960 or minute > target_minute:
-            continue
-        by_date[local.date()] = by_date.get(local.date(), 0.0) + r["volume"]
-    samples = [by_date[d] for d in sorted(by_date)[-20:] if by_date[d] > 0]
-    if not samples:
+    for row in history_rows:
+        local = datetime.fromtimestamp(row["t"], ET)
+        if local.date() < today:
+            by_date.setdefault(local.date(), []).append(row)
+    candidates = []
+    for day in sorted(by_date):
+        historical = _historical_schedule(datetime.combine(day, datetime.min.time(), ET), schedule_provider)
+        if historical.phase != "CLOSED":
+            candidates.append((day, historical))
+    return by_date, candidates[-20:]
+
+
+def _same_time_rvol(current_rows, history_rows, now, *, schedule_provider):
+    """Median cumulative volume of 20 complete, calendar-comparable sessions.
+
+    A zero-volume bar is present evidence. Missing/duplicate/open/fill-forward
+    bars are not filled with zero; their historical session is excluded.
+    """
+    current_schedule = _schedule(now, schedule_provider)
+    completed = sorted((r for r in current_rows if r.get("session") == "RTH"
+                        and r.get("completed") and not r.get("is_fill_forward", False)),
+                       key=lambda r: r["t"])
+    if not completed or current_schedule.open_ms is None:
         return None, 0
+    target_end = (completed[-1]["t"]+300)*1000
+    expected = tuple(range(current_schedule.open_ms//1000, target_end//1000, 300))
+    if tuple(r["t"] for r in completed) != expected:
+        return None, 0
+    target_elapsed = target_end-current_schedule.open_ms
+    current_cumulative = sum(r["volume"] for r in completed)
+    by_date, candidates = _history_sessions(history_rows, now, schedule_provider)
+    samples = []
+    for day, historical in candidates:
+        if historical.open_ms is None or historical.close_ms is None:
+            continue
+        historical_target = historical.open_ms+target_elapsed
+        if historical_target > historical.close_ms:
+            continue
+        required = tuple(range(historical.open_ms//1000, historical_target//1000, 300))
+        window = sorted((r for r in by_date[day]
+                         if historical.open_ms//1000 <= r["t"] < historical_target//1000),
+                        key=lambda r: r["t"])
+        if (tuple(r["t"] for r in window) != required
+                or any(not r.get("closed_at_capture", True) or r.get("is_fill_forward", False)
+                       or not _finite(r.get("volume")) or r["volume"] < 0 for r in window)):
+            continue
+        samples.append(sum(r["volume"] for r in window))
+    if len(samples) < US_PUBLIC_5M_POLICY.min_rvol_sessions:
+        return None, len(samples)
     baseline = median(samples)
-    return (current_cumulative / baseline if baseline > 0 else None), len(samples)
+    return (current_cumulative/baseline if baseline > 0 else None), len(samples)
 
 
-def _intraday_metrics(rows, daily, now, history_rows=None):
-    today = _today_intraday(rows, now)
+def _intraday_metrics(rows, daily, now, history_rows=None, *, captured_at_ms: int):
+    today = _today_intraday(rows, now, captured_at_ms=captured_at_ms)
     if not today:
         raise ValueError("no bars for current ET date")
     last = max(today, key=lambda r: r["t"])
@@ -292,7 +423,7 @@ def _intraday_metrics(rows, daily, now, history_rows=None):
     prior = daily["prior_close"]
     pre_last = pre[-1]["close"] if pre else None
     rth_open = rth[0]["open"] if rth else None
-    same_time_rvol, rvol_samples = _same_time_rvol(today, history_rows or [], now)
+    same_time_rvol, rvol_samples = _same_time_rvol(today, history_rows or [], now, schedule_provider=schedule_at)
     result = {
         "current_price": current,
         "current_session": last["session"],
@@ -323,7 +454,16 @@ def _intraday_metrics(rows, daily, now, history_rows=None):
     return result
 
 
-def classify(daily, intra, qqq_change=None):
+def classify(daily, intra, qqq_change=None, *, quality: QualityResult):
+    if not isinstance(quality, QualityResult):
+        raise TypeError("quality must be a QualityResult")
+    if not quality.observation_ok:
+        closed = "SESSION_NOT_OPEN" in quality.reason_codes
+        return {"state": "MARKET_CLOSED" if closed else "DATA_UNAVAILABLE",
+                "reason": ", ".join(quality.reason_codes), "leader_detected": False,
+                "leader_reasons": [], "daily_trend_gate": False,
+                "standard_entry_geometry": False, "observation_geometry": False,
+                "relative_change_vs_qqq_pp": None}
     trend_ok = daily["ma5_slope_1d"] > 0 and daily["ma5_3point_slope"] >= 0
     d5 = intra["d5_atr"]
     chg = intra.get("change_pct")
@@ -347,7 +487,7 @@ def classify(daily, intra, qqq_change=None):
     standard_geometry = -0.10 <= d5 <= 0.20
     observation_geometry = -0.35 <= d5 <= 0.40
     rvol = intra.get("same_time_rvol")
-    confirmed = (trend_ok and standard_geometry
+    confirmed = (quality.confirmation_ok and trend_ok and standard_geometry
                  and intra.get("two_completed_5m_above_vwap_and_ma5", False)
                  and _finite(rvol) and rvol >= 0.8)
 
@@ -382,50 +522,152 @@ def classify(daily, intra, qqq_change=None):
     }
 
 
-def _scan_symbol(symbol, fetcher, now, qqq_change=None):
+def _scan_symbol(symbol, fetcher, now, *, qqq_context=None):
     cache_key = (symbol, now.astimezone(ET).date().isoformat())
     cached = _DAILY_CACHE.get(cache_key)
     if cached is None:
         daily_rows, _, daily_receipt = _chart(fetcher, symbol, range_value="3mo", interval="1d", include_prepost=False)
-        daily = _daily_metrics(daily_rows, now)
-        cached = (daily, daily_receipt.get("received_at_utc"))
+        daily_error = None
+        try:
+            daily = _daily_metrics(daily_rows, now)
+        except ValueError as exc:
+            daily, daily_error = {}, str(exc)
+        completed_daily = _completed_daily(daily_rows, now)
+        daily_sessions = {datetime.fromtimestamp(r["t"], ET).date().isoformat() for r in completed_daily}
+        cached = (daily, daily_receipt, daily_sessions, daily_error)
         _DAILY_CACHE[cache_key] = cached
-    daily, daily_known_at = cached
+    daily, daily_receipt, daily_sessions, daily_error = cached
     volume_cached = _VOLUME_PROFILE_CACHE.get(cache_key)
     if volume_cached is None:
         volume_rows, _, volume_receipt = _chart(fetcher, symbol, range_value="1mo", interval="5m", include_prepost=False)
-        volume_cached = (volume_rows, volume_receipt.get("received_at_utc"))
+        volume_cached = (volume_rows, volume_receipt)
         _VOLUME_PROFILE_CACHE[cache_key] = volume_cached
-    volume_rows, volume_known_at = volume_cached
+    volume_rows, volume_receipt = volume_cached
     intraday_rows, _, intra_receipt = _chart(fetcher, symbol, range_value="5d", interval="5m", include_prepost=True)
-    intra = _intraday_metrics(intraday_rows, daily, now, history_rows=volume_rows)
-    state = classify(daily, intra, qqq_change=qqq_change)
-    previous = datetime.fromisoformat(daily["previous_session_date"]).date()
+    captured_at_ms = intra_receipt["captured_at_ms"]
+    intraday = _today_intraday(intraday_rows, now, captured_at_ms=captured_at_ms)
+    current_schedule = _schedule(now)
+    # Only today's required RTH dependency can veto today's RTH metrics.
+    required_end = current_schedule.expected_completed_ends[-1] if current_schedule.expected_completed_ends else None
+    def in_current_window(stamp):
+        return (current_schedule.open_ms is not None and required_end is not None
+                and current_schedule.open_ms <= stamp*1000 < required_end)
+    intra_invalid = _window_invalid(intra_receipt, in_current_window)
+    daily_dates = _required_daily_dates(now)
+    missing_daily = daily_dates-daily_sessions
+    daily_invalid = _window_invalid(daily_receipt,
+        lambda stamp: datetime.fromtimestamp(stamp, ET).date().isoformat() in daily_dates)
+    daily_capture_valid = (0 <= daily_receipt["captured_at_ms"]
+                           <= int(now.timestamp()*1000)+US_PUBLIC_5M_POLICY.future_clock_tolerance_ms)
+    daily_invalid += len(missing_daily) + (22-len(daily_dates)) + int(not daily_capture_valid)
+    if daily_error and not daily_invalid:
+        daily_invalid += 1
+    # A malformed/duplicate historical bar excludes its day from RVOL, not the
+    # independent daily/current structure. Preserve the complete receipt evidence.
+    history_unknown = any(e.get("t") is None for e in volume_receipt.get("invalid_row_evidence", []))
+    history_capture_valid = (0 <= volume_receipt["captured_at_ms"]
+                             <= int(now.timestamp()*1000)+US_PUBLIC_5M_POLICY.future_clock_tolerance_ms)
+    history_for_rvol = [] if history_unknown or not history_capture_valid else list(volume_rows)
+    for key in ("invalid_row_evidence", "duplicate_row_evidence"):
+        for error in volume_receipt.get(key, []):
+            if error.get("t") is not None and history_capture_valid and not history_unknown:
+                # A located invalid/duplicate remains in the historical window
+                # as unusable evidence, so only a dependent window rejects it.
+                history_for_rvol.append({"t": error["t"], "volume": None})
+    if daily and intraday:
+        intra = _intraday_metrics(intraday_rows, daily, now, history_rows=history_for_rvol,
+                                  captured_at_ms=captured_at_ms)
+    else:
+        _, rvol_samples = _same_time_rvol(intraday, history_for_rvol, now, schedule_provider=schedule_at)
+        intra = {"same_time_rvol": None, "same_time_rvol_samples": rvol_samples}
+    facts = _bar_facts([r for r in intraday if r["session"] == "RTH"], captured_at_ms)
+    completed_ends = [f.end_ms for f in facts if f.closed_at_capture and not f.is_fill_forward]
+    elapsed = max(completed_ends)-current_schedule.open_ms if completed_ends and current_schedule.open_ms is not None else 0
+    _, history_candidates = _history_sessions(history_for_rvol, now, schedule_at)
+    history_schedules = dict(history_candidates)
+    def in_history_window(stamp):
+        historical = history_schedules.get(datetime.fromtimestamp(stamp, ET).date())
+        return (historical is not None and historical.open_ms is not None
+                and historical.close_ms is not None
+                and historical.open_ms+elapsed <= historical.close_ms
+                and historical.open_ms <= stamp*1000 < historical.open_ms+elapsed)
+    history_invalid = _window_invalid(volume_receipt, in_history_window)
+    # Reject this result now. Retry only via the next ordinary scan, keeping the
+    # configured source/range; insufficient RVOL count alone never retries.
+    if daily_invalid:
+        _DAILY_CACHE.pop(cache_key, None)
+    if history_invalid or not history_capture_valid:
+        _VOLUME_PROFILE_CACHE.pop(cache_key, None)
+    quality_input = BarQualityInput(int(now.timestamp()*1000), captured_at_ms, facts,
+        intra_invalid+daily_invalid, intra["same_time_rvol_samples"],
+        daily.get("previous_session_date", max(daily_sessions) if daily_sessions else None))
+    quality = evaluate_bars(quality_input, US_PUBLIC_5M_POLICY, current_schedule)
+    benchmark = _benchmark_dependency(qqq_context, intra, quality)
+    state = classify(daily, intra, qqq_change=benchmark["change_pct"], quality=quality)
+    previous = datetime.fromisoformat(quality_input.last_daily_session).date() if quality_input.last_daily_session else None
     current = now.astimezone(ET).date()
-    calendar_gap = (current - previous).days
-    return {
-        "symbol": symbol,
-        "status": "OK",
-        "source": "Yahoo Finance public chart",
-        "known_at": intra_receipt.get("received_at_utc"),
-        "daily_known_at": daily_known_at,
-        "volume_profile_known_at": volume_known_at,
-        "calendar_days_since_previous_session": calendar_gap,
-        "monday_weekend_context": current.weekday() == 0 and calendar_gap >= 3,
-        "daily": daily,
-        "intraday": intra,
-        **state,
+    calendar_gap = (current-previous).days if previous else None
+    # JSON-safe contract for cached-structure consumers: recreate BarQualityInput
+    # with fresh now_ms and these immutable facts, then call evaluate_bars with a
+    # fresh XNYS schedule. Dependency snapshots retain original source captures;
+    # their TTL is not a live-bar TTL. daily.invalid_rows is last-22-session scoped;
+    # history invalidity is already reflected in complete_rvol_sessions.
+    evidence = {
+        "schema_version": 1, "policy_id": US_PUBLIC_5M_POLICY.policy_id,
+        "calendar_name": "XNYS", "captured_at_ms": captured_at_ms,
+        "bars": [asdict(f) for f in facts], "invalid_rows": quality_input.invalid_rows,
+        "complete_rvol_sessions": quality_input.complete_rvol_sessions,
+        "last_daily_session": quality_input.last_daily_session,
+        "intraday": {"captured_at_ms": captured_at_ms, "bars": [asdict(f) for f in facts],
+                     "invalid_rows": intra_invalid, "receipt": intra_receipt},
+        "daily": {"captured_at_ms": daily_receipt["captured_at_ms"], "capture_valid": daily_capture_valid,
+                  "invalid_rows": daily_invalid,
+                  "required_sessions": sorted(daily_dates), "completed_sessions": sorted(daily_sessions),
+                  "missing_sessions": sorted(missing_daily), "metrics_error": daily_error, "receipt": daily_receipt},
+        "history": {"captured_at_ms": volume_receipt["captured_at_ms"], "capture_valid": history_capture_valid,
+                    "invalid_rows": history_invalid, "complete_rvol_sessions": intra["same_time_rvol_samples"], "receipt": volume_receipt},
     }
+    return {
+        "symbol": symbol, "status": "OK", "source": "Yahoo Finance public chart",
+        "known_at": intra_receipt.get("received_at_utc"),
+        "daily_known_at": daily_receipt.get("received_at_utc"),
+        "volume_profile_known_at": volume_receipt.get("received_at_utc"),
+        "calendar_days_since_previous_session": calendar_gap,
+        "monday_weekend_context": current.weekday() == 0 and calendar_gap is not None and calendar_gap >= 3,
+        "daily": daily, "intraday": intra, "quality": asdict(quality),
+        "quality_policy_id": US_PUBLIC_5M_POLICY.policy_id, "quality_evidence": evidence,
+        "benchmark_dependency": benchmark, **state,
+    }
+
+
+def _benchmark_dependency(context, intra, quality):
+    """Relative strength alone depends on an independently fresh aligned QQQ."""
+    result = {"change_pct": None, "reason_codes": ["BENCHMARK_UNAVAILABLE"]}
+    if not isinstance(context, dict):
+        return result
+    benchmark_quality = context.get("quality") or {}
+    expiry = benchmark_quality.get("valid_until_ms")
+    if (not benchmark_quality.get("observation_ok") or type(expiry) is not int
+            or quality.evaluated_at_ms >= expiry):
+        result["reason_codes"] = ["STALE_BENCHMARK"]
+    elif (context.get("current_bar_time_utc") != intra.get("current_bar_time_utc")
+          or benchmark_quality.get("last_bar_end_ms") != quality.last_bar_end_ms):
+        result["reason_codes"] = ["MISALIGNED_BENCHMARK"]
+    elif _finite(context.get("change_pct")):
+        result = {"change_pct": context["change_pct"], "reason_codes": []}
+    result["known_at"] = context.get("known_at")
+    result["quality"] = benchmark_quality
+    return result
 
 
 def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
     now = now or datetime.now(timezone.utc)
     symbols = tuple(dict.fromkeys(s.upper() for s in symbols))
     market_context = _market_context(fetcher, now)
-    qqq_change = (market_context.get("QQQ") or {}).get("change_pct")
+    qqq_context = market_context.get("QQQ")
     rows = []
     with ThreadPoolExecutor(max_workers=max(1, min(workers, 12)), thread_name_prefix="qd-us-watch") as pool:
-        futures = {pool.submit(_scan_symbol, s, fetcher, now, qqq_change): s for s in symbols}
+        futures = {pool.submit(_scan_symbol, s, fetcher, now, qqq_context=qqq_context): s for s in symbols}
         for future in as_completed(futures):
             symbol = futures[future]
             try:
@@ -475,6 +717,8 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
             "relative_change_vs_qqq_pp": r.get("relative_change_vs_qqq_pp"),
             "market_context": market_context,
             "news": (r.get("news") or {}).get("items", [])[:3],
+            "quality": r["quality"],
+            "quality_policy_id": r["quality_policy_id"],
         })
     return {
         "generated_at_utc": now.isoformat(),
