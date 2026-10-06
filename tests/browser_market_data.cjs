@@ -39,6 +39,74 @@ async function main(){
  assert.equal(await page.locator('#candle-body tr[data-candle]').count(),0,'Failed requests must clear prior successful prices.');
  assert.match(await page.locator('#taker-note').innerText(),/来源B没有主动买量/);
  await page.setViewportSize({width:320,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'The 320px viewport must not overflow.');
- assert.deepEqual(errors,[]);await browser.close();console.log('PASS: 8 catalogs, instrument search, manual fetch, 100000/15m request, response races, null taker, failure clearing, tiny nonzero prices and axes, 320px, no JS errors.');
+ assert.deepEqual(errors,[]);await factorWorkflow(browser);await browser.close();console.log('PASS: 8 catalogs, instrument search, manual fetch, 100000/15m request, response races, null taker, failure clearing, tiny nonzero prices and axes, 320px, no JS errors.');
+}
+async function factorWorkflow(browser){
+ const {spawn}=require('node:child_process'),os=require('node:os');
+ const root=path.resolve(__dirname,'..'),temporary=fs.mkdtempSync(path.join(os.tmpdir(),'qd-factor-browser-'));
+ const child=spawn(path.join(root,'.venv/bin/python'),[path.join(__dirname,'factor_browser_server.py'),path.join(temporary,'factors.sqlite')],{cwd:root,stdio:['ignore','pipe','pipe']});
+ let diagnostics='';child.stderr.on('data',data=>diagnostics+=data.toString());
+ try{
+  const port=await new Promise((resolve,reject)=>{let data='';const timeout=setTimeout(()=>reject(new Error('Synthetic server did not start: '+diagnostics)),15000);child.once('exit',code=>{clearTimeout(timeout);reject(new Error('Synthetic server exited '+code+': '+diagnostics));});child.stdout.on('data',chunk=>{data+=chunk.toString();if(/^[0-9]+\n/.test(data)){clearTimeout(timeout);resolve(Number(data.trim()));}});});
+  const origin='http://127.0.0.1:'+port,page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[],writes=[];
+  page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(request.method()==='POST')writes.push(request.url());});
+  await page.goto(origin+'/factors');
+  await page.waitForSelector('#factor-select option');
+  assert.equal(await page.locator('#factor-select option').count(),16,'The catalog has exactly nine bound definitions and seven locked components.');
+  await page.locator('#factor-select').selectOption('locked.amihud@1.0.0');
+  await page.waitForFunction(()=>document.querySelector('#evidence-status').textContent.includes('无本次观测'));
+  assert.equal(await page.locator('#evidence-list [data-observation]').count(),0,'Unimplemented components must never invent observations.');
+  await page.locator('#factor-select').selectOption('minute.vwap60@1.0.0');
+  await page.waitForSelector('#evidence-list [data-observation]');
+  assert.match(await page.locator('#evidence-list').innerText(),/202.25/);
+  assert.match(await page.locator('#evidence-list').innerText(),/EXPIRED_QUALITY/);
+  assert.match(await page.locator('#evidence-list').innerText(),/Age|年龄/);
+  const fields=['instrument_id','observed_at','source_published_at','provider_available_at','value','unit','factor_id','factor_version'];
+  const headers=['Asset','Observed','Published','ProviderTime','Result','Units','Factor','Version'];
+  const row=['SYNTH','2026-10-06T12:00:00Z','2026-10-06T12:00:01Z','2026-10-06T12:00:02Z','10.5','ratio','external.browser_value','1'];
+  const definition={ref:{factor_id:'external.browser_value',version:'1'},name:'<img src=x onerror="window.factorXss=true">',purpose:'Synthetic browser acceptance',market:'us_equity',frequency:'daily',unit:'ratio',formula_text:'External value; no code executed',calculator_key:null,input_fields:['value'],min_history:{bars:1},missing_policy:'Preserve missing',window:{bars:1},lag:{bars:0},direction:'descriptive'};
+  const document={definition,manifest:{dataset_id:'browser-synthetic-import',version:1,source_ref:'synthetic browser source',universe_version:'browser-synthetic-v1',adjustment:'unadjusted',provider:'synthetic',permission_basis:'synthetic fixture',source_timezone:'UTC',corporate_action_basis:'not applicable',history_version:'synthetic-v1',coverage_gaps:[]}};
+  const upload=async(values)=>{
+   await page.locator('#csv-file').setInputFiles({name:'synthetic.csv',mimeType:'text/csv',buffer:Buffer.from(headers.join(',')+'\n'+values.join(',')+'\n')});
+   await page.locator('#definition-file').setInputFiles({name:'definition.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(document))});
+   await page.waitForSelector('#mapping-instrument_id option[value="Asset"]');
+   for(let i=0;i<fields.length;i++)await page.locator('#mapping-'+fields[i]).selectOption(headers[i]);
+  };
+  const bad=[...row];bad[0]='UNKNOWN';bad[4]='NaN';await upload(bad);
+  await page.locator('#preview-import').click();
+  await page.waitForFunction(()=>document.querySelector('#preview-status').dataset.state==='error');
+  assert.match(await page.locator('#preview-errors').innerText(),/Row 2|第 2 行/);
+  assert.match(await page.locator('#preview-errors').innerText(),/UNKNOWN_INSTRUMENT|INVALID_FACTOR_VALUE/);
+  assert.ok(await page.locator('#save-import').isDisabled());assert.equal(writes.filter(url=>url.endsWith('/commit')).length,0);
+  await upload(row);await page.locator('#preview-import').click();
+  await page.waitForFunction(()=>document.querySelector('#preview-status').dataset.state==='ready');
+  assert.equal(await page.locator('#definition-name').textContent(),definition.name);
+  assert.equal(await page.locator('#definition-name img').count(),0);
+  assert.equal(await page.evaluate(()=>window.factorXss),undefined);
+  assert.equal(writes.filter(url=>url.endsWith('/commit')).length,0,'Preview must never save automatically.');
+  const session=await page.evaluate(async()=>await (await fetch('/api/factors/session')).json());
+  const downloadEvent=page.waitForEvent('download');await page.locator('#download-evidence').click();const download=await downloadEvent;
+  const downloaded=fs.readFileSync(await download.path(),'utf8');
+  assert.ok(!downloaded.includes(session.csrf_token));assert.ok(!downloaded.includes('csrf_token'));
+  assert.ok(!downloaded.includes('csv_text'));assert.match(downloaded,/content_hash/);
+  await page.locator('#save-import').click();
+  await page.waitForFunction(()=>document.querySelector('#commit-status').dataset.state==='ready');
+  await page.waitForFunction(()=>document.querySelector('#factor-select').value==='external.browser_value@1');
+  await page.waitForSelector('#evidence-list [data-observation]');
+  assert.match(await page.locator('#evidence-list').innerText(),/10.5/);
+  assert.match(await page.locator('#evidence-list').innerText(),/EXTERNAL_VALUES_UNVERIFIED|PIT_EVIDENCE_REQUIRED/);
+  assert.equal(await page.locator('#evidence-list img').count(),0);
+  assert.equal(writes.filter(url=>url.endsWith('/commit')).length,1,'Save requires one explicit click.');
+  await page.locator('#factor-select').selectOption('minute.vwap60@1.0.0');await page.waitForSelector('#evidence-list [data-observation]');
+  const screenshots=path.join(root,'.superpowers/sdd/quant-factor-foundations-implementation-plan-20261006/task-7-screenshots');fs.mkdirSync(screenshots,{recursive:true});
+  await page.screenshot({path:path.join(screenshots,'factor-catalog-evidence-desktop.png'),fullPage:true});
+  await page.setViewportSize({width:320,height:844});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'Factor import page fits 320px.');
+  await page.screenshot({path:path.join(screenshots,'factor-import-mobile.png'),fullPage:true});
+  assert.deepEqual(errors,[]);await page.close();
+  console.log('PASS: dot cloud browser, real loopback synthetic import, mapping, row errors/no save, explicit preview/save/evidence, HTML-like text, token-free metadata download, no fake components, stale evidence, 320px, no JS errors.');
+ }finally{
+  child.kill('SIGTERM');await new Promise(resolve=>{if(child.exitCode!==null)return resolve();child.once('exit',resolve);});fs.rmSync(temporary,{recursive:true,force:true});
+ }
 }
 main().catch(async e=>{console.error(e);if(browser)await browser.close();process.exitCode=1;});

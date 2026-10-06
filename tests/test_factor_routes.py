@@ -337,3 +337,123 @@ def test_malformed_bracket_target_has_safe_http_rejection(tmp_path, capsys, meth
         payloads = list(database.iterdump())
     persisted = any(session_token in row for row in payloads)
     assert persisted is False
+
+
+def test_factor_catalog_and_missing_current_observations_are_read_only(tmp_path):
+    with running(tmp_path) as app:
+        status, body = request(app, '/api/factors')
+        payload = json.loads(body)
+        assert status == 200 and len(payload['factors']) == 16
+        assert len([x for x in payload['factors'] if x['binding_status'] == 'UNIMPLEMENTED']) == 7
+        status, body = request(app, '/api/factors/observations?factor_id=minute.vwap60&version=1.0.0')
+        payload = json.loads(body)
+        assert status == 200 and payload['cards'] == [] and payload['message'] == '无本次观测'
+        assert request(app, '/factors')[0] == 200
+    assert not (tmp_path / 'factors.sqlite').exists()
+
+
+@pytest.mark.parametrize('query', ['path=/etc/passwd', 'factor_id=minute.vwap60&version=1.0.0&sql=select',
+                                   'factor_id=minute.vwap60&factor_id=other&version=1.0.0',
+                                   'factor_id=minute.vwap60', 'factor_id=minute.vwap60&version='])
+def test_factor_read_query_whitelist(tmp_path, query):
+    with running(tmp_path) as app:
+        assert request(app, '/api/factors/observations?' + query)[0] == 400
+        assert request(app, '/api/factors?' + query)[0] == 400
+
+
+def test_metadata_cannot_render_html(tmp_path):
+    from factors.importer import InstrumentUniverse
+    universe = InstrumentUniverse('synthetic-v1', {'SYNTH': 'us_equity'})
+    with running(tmp_path, enable_factor_import=True, factor_universe=universe) as app:
+        payload = valid_payload(universe.version)
+        payload['definition_json']['definition']['name'] = '<img src=x onerror="alert(1)">'
+        _, body = request(app, '/api/factors/import/preview', 'POST', payload, {'X-Factor-CSRF': token(app)})
+        _, body = request(app, '/api/factors/import/commit', 'POST', {
+            'preview_id': json.loads(body)['preview_id'], 'request_id': 'html-text'}, {'X-Factor-CSRF': token(app)})
+        assert json.loads(body)['ok']
+        status, body = request(app, '/api/factors')
+        assert status == 200
+        catalog = json.loads(body)
+        entry = next(item for item in catalog['factors'] if item['definition']['ref']['factor_id'] == 'external_value')
+        assert entry['definition']['name'] == '<img src=x onerror="alert(1)">'
+        assert entry['lifecycle_state'] == 'CANDIDATE'
+
+
+def test_external_cannot_shadow_immutable_builtin_definition(tmp_path):
+    from factors.models import FactorRef
+    from test_factor_models import definition
+    ref = FactorRef(factor_id='minute.vwap60', version='1.0.0')
+    with FactorStore(tmp_path / 'factors.sqlite') as store:
+        with pytest.raises(ValueError, match='DEFINITION_VERSION_CONFLICT'):
+            store.register_definition(definition(ref=ref, name='fake built-in'), expected_revision=0, request_id='shadow')
+        assert store.revision() == 0
+
+
+def test_supplied_reports_stale_evidence_and_pit_query_modes(tmp_path):
+    from test_factor_bindings import reports, IDS
+    from test_factor_models import T
+    with running(tmp_path, factor_reports=reports()) as app:
+        _, body = request(app, '/api/factors/observations?factor_id=minute.vwap60&version=1.0.0')
+        card = json.loads(body)['cards'][0]
+        assert card['observation']['value'] == IDS['minute.vwap60']
+        assert 'EXPIRED_QUALITY' in card['block_reasons']
+        assert card['eligible_for_production'] is False
+        _, body = request(app, '/api/factors/observations?factor_id=minute.vwap60&version=1.0.0&mode=live')
+        assert json.loads(body)['cards'] == []
+        assert request(app, '/api/factors/observations?factor_id=minute.vwap60&version=1.0.0&mode=strict_replay')[0] == 400
+        _, body = request(app, '/api/factors/observations?factor_id=minute.vwap60&version=1.0.0&as_of=2026-10-06T11:00:00Z')
+        assert json.loads(body)['cards'] == []
+    assert not (tmp_path / 'factors.sqlite').exists()
+
+
+def test_external_preview_rejects_reserved_catalog_ids_before_any_save(tmp_path):
+    from factors.importer import InstrumentUniverse
+    from factors import registry
+    from factors.models import FactorRef
+    from test_factor_import import csv_bytes
+    universe = InstrumentUniverse('synthetic-v1', {'SYNTH':'us_equity'})
+    with running(tmp_path, enable_factor_import=True, factor_universe=universe) as app:
+        payload = valid_payload(universe.version)
+        original = registry.get(FactorRef(factor_id='minute.vwap60', version='1.0.0'))
+        payload['definition_json']['definition'] = original.model_dump(mode='json')
+        payload['csv_text'] = csv_bytes({'factor_id':'minute.vwap60','factor_version':'1.0.0','unit':original.unit}).decode()
+        _, body = request(app, '/api/factors/import/preview', 'POST', payload, {'X-Factor-CSRF':token(app)})
+        assert 'DEFINITION_VERSION_CONFLICT' in {item['code'] for item in json.loads(body)['errors']}
+        with FactorStore(tmp_path / 'factors.sqlite') as store:
+            assert store.revision() == 0 and not store.definitions()
+
+
+def test_reserved_definition_conflict_cannot_be_silently_displayed_as_builtin(tmp_path):
+    from test_factor_models import definition
+    import sqlite3
+    from contextlib import closing
+    from factors.models import FactorRef
+    with running(tmp_path, enable_factor_import=True) as app:
+        # Simulate an existing B1-era conflicting record without using product APIs.
+        forged = definition(ref=FactorRef(factor_id='minute.vwap60',version='1.0.0'),name='forged')
+        with closing(sqlite3.connect(tmp_path/'factors.sqlite')) as db:
+            db.execute('INSERT INTO definitions VALUES (?,?,?,?)', ('minute.vwap60','1.0.0',forged.model_dump_json(),'a'*64));db.commit()
+        assert request(app, '/api/factors')[0] == 409
+
+
+def test_current_data_status_is_unavailable_without_a_visible_value(tmp_path):
+    with running(tmp_path) as app:
+        _, body = request(app, '/api/factors')
+        assert all(item['DATA_STATUS'] == 'UNAVAILABLE' for item in json.loads(body)['factors'])
+
+
+def test_external_similar_prefix_is_not_a_locked_component(tmp_path):
+    from factors.importer import InstrumentUniverse
+    from test_factor_import import csv_bytes
+    universe=InstrumentUniverse('synthetic-v1',{'SYNTH':'us_equity'})
+    with running(tmp_path,enable_factor_import=True,factor_universe=universe) as app:
+        payload=valid_payload(universe.version)
+        payload['definition_json']['definition']['ref']['factor_id']='locked.external_research'
+        payload['csv_text']=csv_bytes({'factor_id':'locked.external_research'}).decode()
+        _,body=request(app,'/api/factors/import/preview','POST',payload,{'X-Factor-CSRF':token(app)})
+        _,body=request(app,'/api/factors/import/commit','POST',{'preview_id':json.loads(body)['preview_id'],'request_id':'prefix'}, {'X-Factor-CSRF':token(app)})
+        assert json.loads(body)['ok']
+        _,body=request(app,'/api/factors')
+        catalog=json.loads(body)['factors']
+        assert len([item for item in catalog if item['binding_status']=='UNIMPLEMENTED'])==7
+        assert next(item for item in catalog if item['definition']['ref']['factor_id']=='locked.external_research')['binding_status']=='EXTERNAL_VALUE'

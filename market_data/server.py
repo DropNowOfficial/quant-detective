@@ -9,7 +9,7 @@ from urllib.parse import parse_qs, urlsplit
 from . import providers
 from .transport import FetchError, fetch
 from .live import LiveService
-from .factor_routes import FactorRoutes, SESSION_PATH, WRITE_PATHS
+from .factor_routes import FactorRoutes, SESSION_PATH, WRITE_PATHS, READ_PATHS, read_factors
 from factors.importer import DEFAULT_UNIVERSE
 
 
@@ -66,15 +66,23 @@ class MarketHandler(BaseHTTPRequestHandler):
             return
         try:
             try:
+                if not self.path.startswith('/') or self.path.startswith('//'):
+                    raise ValueError
                 parsed = urlsplit(self.path)
             except ValueError:
                 self.send_json({"ok": False, "error": "INVALID_REQUEST_TARGET"}, 400)
                 return
+            if parsed.path in READ_PATHS:
+                read_factors(self, parsed)
+                return
             if parsed.path == SESSION_PATH and self.server.factor_routes is not None:
                 self.server.factor_routes.session(self)
                 return
-            pages = {'/': 'live.html', '/index.html': 'live.html', '/market': 'template.html', '/research': 'research.html'}
+            pages = {'/': 'live.html', '/index.html': 'live.html', '/market': 'template.html', '/research': 'research.html', '/factors': 'factors.html'}
             if parsed.path in pages:
+                if parsed.path == '/factors' and (parsed.query or parsed.fragment):
+                    self.send_json({'ok': False, 'error': 'QUERY_NOT_ALLOWED'}, 400)
+                    return
                 body = Path(__file__).with_name(pages[parsed.path]).read_bytes()
                 self.send_response(200)
                 self.send_header('Content-Type', 'text/html; charset=utf-8')
@@ -168,12 +176,14 @@ class MarketServer(ThreadingHTTPServer):
 
 
 def make_server(port=8767, fetcher=fetch, *, factor_store_path=None, enable_factor_import=False,
-                factor_universe=DEFAULT_UNIVERSE):
+                factor_universe=DEFAULT_UNIVERSE, factor_reports=None):
     server = MarketServer(('127.0.0.1', port), MarketHandler)
     server.daemon_threads = True
     server.fetcher = fetcher
     server.live = LiveService(fetcher=fetcher)
     server.factor_routes = None
+    from copy import deepcopy
+    server.factor_reports = deepcopy(factor_reports or {})
     try:
         if enable_factor_import:
             path = factor_store_path if factor_store_path is not None else Path("runtime/factors.sqlite")

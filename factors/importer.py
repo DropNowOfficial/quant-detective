@@ -22,7 +22,7 @@ from pydantic import ValidationError
 from market_data.quality import QualityResult
 from market_data.us_watch import DEFAULT_SYMBOLS
 from .models import CommitResult, DatasetManifest, FactorDefinition, FactorObservation, require_utc
-from .registry import canonical_json, fingerprint, source_content
+from .registry import canonical_json, fingerprint, source_content, check_reserved_definition, definitions
 from .store import FactorStore
 
 MAX_REQUEST_BYTES = 5 * 1024 * 1024
@@ -219,6 +219,13 @@ def preview_import(csv_bytes: bytes, definition_json: dict, mapping: dict[str, s
                 error("INVALID_MANIFEST_FIELDS")
             else:
                 proposed_definition = FactorDefinition.model_validate_json(canonical_json(definition_json["definition"]))
+                try:
+                    check_reserved_definition(proposed_definition)
+                    if (proposed_definition.calculator_key is not None
+                            or any(item.ref.factor_id == proposed_definition.ref.factor_id for item in definitions())):
+                        raise ValueError("DEFINITION_VERSION_CONFLICT")
+                except ValueError:
+                    error("DEFINITION_VERSION_CONFLICT")
                 metadata = definition_json["manifest"]
                 proposed_manifest = DatasetManifest.model_validate_json(canonical_json({
                     **metadata, "file_sha256": hashlib.sha256(csv_bytes).hexdigest(),

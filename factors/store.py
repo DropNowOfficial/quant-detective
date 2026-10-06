@@ -14,7 +14,7 @@ import sqlite3
 from typing import Iterable
 
 from .models import CommitResult, DatasetManifest, FactorDefinition, FactorObservation, FactorRef, require_utc
-from .registry import canonical_json, definition_fingerprint, fingerprint, source_content
+from .registry import canonical_json, definition_fingerprint, fingerprint, source_content, check_reserved_definition
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS metadata (
@@ -186,6 +186,7 @@ class FactorStore:
         return FactorDefinition.model_validate_json(row[0]) if row else None
 
     def _check_definition(self, definition):
+        check_reserved_definition(definition)
         existing = self._existing_definition(definition.ref)
         if existing is not None and definition_fingerprint(existing) != definition_fingerprint(definition):
             raise ValueError("DEFINITION_VERSION_CONFLICT")

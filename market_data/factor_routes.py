@@ -182,3 +182,96 @@ class FactorRoutes:
             handler.send_json({"ok": False, "error": code}, status)
         except sqlite3.Error:
             handler.send_json({"ok": False, "error": "FACTOR_STORE_UNAVAILABLE"}, 503)
+
+
+READ_PATHS = frozenset({'/api/factors', '/api/factors/observations'})
+
+
+def read_factors(handler, parsed):
+    """Fixed read interfaces; no new scan, arbitrary path, SQL or mutation route."""
+    from copy import deepcopy
+    from urllib.parse import parse_qs
+    from factors import registry
+    from factors.bindings import observations_from_report, binding_diagnostics, evidence_card
+    from factors.models import FactorRef
+
+    now = datetime.now(UTC)
+    query = parse_qs(parsed.query, keep_blank_values=True)
+    allowed = set() if parsed.path == '/api/factors' else {'factor_id', 'version', 'as_of', 'mode'}
+    if (parsed.fragment or set(query) - allowed or any(len(values) != 1 or not values[0] for values in query.values())
+            or (parsed.path.endswith('/observations') and not {'factor_id', 'version'} <= set(query))):
+        handler.send_json({'ok': False, 'error': 'INVALID_FACTOR_QUERY'}, 400)
+        return
+    try:
+        values = {key: items[0] for key, items in query.items()}
+        as_of = datetime.fromisoformat(values['as_of']).astimezone(UTC) if 'as_of' in values else now
+        if 'as_of' in values and datetime.fromisoformat(values['as_of']).tzinfo is None:
+            raise ValueError('UTC_REQUIRED')
+        mode = values.get('mode', 'exploratory')
+        if mode not in {'live', 'strict_replay', 'exploratory'}:
+            raise ValueError('INVALID_QUERY_MODE')
+        # Already captured application reports and analyses only; never initiate
+        # live.snapshot(), providers, a scan, or file reads chosen by a query.
+        reports = deepcopy(handler.server.factor_reports)
+        if not reports:
+            with handler.server.live.lock:
+                rows = [deepcopy(row) for session in handler.server.live.sessions.values()
+                        for row in session.analyses.values()]
+            reports = {'minute_report': {'rows': rows}}
+        bound = observations_from_report(reports, recorded_at=now)
+        diagnostics = binding_diagnostics(reports)
+        virtual = registry.definitions()
+        catalog = {(item.ref.factor_id, item.ref.version): item for item in virtual}
+        routes = handler.server.factor_routes
+        external = []
+        if routes is not None:
+            with FactorStore(routes.path) as store:
+                for item in store.definitions():
+                    registry.check_reserved_definition(item)
+                    catalog[(item.ref.factor_id, item.ref.version)] = item
+                if parsed.path.endswith('/observations'):
+                    ref = FactorRef(factor_id=values['factor_id'], version=values['version'])
+                    external = store.observations(ref, as_of=as_of, mode=mode)
+        if parsed.path == '/api/factors':
+            factors = []
+            for item in sorted(catalog.values(), key=lambda entry: (entry.ref.factor_id, entry.ref.version)):
+                builtin = item.calculator_key is not None
+                locked = any(original.ref == item.ref and original.calculator_key is None for original in virtual)
+                factors.append({'definition': item.model_dump(mode='json'),
+                                'definition_fingerprint': registry.definition_fingerprint(item),
+                                'binding_status': 'BOUND' if builtin else 'UNIMPLEMENTED' if locked else 'EXTERNAL_VALUE',
+                                'CONTRACT_STATUS': 'READY' if builtin else 'NOT READY',
+                                'DATA_STATUS': 'READY' if any(
+                                    observation.ref == item.ref and observation.value is not None
+                                    and evidence_card(observation, now=now)['current_observation']
+                                    for observation in bound) else 'UNAVAILABLE',
+                                'VALIDATION_STATUS': 'NEEDS BACKTEST',
+                                'lifecycle_state': 'LEGACY_UNVALIDATED' if builtin else 'CANDIDATE',
+                                'eligible_for_production': False})
+            handler.send_json({'ok': True, 'factors': factors, 'hypotheses': registry.hypotheses(),
+                               'axes': ['CONTRACT_STATUS', 'DATA_STATUS', 'VALIDATION_STATUS'],
+                               'diagnostics': diagnostics, 'import_enabled': routes is not None})
+        else:
+            ref = FactorRef(factor_id=values['factor_id'], version=values['version'])
+            if (ref.factor_id, ref.version) not in catalog:
+                raise ValueError('UNKNOWN_DEFINITION')
+            selected = [item for item in bound if item.ref == ref and item.effective_available_at <= as_of]
+            if mode == 'live':
+                selected = [item for item in selected if item.pit_grade == 'FORWARD_OBSERVED']
+            elif mode == 'strict_replay' and any(item.pit_grade == 'RECONSTRUCTED' for item in selected):
+                raise ValueError('PIT_EVIDENCE_REQUIRED')
+            cards = [evidence_card(item, now=now) for item in sorted(
+                [*selected, *external], key=lambda item: (item.observed_at, item.instrument_id))]
+            handler.send_json({'ok': True, 'ref': ref.model_dump(mode='json'), 'mode': mode,
+                               'as_of': as_of.isoformat(), 'cards': cards,
+                               'message': '无本次观测' if not cards else 'Last source-bound evidence; eligibility unvalidated',
+                               'diagnostics': [entry for entry in diagnostics if entry['factor_id'] == ref.factor_id]})
+    except (ValueError, TypeError, KeyError, OverflowError) as exc:
+        # Fixed codes avoid leaking malformed metadata/query/token text.
+        code = str(exc)
+        safe = CONFLICT_CODES | {'PIT_EVIDENCE_REQUIRED', 'UNKNOWN_DEFINITION', 'UTC_REQUIRED', 'INVALID_QUERY_MODE'}
+        if code not in safe:
+            code = 'INVALID_FACTOR_EVIDENCE_OR_QUERY'
+        handler.send_json({'ok': False, 'error': code}, 409 if code in CONFLICT_CODES else 400)
+    except sqlite3.Error:
+        handler.send_json({'ok': False, 'error': 'FACTOR_STORE_UNAVAILABLE'}, 503)
