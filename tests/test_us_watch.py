@@ -593,3 +593,160 @@ def test_outside_window_invalid_diagnostics_do_not_evict_caches(monkeypatch):
     second = us_watch._scan_symbol("AAA", fetcher, now+timedelta(minutes=1))
     assert first["quality"]["confirmation_ok"] and second["quality"]["confirmation_ok"]
     assert len(fetcher.calls) == 4
+
+
+def grace_rows(now):
+    rows = bars_for(now.date().isoformat(), 3)
+    for i, row in enumerate(rows):
+        row.update(open=100.3+i*0.1, high=100.4+i*0.1, low=100.2+i*0.1,
+                   close=100.39+i*0.1)
+    return rows
+
+
+def test_consumed_stock_conflict_inside_publication_grace_cannot_confirm(monkeypatch):
+    now = at(minute=45, second=30)
+    rows = grace_rows(now)
+    duplicate = dict(rows[-1], close=100.58)
+    history = [r for d in previous_dates(now, 20) for r in bars_for(d, 3)]
+    result, _ = scan_fixture(monkeypatch, now, rows=rows+[duplicate], history=history)
+    assert result["intraday"]["two_completed_5m_above_vwap_and_ma5"]
+    assert result["intraday"]["same_time_rvol"] == 1.0
+    assert result["state"] == "DATA_UNAVAILABLE"
+    assert result["quality_evidence"]["intraday"]["invalid_rows"] == 1
+    assert "INVALID_ROWS" in result["quality"]["reason_codes"]
+
+
+def test_consumed_qqq_conflict_inside_publication_grace_is_unavailable():
+    now = at(minute=45, second=30)
+    rows = grace_rows(now)
+    duplicate = dict(rows[-1], close=100.58)
+    qqq = us_watch._market_proxy(lambda url, kind: yahoo(rows+[duplicate], now, symbol="QQQ"), "QQQ", now)
+    assert qqq["ok"]
+    assert not qqq["quality"]["observation_ok"]
+    assert "INVALID_ROWS" in qqq["quality"]["reason_codes"]
+
+
+@pytest.mark.parametrize("symbol", ["AAA", "QQQ"])
+def test_invalid_current_live_bar_is_a_consumed_price_dependency(monkeypatch, symbol):
+    now = at(minute=44, second=30)
+    rows = grace_rows(now)
+    # 09:40 is still open at capture but supplies the current price.
+    duplicate = dict(rows[-1], close=100.58)
+    if symbol == "AAA":
+        result, _ = scan_fixture(monkeypatch, now, rows=rows+[duplicate])
+    else:
+        result = us_watch._market_proxy(lambda url, kind: yahoo(rows+[duplicate], now, symbol="QQQ"), "QQQ", now)
+    assert not result["quality"]["observation_ok"]
+    assert "INVALID_ROWS" in result["quality"]["reason_codes"]
+
+
+def timed_feed(start, captured):
+    history = [row for day in previous_dates(start, 20) for row in bars_for(day)]
+    def fetcher(url, kind):
+        if "/v1/finance/search?" in url:
+            return {"data": {"news": []}, "receipt": {"received_at_utc": captured.isoformat()}}
+        symbol = "AAA" if "/chart/AAA?" in url else "QQQ" if "/chart/QQQ?" in url else "NQ=F" if "NQ%3DF" in url else "ES=F"
+        rows = daily_rows(start) if "interval=1d" in url else history if "range=1mo" in url else bars_for(start.date().isoformat())
+        return yahoo(rows, captured, symbol=symbol)
+    return fetcher
+
+
+def test_default_live_scan_refreshes_evaluation_after_delayed_acquisition(monkeypatch):
+    start = at()
+    received = start + timedelta(seconds=6)
+    wall = {"now": start}
+    class ProcessDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return wall["now"].astimezone(tz) if tz else wall["now"]
+    monkeypatch.setattr(us_watch, "datetime", ProcessDateTime)
+    monkeypatch.setattr(us_watch, "_DAILY_CACHE", {})
+    monkeypatch.setattr(us_watch, "_VOLUME_PROFILE_CACHE", {})
+    monkeypatch.setattr(us_watch, "_NEWS_CACHE", {})
+    source = timed_feed(start, received)
+    def delayed(url, kind):
+        response = source(url, kind)
+        wall["now"] = received
+        return response
+    report = us_watch.scan_once(symbols=("AAA",), fetcher=delayed, workers=1)
+    row = report["rows"][0]
+    assert row["quality"]["state"] == "VALID"
+    assert row["quality"]["evaluated_at_ms"] == int(received.timestamp()*1000)
+    assert row["known_at"] == received.astimezone(timezone.utc).isoformat()
+    assert row["quality_evidence"]["daily"]["capture_valid"]
+    assert row["quality_evidence"]["history"]["capture_valid"]
+    assert report["market_context"]["QQQ"]["quality"]["state"] == "VALID"
+    assert ("AAA", start.date().isoformat()) in us_watch._DAILY_CACHE
+    assert ("AAA", start.date().isoformat()) in us_watch._VOLUME_PROFILE_CACHE
+
+
+def test_injected_clock_refreshes_queued_symbol_and_qqq_after_acquisition(monkeypatch):
+    start = at()
+    received = start + timedelta(seconds=6)
+    monkeypatch.setattr(us_watch, "_DAILY_CACHE", {})
+    monkeypatch.setattr(us_watch, "_VOLUME_PROFILE_CACHE", {})
+    feed = timed_feed(start, received)
+    clock = lambda: received
+    row = us_watch._scan_symbol("AAA", feed, start, clock=clock)
+    qqq = us_watch._market_proxy(feed, "QQQ", start, clock=clock)
+    assert row["quality"]["confirmation_ok"]
+    assert qqq["quality"]["observation_ok"]
+    assert row["quality_evidence"]["captured_at_ms"] == int(received.timestamp()*1000)
+    assert row["quality"]["evaluated_at_ms"] == int(received.timestamp()*1000)
+
+
+def test_explicit_now_replay_remains_fixed_despite_later_receipts(monkeypatch):
+    start = at()
+    received = start + timedelta(seconds=6)
+    class ForbiddenClockDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            raise AssertionError("explicit-now replay must not read wall time")
+    monkeypatch.setattr(us_watch, "datetime", ForbiddenClockDateTime)
+    monkeypatch.setattr(us_watch, "_DAILY_CACHE", {})
+    monkeypatch.setattr(us_watch, "_VOLUME_PROFILE_CACHE", {})
+    report = us_watch.scan_once(symbols=("AAA",), fetcher=timed_feed(start, received), now=start, workers=1)
+    row = report["rows"][0]
+    assert row["state"] == "DATA_UNAVAILABLE"
+    assert "FUTURE_CAPTURE" in row["quality"]["reason_codes"]
+    assert row["quality"]["evaluated_at_ms"] == int(start.timestamp()*1000)
+
+
+def test_live_clock_does_not_make_genuinely_future_receipts_valid(monkeypatch):
+    start = at()
+    evaluated = start + timedelta(seconds=6)
+    received = evaluated + timedelta(seconds=6)
+    monkeypatch.setattr(us_watch, "_DAILY_CACHE", {})
+    monkeypatch.setattr(us_watch, "_VOLUME_PROFILE_CACHE", {})
+    row = us_watch._scan_symbol("AAA", timed_feed(start, received), start, clock=lambda: evaluated)
+    assert row["state"] == "DATA_UNAVAILABLE"
+    assert "FUTURE_CAPTURE" in row["quality"]["reason_codes"]
+
+
+def test_live_evaluation_never_matures_bars_open_at_receipt(monkeypatch):
+    start = at(minute=39, second=55)
+    received = at(minute=39, second=59)
+    evaluated = at(minute=41, second=30)
+    monkeypatch.setattr(us_watch, "_DAILY_CACHE", {})
+    monkeypatch.setattr(us_watch, "_VOLUME_PROFILE_CACHE", {})
+    row = us_watch._scan_symbol("AAA", timed_feed(start, received), start, clock=lambda: evaluated)
+    assert row["quality_evidence"]["bars"][-1]["closed_at_capture"] is False
+    assert row["intraday"]["rth_completed_bars"] == 1
+    assert "STALE_BAR" in row["quality"]["reason_codes"]
+
+
+def test_scan_once_propagates_injected_live_clock_with_explicit_start(monkeypatch):
+    start = at()
+    received = start + timedelta(seconds=6)
+    class ForbiddenWallDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            raise AssertionError("an injected live clock must not sample implicit wall time")
+    monkeypatch.setattr(us_watch, "datetime", ForbiddenWallDateTime)
+    monkeypatch.setattr(us_watch, "_DAILY_CACHE", {})
+    monkeypatch.setattr(us_watch, "_VOLUME_PROFILE_CACHE", {})
+    report = us_watch.scan_once(symbols=("AAA",), fetcher=timed_feed(start, received),
+                                now=start, workers=1, clock=lambda: received)
+    assert report["rows"][0]["quality"]["confirmation_ok"]
+    assert report["market_context"]["QQQ"]["quality"]["observation_ok"]
+    assert report["generated_at_utc"] == received.isoformat()

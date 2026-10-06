@@ -171,6 +171,25 @@ def _window_invalid(receipt, predicate):
                for e in receipt.get(key, []))
 
 
+def _consumed_intraday_invalid(receipt, rows, now, *, include_premarket):
+    """Scope defects to the rows consumed by metrics, not publication grace.
+
+    Metrics consume every current RTH row (including live/grace-window rows),
+    the latest current price, and, for stocks, the last premarket price.
+    """
+    today = now.astimezone(ET).date()
+    timestamps = [row["t"] for row in rows]
+    timestamps.extend(error["t"] for key in ("invalid_row_evidence", "duplicate_row_evidence")
+                      for error in receipt.get(key, []) if error.get("t") is not None)
+    current = [stamp for stamp in timestamps if datetime.fromtimestamp(stamp, ET).date() == today]
+    latest = max(current) if current else None
+    pre = [stamp for stamp in current if _session_name(stamp) == "PRE"]
+    latest_pre = max(pre) if include_premarket and pre else None
+    return _window_invalid(receipt, lambda stamp:
+        datetime.fromtimestamp(stamp, ET).date() == today
+        and (_session_name(stamp) == "RTH" or stamp == latest or stamp == latest_pre))
+
+
 def _historical_schedule(day, schedule_provider=schedule_at):
     key = (day.date().isoformat(), schedule_provider)
     if key not in _SESSION_SCHEDULE_CACHE:
@@ -194,10 +213,12 @@ def _required_daily_dates(now):
     return dates
 
 
-def _market_proxy(fetcher, symbol, now):
+def _market_proxy(fetcher, symbol, now, *, clock=None):
     try:
         rows, meta, receipt = _chart(fetcher, symbol, range_value="5d", interval="5m",
                                      include_prepost=True, require_us_equity=symbol == "QQQ")
+        if clock is not None:
+            now = clock()  # Live process boundary, after source acquisition.
         last = rows[-1]
         prior = next((float(meta[k]) for k in ("regularMarketPreviousClose", "chartPreviousClose", "previousClose")
                       if _finite(meta.get(k))), None)
@@ -214,10 +235,7 @@ def _market_proxy(fetcher, symbol, now):
             today = _today_intraday(rows, now, captured_at_ms=captured_at_ms)
             rth = [r for r in today if r["session"] == "RTH"]
             current_schedule = _schedule(now)
-            last_due = current_schedule.expected_completed_ends[-1] if current_schedule.expected_completed_ends else None
-            invalid = _window_invalid(receipt, lambda stamp:
-                current_schedule.open_ms is not None and last_due is not None
-                and current_schedule.open_ms <= stamp*1000 < last_due)
+            invalid = _consumed_intraday_invalid(receipt, rows, now, include_premarket=False)
             benchmark_policy = replace(US_PUBLIC_5M_POLICY, policy_id="us_public_5m_benchmark_v1",
                                        min_rvol_sessions=0, min_completed_bars=1)
             quality = evaluate_bars(BarQualityInput(int(now.timestamp()*1000), captured_at_ms,
@@ -229,10 +247,10 @@ def _market_proxy(fetcher, symbol, now):
                 "error": f"{type(exc).__name__}: {str(exc)[:200]}"}
 
 
-def _market_context(fetcher, now):
+def _market_context(fetcher, now, *, clock=None):
     symbols = ("NQ=F", "ES=F", "QQQ")
     with ThreadPoolExecutor(max_workers=3, thread_name_prefix="qd-regime") as pool:
-        futures = {pool.submit(_market_proxy, fetcher, symbol, now): symbol for symbol in symbols}
+        futures = {pool.submit(_market_proxy, fetcher, symbol, now, clock=clock): symbol for symbol in symbols}
         return {symbol: future.result() for future, symbol in ((f, futures[f]) for f in as_completed(futures))}
 
 
@@ -522,7 +540,7 @@ def classify(daily, intra, qqq_change=None, *, quality: QualityResult):
     }
 
 
-def _scan_symbol(symbol, fetcher, now, *, qqq_context=None):
+def _scan_symbol(symbol, fetcher, now, *, qqq_context=None, clock=None):
     cache_key = (symbol, now.astimezone(ET).date().isoformat())
     cached = _DAILY_CACHE.get(cache_key)
     if cached is None:
@@ -544,15 +562,12 @@ def _scan_symbol(symbol, fetcher, now, *, qqq_context=None):
         _VOLUME_PROFILE_CACHE[cache_key] = volume_cached
     volume_rows, volume_receipt = volume_cached
     intraday_rows, _, intra_receipt = _chart(fetcher, symbol, range_value="5d", interval="5m", include_prepost=True)
+    if clock is not None:
+        now = clock()  # Queued/acquisition time is elapsed time, not future data.
     captured_at_ms = intra_receipt["captured_at_ms"]
     intraday = _today_intraday(intraday_rows, now, captured_at_ms=captured_at_ms)
     current_schedule = _schedule(now)
-    # Only today's required RTH dependency can veto today's RTH metrics.
-    required_end = current_schedule.expected_completed_ends[-1] if current_schedule.expected_completed_ends else None
-    def in_current_window(stamp):
-        return (current_schedule.open_ms is not None and required_end is not None
-                and current_schedule.open_ms <= stamp*1000 < required_end)
-    intra_invalid = _window_invalid(intra_receipt, in_current_window)
+    intra_invalid = _consumed_intraday_invalid(intra_receipt, intraday_rows, now, include_premarket=True)
     daily_dates = _required_daily_dates(now)
     missing_daily = daily_dates-daily_sessions
     daily_invalid = _window_invalid(daily_receipt,
@@ -660,20 +675,36 @@ def _benchmark_dependency(context, intra, quality):
     return result
 
 
-def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
-    now = now or datetime.now(timezone.utc)
+def _utc_now():
+    """Wall time belongs only at the live scan's injectable process boundary."""
+    return datetime.now(timezone.utc)
+
+
+def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8, *, clock=None):
+    """Scan live with a fresh post-acquisition clock, or replay at explicit now.
+
+    An explicit ``now`` with no ``clock`` fixes every evaluation to that time.
+    Live scans default to ``_utc_now``; callers can inject a datetime-returning
+    clock (also with a scan-start ``now``) without changing captured source facts.
+    Pure metric/quality calculations never sample wall time themselves.
+    """
+    if now is None:
+        clock = clock or _utc_now
+        now = clock()
     symbols = tuple(dict.fromkeys(s.upper() for s in symbols))
-    market_context = _market_context(fetcher, now)
+    market_context = _market_context(fetcher, now, clock=clock)
     qqq_context = market_context.get("QQQ")
     rows = []
     with ThreadPoolExecutor(max_workers=max(1, min(workers, 12)), thread_name_prefix="qd-us-watch") as pool:
-        futures = {pool.submit(_scan_symbol, s, fetcher, now, qqq_context=qqq_context): s for s in symbols}
+        futures = {pool.submit(_scan_symbol, s, fetcher, now, qqq_context=qqq_context, clock=clock): s for s in symbols}
         for future in as_completed(futures):
             symbol = futures[future]
             try:
                 rows.append(future.result())
             except Exception as exc:
                 rows.append({"symbol": symbol, "status": "ERROR", "error": f"{type(exc).__name__}: {str(exc)[:240]}"})
+    if clock is not None:
+        now = clock()
     rows.sort(key=lambda r: (
         {"ENTRY_CONFIRMED": 0, "ENTRY_ARMED": 1, "LEADER_HOT_NO_CHASE": 2, "LEADER_WATCH": 3,
          "EXTENDED": 4, "WATCH": 5}.get(r.get("state"), 9),
