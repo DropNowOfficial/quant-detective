@@ -9,7 +9,7 @@ No provider purchases, real notifications, trades, deployment, merge, push or
 remote CI run were performed. All source/network fixtures are synthetic or mocked;
 the HTTP integration uses only a local loopback server.
 
-The delivery adds three end-to-end evidence tests and one installed-wheel test in
+The original integration delivery added three end-to-end evidence tests and one installed-wheel test in
 `tests/test_factor_roundtrip.py`. No product-code integration repair was needed:
 the existing A/B/C APIs and canonical definition packaging passed once the new
 test harness correctly encoded offset query strings and removed the editable
@@ -17,7 +17,74 @@ source root from its isolated subprocess. The initial run had 2 passes and 2
 harness failures; it was not evidence of a product defect or a production-code
 RED/GREEN repair. Subsequent checks below use the corrected assertions.
 
-## Commands and observed results
+## Final review fixes and verification
+
+Fixed implementation: `5afacff17588f93d6d006538a99f83f08d71986a` (source tree
+`cec5069999441f3d11394d9259bbdcb1abd290ec`). The full gate ran against the exact
+working tree committed as that implementation; this subsequent record changes
+documentation only. The pre-fix 738-test evidence is retained separately below.
+
+- Daily observations now use official session identity. Identical or conflicting
+  second observations with a different timestamp cannot enter daily math; all
+  rows of the ambiguous daily session are excluded and retained duplicate/session
+  diagnostics veto a required dependency. Irrelevant older duplicates leave
+  consumed metrics and the ordinary cache policy unchanged
+- Source timestamp conversion is validated at the adapter boundary. Unlocatable
+  timestamps retain `INVALID_TIMESTAMP` evidence and cannot be treated as safely
+  outside a dependency window
+- CSV/JSON file reading uses native bytes and fatal UTF-8 decoding. Leading BOMs
+  are explicitly rejected with `UTF8_BOM_NOT_ALLOWED`, including direct/server
+  CSV imports. BOM-producing exports must be resaved as UTF-8 without BOM. Native
+  Node File plus real synthetic HTTP checks establish unchanged accepted CSV
+  bytes and exact equality with preview/retained manifest `file_sha256`
+- Both POST routes reject the current process CSRF token in parsed body keys or
+  string values, including JSON escapes, metadata, CSV cells and request IDs,
+  before preview retention or store access. Rejections are fixed/token-free;
+  accepted financial evidence is never rewritten. The page keeps rejected
+  token-bearing sources unsaveable and undownloadable
+- Documented startup selects the synced project environment. The Windows launcher
+  checks `.venv\Scripts\python.exe`, dependencies and curl with actionable
+  missing-prerequisite messages. The default store is consistently
+  `runtime/factors/catalog.sqlite3`; explicit paths are preserved and no existing
+  database is automatically moved, deleted or migrated to that default
+
+All uv commands below use `UV_CACHE_DIR=/tmp/qd-factor-uv-cache UV_LINK_MODE=copy`.
+
+| Command / boundary | Observed result | Exit |
+|---|---|---:|
+| `make verify` | `SCHEMA_GATE_OK`; kernel and Time Machine pass; **779 root pytest tests + 84 legacy unittest tests**; `VERIFY_OK` | 0 |
+| `uv run --extra research pytest -q -W error::ResourceWarning tests/test_factor_import.py tests/test_factor_routes.py tests/test_us_watch.py tests/test_local_startup.py tests/test_factor_roundtrip.py tests/test_live_features.py tests/test_factor_bindings.py` | **261 passed**, including isolated installed-wheel checks; no resource warnings | 0 |
+| `node tests/test_factor_import_state.cjs` | actual-page asynchronous state suite passes with byte reads | 0 |
+| `node tests/test_factor_history_state.cjs` | actual-page read-only history suite passes | 0 |
+| `node tests/test_factor_file_bytes.cjs` | six grouped native-File/HTTP checks pass: malformed CSV/JSON, BOM CSV/JSON, token-bearing evidence rejection, original accepted/retained SHA equality | 0 |
+| `node --check` on all three Node suites, `tests/browser_market_data.cjs`, and the extracted page inline script | JavaScript syntax passes; no browser execution | 0 |
+| `uv sync --frozen`; `uv run --frozen python -c "import sys, pydantic, exchange_calendars; print(sys.executable)"`; `uv run --frozen qd-market serve --port 0` | Linux startup with a deliberately dependency-free PATH Python selects project `.venv`; `/health` and `/api/factors` succeed without provider requests | 0 |
+
+The same startup commands and three Node suites also passed in a fresh local
+clone of the fixed implementation with a newly created `.venv`, cached/offline
+installation, unchanged `uv.lock`, a clean tracked tree and explicit checks that
+project/dependency imports came from the clone rather than the parent checkout.
+The first smoke harness removed its temporary PATH interpreter before later
+checks, leaving its new `.venv` symlink unusable. Selecting the stable base Python
+for bootstrap fixed that test-harness lifetime issue; the repeated startup/import
+and Node checks all passed without a source change.
+This is **fresh-source startup/transport smoke evidence**, not a second full
+canonical run. The one final full suite is the 779 + 84 run above. The isolated
+wheel build/install/resource/HTTP test ran in that full gate and the focused gate.
+
+The launcher checks in `tests/test_local_startup.py` inspect interpreter selection
+and prerequisite text and compile the embedded Python check. They do not execute
+Windows batch commands. Windows/macOS execution, remote CI and actual browser
+acceptance remain unverified. The full legacy suite still emits inherited
+unclosed-SQLite ResourceWarnings; none were suppressed or repaired in this wave.
+No denied browser startup/navigation was retried, and no screenshots were made.
+
+## Original delivery commands (before final review fixes)
+
+The following historical counts precede the fix wave; they do not describe the
+newer code above. The reviewed pre-fix HEAD was
+`7cfb3aed23ec388a8fbf99ab8b620d12a57f028b`. Its separately recorded fresh-clone
+canonical run also passed 738 root tests and 84 legacy tests.
 
 Verification runtime: Linux, Python 3.13.5, uv 0.12.19, Node v24.19.0. Commands using
 uv below set `UV_CACHE_DIR=/tmp/qd-factor-uv-cache UV_LINK_MODE=copy` so the cache is
@@ -126,8 +193,9 @@ readiness checks support explicit bars counts only; session readiness is refused
 Source freshness is distinct from PIT/lifecycle. The nine legacy baselines remain
 unvalidated and the seven locked components remain unimplemented.
 
-A clean-clone rerun and remote/public reproducibility were not newly established
-for this delivery. Retain original licensed input storage and immutable factor
+The pre-fix full clean-clone run does not cover the repaired code. The fixed
+implementation has the fresh-source startup/transport smoke recorded above; no
+second full clean-clone suite or remote/public reproducibility was claimed. Retain original licensed input storage and immutable factor
 SQLite evidence outside Git. Before a code rollback, stop the writer and take a
 consistent DB backup; disable imports by restarting without `--factor-import`.
 Do not rewrite old decisions/trials or attempt an evidence-schema downgrade.
