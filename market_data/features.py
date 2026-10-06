@@ -135,15 +135,18 @@ def analyze(observation, benchmark, instrument, now_ms, band=.5, min_rvol=1.2, m
     try:
         rows = closed_rows(observation, now_ms, step)
         visible = [r for r in observation.get('rows', []) if finite(r.get('open_time_ms')) and r['open_time_ms'] <= now_ms
-                   and finite(r.get('close')) and r['close'] > 0]
+                   and not r.get('is_fill_forward', False) and finite(r.get('close')) and r['close'] > 0]
         if visible:
             last = max(visible, key=lambda r: r['open_time_ms'])
             out.update(price=last['close'], price_unclosed=not last.get('closed', False), price_time_ms=last['open_time_ms'])
-        if rows:
-            out['signal_time_ms'] = rows[-1]['open_time_ms'] + step
         quality, evidence = _minute_quality(observation, rows, now_ms, policy)
         out.update(quality=asdict(quality), quality_evidence=evidence,
-                   valid_until_ms=quality.valid_until_ms)
+                   valid_until_ms=quality.valid_until_ms, signal_time_ms=quality.last_bar_end_ms)
+        # The core excludes synthetic rows from its completed evidence. Keep the
+        # calculator's original window intact, but never calculate on a tail
+        # that contains a row the shared decision did not certify as real.
+        if any(r.get('is_fill_forward', False) for r in rows[-61:]):
+            raise ValueError('最近61根计算依赖含填充K线：FILL_FORWARD_DEPENDENCY')
         if observation.get('dropped_rows', 0):
             raise ValueError('本次来源存在被剔除的无效K线')
         stale = stale_reason(out, now_ms)

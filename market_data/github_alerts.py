@@ -16,6 +16,8 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
+from .quality_profiles import US_PUBLIC_5M_POLICY
+
 ET = ZoneInfo("America/New_York")
 API = "https://api.github.com"
 
@@ -73,9 +75,33 @@ def _quality_usable(quality, now_ms, *, confirmation=False):
     return (_quality_complete(quality) and quality["observation_ok"] is True
             and quality["state"] in {"VALID", "OBSERVATION_ONLY"}
             and quality["sample_count"] > 0 and quality["last_bar_end_ms"] is not None
+            # This publisher consumes completed-bar decisions, not IBKR quote
+            # clocks. A1 selects completed bars only at/before evaluation.
+            and quality["last_bar_end_ms"] <= quality["evaluated_at_ms"]
+            and (quality["expected_bar_end_ms"] is None
+                 or quality["expected_bar_end_ms"] <= quality["last_bar_end_ms"])
             and quality["evaluated_at_ms"] <= now_ms < quality["valid_until_ms"]
             and (not confirmation or (quality["state"] == "VALID"
                  and quality["confirmation_ok"] is True and not quality["reason_codes"])))
+
+
+def _source_capture_ms(observed_at):
+    """Read the original receipt, never substitute evaluation/publication time."""
+    if not isinstance(observed_at, str):
+        return None
+    try:
+        observed = datetime.fromisoformat(observed_at.replace('Z', '+00:00'))
+        if observed.utcoffset() is None:
+            return None
+        return int(observed.timestamp() * 1000)
+    except (ValueError, OverflowError, OSError):
+        return None
+
+
+def _capture_consistent(quality, captured_at_ms):
+    return (type(captured_at_ms) is int and captured_at_ms >= 0
+            and captured_at_ms <= quality["evaluated_at_ms"] + US_PUBLIC_5M_POLICY.future_clock_tolerance_ms
+            and quality["last_bar_end_ms"] <= captured_at_ms)
 
 
 def _confirmation_usable(event, now_ms):
@@ -84,7 +110,8 @@ def _confirmation_usable(event, now_ms):
     policy_id = event.get("quality_policy_id")
     if (not isinstance(policy_id, str) or not policy_id.strip()
             or type(expiry) is not int or now_ms >= expiry
-            or not _quality_usable(quality, now_ms, confirmation=True)):
+            or not _quality_usable(quality, now_ms, confirmation=True)
+            or not _capture_consistent(quality, event.get("captured_at_ms"))):
         return False
     if expiry > quality["valid_until_ms"]:
         return False
@@ -93,7 +120,8 @@ def _confirmation_usable(event, now_ms):
     if event.get("relative_change_vs_qqq_pp") is not None:
         benchmark = event.get("benchmark_dependency")
         if (not isinstance(benchmark, dict) or benchmark.get("reason_codes") != []
-                or not _quality_usable(benchmark.get("quality"), now_ms)):
+                or not _quality_usable(benchmark.get("quality"), now_ms)
+                or not _capture_consistent(benchmark["quality"], _source_capture_ms(benchmark.get("known_at")))):
             return False
         if expiry > benchmark["quality"]["valid_until_ms"]:
             return False

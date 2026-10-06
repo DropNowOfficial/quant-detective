@@ -11,7 +11,7 @@ NOW = int(datetime.fromisoformat('2026-10-05T13:41:00+00:00').timestamp()*1000)
 def _quality(**changes):
     out = dict(state='VALID', reason_codes=[], observation_ok=True, confirmation_ok=True,
                evaluated_at_ms=NOW, valid_until_ms=NOW+60_000,
-               expected_bar_end_ms=NOW-30_000, last_bar_end_ms=NOW-30_000, sample_count=2)
+               expected_bar_end_ms=NOW-60_000, last_bar_end_ms=NOW-60_000, sample_count=2)
     out.update(changes)
     return out
 
@@ -277,3 +277,37 @@ def test_confirmation_requires_actual_completed_evidence(monkeypatch, changes):
     calls = _mock_publication(monkeypatch); event = _event(); event['quality'].update(changes)
     assert github_alerts.publish(_report([event]), now_ms=NOW)['published'] == 0
     assert _material_comments(calls) == []
+
+
+@pytest.mark.parametrize('dependency', ['stock', 'benchmark'])
+@pytest.mark.parametrize('mutation', ['future_completed', 'future_expected', 'expected_after_completed', 'completed_after_capture'])
+def test_impossible_bar_watermarks_do_not_publish_confirmation(monkeypatch, dependency, mutation):
+    calls=_mock_publication(monkeypatch); event=_event()
+    if dependency == 'benchmark':
+        event['relative_change_vs_qqq_pp']=0.7
+        event['benchmark_dependency']={'change_pct':0.3, 'reason_codes':[],
+            'known_at':event['known_at'], 'quality':_quality()}
+    quality=event['quality'] if dependency == 'stock' else event['benchmark_dependency']['quality']
+    if mutation == 'future_completed': quality['last_bar_end_ms']=NOW+1_000
+    elif mutation == 'future_expected': quality['expected_bar_end_ms']=NOW+1_000
+    elif mutation == 'expected_after_completed': quality['expected_bar_end_ms']=quality['last_bar_end_ms']+1
+    else: quality['last_bar_end_ms']=event['captured_at_ms']+1
+    assert github_alerts.publish(_report([event]), now_ms=NOW)['published'] == 0
+    assert _material_comments(calls) == []
+
+
+@pytest.mark.parametrize('capture', [None, True, NOW+5_001])
+def test_confirmation_capture_is_original_valid_evidence(monkeypatch, capture):
+    calls=_mock_publication(monkeypatch); event=_event(); event['captured_at_ms']=capture
+    assert github_alerts.publish(_report([event]), now_ms=NOW)['published'] == 0
+    assert _material_comments(calls) == []
+
+
+def test_bar_publication_preserves_approved_future_receipt_tolerance(monkeypatch):
+    calls=_mock_publication(monkeypatch); event=_event(); event['captured_at_ms']=NOW+5_000
+    event['known_at']=datetime.fromtimestamp((NOW+5_000)/1000,timezone.utc).isoformat()
+    event['relative_change_vs_qqq_pp']=0.7
+    event['benchmark_dependency']={'change_pct':0.3,'reason_codes':[],
+        'known_at':event['known_at'],'quality':_quality()}
+    assert github_alerts.publish(_report([event]), now_ms=NOW)['published'] == 1
+    assert len(_material_comments(calls)) == 1

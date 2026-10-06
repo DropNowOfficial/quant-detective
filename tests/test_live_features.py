@@ -213,3 +213,39 @@ def test_shared_minute_validity_is_exclusive(deadline):
         assert out['valid_until_ms'] == expiry
         assert stale_reason(out, expiry-1) is None
         assert stale_reason(out, expiry) is not None
+
+
+@pytest.mark.parametrize('interval,step', [('1m',60_000), ('5m',300_000), ('15m',900_000)])
+def test_fill_forward_grace_tail_cannot_enter_minute_math_or_signal(interval, step):
+    obs, bench = observation(), baseline(); now = 121*step+5_000
+    for source in (obs, bench):
+        source.update(interval=interval, received_at_utc=iso(now), requested_at_utc=iso(now-100))
+        for i,row in enumerate(source['rows']): row['open_time_ms']=i*step
+    obs['rows'][-1]['is_fill_forward'] = True
+    original = deepcopy(obs)
+    out = analyze(obs, bench, {}, now)
+    assert out['status'] == 'BLOCKED' and out['score'] is None
+    assert out['metrics'] == {}  # Do not silently recalculate on a different window.
+    assert out['quality']['confirmation_ok'] is False
+    assert out['signal_time_ms'] == out['quality']['last_bar_end_ms'] == 120*step
+    assert out['price'] == obs['rows'][-2]['close']
+    assert out['price_time_ms'] == 119*step
+    assert obs == original
+
+
+def test_fill_forward_outside_consumed_minute_window_leaves_real_math_unchanged():
+    obs=observation(); expected=run(obs)
+    obs['rows'][5]['is_fill_forward']=True
+    out=run(obs)
+    assert out['metrics'] == expected['metrics']
+    assert out['status'] == 'READY' and out['score'] == 100
+    assert out['signal_time_ms'] == out['quality']['last_bar_end_ms'] == 121*STEP
+    assert out['quality']['confirmation_ok'] is True
+
+
+def test_fill_forward_in_actual_benchmark_dependency_cannot_certify_relative_math():
+    bench=baseline(); bench['rows'][-1]['is_fill_forward']=True
+    out=run(bench=bench)
+    assert out['status'] == 'BLOCKED' and out['metrics'] == {}
+    assert out['quality']['confirmation_ok'] is False
+    assert out['benchmark_dependency']['quality']['last_bar_end_ms'] == 120*STEP
