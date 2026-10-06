@@ -503,9 +503,14 @@ def run(*, symbols=DEFAULT_SYMBOLS, poll_seconds=60, duration_minutes=0, github_
         raise ValueError("poll_seconds must be 15..3600")
     if duration_minutes < 0 or duration_minutes > 360:
         raise ValueError("duration_minutes must be 0..360")
+    symbols = tuple(dict.fromkeys(s.upper() for s in symbols))
     started = time.monotonic()
     while True:
         report = scan_once(symbols=symbols, fetcher=fetcher)
+        if once:
+            ok_symbols = {r.get("symbol") for r in report.get("rows", []) if r.get("status") == "OK"}
+            report["incomplete_symbols"] = sorted(set(symbols) - ok_symbols)
+            report["scan_status"] = "INCOMPLETE" if not symbols or report["incomplete_symbols"] else "COMPLETE"
         _write(report, output)
         compact = {
             "generated_at_et": report.get("generated_at_et"),
@@ -524,6 +529,11 @@ def run(*, symbols=DEFAULT_SYMBOLS, poll_seconds=60, duration_minutes=0, github_
             from .github_alerts import publish
             publish(report)
         if once:
+            # Preserve partial observations and publication before failing the
+            # hosted workflow. Process completion alone is not scan health.
+            if report["scan_status"] != "COMPLETE":
+                detail = ", ".join(report["incomplete_symbols"]) or "no requested symbols"
+                raise RuntimeError(f"one-shot scan incomplete: {detail}")
             return report
         if duration_minutes and time.monotonic() - started >= duration_minutes * 60:
             return report

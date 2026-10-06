@@ -1,9 +1,12 @@
 [Unit]
-Description=Dispatch GitHub market-watch fallback if native schedule is stale
+Description=Check GitHub fallback during the established ET weekday market window
 
 [Timer]
-OnBootSec=3min
-OnUnitInactiveSec=5min
+# Every 5 minutes, Mon-Fri 04:00-19:55 America/New_York.
+OnCalendar=Mon..Fri *-*-* 04..19:00/5:00 America/New_York
+# Final two checks around the existing 20:02 ET hosted fallback slot.
+OnCalendar=Mon..Fri *-*-* 20:00:00 America/New_York
+OnCalendar=Mon..Fri *-*-* 20:05:00 America/New_York
 AccuracySec=10s
 RandomizedDelaySec=15s
 Persistent=true

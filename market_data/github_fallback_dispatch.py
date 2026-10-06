@@ -1,12 +1,7 @@
 """External failover trigger for the GitHub hosted market-watch fallback.
 
-The primary GitHub workflow keeps its native schedule trigger. This module is a
-secondary dispatcher intended for a VPS/systemd timer. It dispatches the
-workflow only when GitHub has no recent native schedule run.
-
-Required secret:
-- QD_GITHUB_FALLBACK_TOKEN: fine-grained PAT scoped to this repository with
-  Actions: write. Never commit the token.
+This is a secondary scheduler. It never treats dispatch acceptance, a queued
+workflow, or process liveness as proof that a market scan succeeded.
 """
 from __future__ import annotations
 
@@ -18,12 +13,24 @@ import tempfile
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+from zoneinfo import ZoneInfo
 
 
 API = "https://api.github.com"
 DEFAULT_REPO = "DropNowOfficial/quant-detective"
 DEFAULT_WORKFLOW = "market-watch.yml"
 DEFAULT_REF = "main"
+
+ET = ZoneInfo("America/New_York")
+WORKDAY_START_MINUTE = 4 * 60
+# Native workflow runs 04:02..19:57 plus 20:02 ET. Keep a small grace window.
+WORKDAY_END_MINUTE = 20 * 60 + 10
+
+ACTIVE_STATUSES = frozenset({"queued", "in_progress", "requested", "waiting", "pending"})
+DISPATCH_COOLDOWN_SECONDS = 240
+NATIVE_SUCCESS_FRESH_SECONDS = 420
+FALLBACK_SUCCESS_FRESH_SECONDS = 240
+ACTIVE_RUN_MAX_AGE_SECONDS = 900
 
 
 class DispatchError(RuntimeError):
@@ -39,10 +46,14 @@ def _parse_time(value):
         return None
 
 
+def _iso(value):
+    return value.astimezone(timezone.utc).isoformat() if value else None
+
+
 def _request(method, path, *, token=None, body=None, opener=urlopen, timeout=12):
     headers = {
         "Accept": "application/vnd.github+json",
-        "User-Agent": "quant-detective-fallback-dispatch/0.1",
+        "User-Agent": "quant-detective-fallback-dispatch/0.2",
         "X-GitHub-Api-Version": "2026-03-10",
     }
     if token:
@@ -71,42 +82,163 @@ def _request(method, path, *, token=None, body=None, opener=urlopen, timeout=12)
         raise DispatchError("GitHub returned invalid JSON") from exc
 
 
-def latest_native_schedule(repo=DEFAULT_REPO, workflow=DEFAULT_WORKFLOW, *, token=None, opener=urlopen):
-    query = urlencode({"event": "schedule", "per_page": 1})
-    data = _request(
-        "GET",
-        f"/repos/{repo}/actions/workflows/{workflow}/runs?{query}",
-        token=token or None,
-        opener=opener,
-    )
-    runs = data.get("workflow_runs") or []
-    if not runs:
-        return None
-    row = runs[0] if isinstance(runs[0], dict) else None
-    if not row:
+def _load_state(path):
+    if not path:
+        return {}
+    target = Path(path)
+    if not target.exists():
+        return {}
+    try:
+        data = json.loads(target.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _write_state(path, value):
+    if not path:
+        return
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    payload = json.dumps(value, ensure_ascii=False, indent=2) + "\n"
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=target.parent, delete=False) as handle:
+        handle.write(payload)
+        temp = Path(handle.name)
+    os.replace(temp, target)
+
+
+def _persistent(previous):
+    return {
+        "last_api_success_at_utc": previous.get("last_api_success_at_utc"),
+        "last_native_scan_success_at_utc": previous.get("last_native_scan_success_at_utc"),
+        "last_fallback_scan_success_at_utc": previous.get("last_fallback_scan_success_at_utc"),
+        "last_dispatch_accepted_at_utc": previous.get("last_dispatch_accepted_at_utc"),
+        "last_dispatch_run_id": previous.get("last_dispatch_run_id"),
+        "last_dispatch_url": previous.get("last_dispatch_url"),
+    }
+
+
+def _validation():
+    return {
+        "native_scan_succeeded": False,
+        "fallback_dispatch_accepted": False,
+        "fallback_run_created": False,
+        "fallback_scan_succeeded": False,
+        # Not checked by this component. These remain separate acceptance stages.
+        "heartbeat_fresh": None,
+        "notification_delivered": None,
+    }
+
+
+def _base_result(now, repo, workflow, previous):
+    local = now.astimezone(ET)
+    return {
+        "checked_at_utc": now.isoformat(),
+        "checked_at_et": local.isoformat(),
+        "repo": repo,
+        "workflow": workflow,
+        "status": None,
+        "reason": None,
+        "work_window": "Mon-Fri 04:00-20:10 America/New_York",
+        "native_schedule": None,
+        "workflow_dispatch": None,
+        "dispatched": False,
+        "dispatch_run_id": None,
+        "dispatch_url": None,
+        "validation": _validation(),
+        **_persistent(previous),
+    }
+
+
+def in_work_window(now):
+    local = now.astimezone(ET)
+    minute = local.hour * 60 + local.minute
+    return local.weekday() < 5 and WORKDAY_START_MINUTE <= minute < WORKDAY_END_MINUTE
+
+
+def _run_summary(row):
+    if not isinstance(row, dict):
         return None
     return {
         "id": row.get("id"),
+        "head_branch": row.get("head_branch"),
+        "event": row.get("event"),
         "created_at": row.get("created_at"),
+        "run_started_at": row.get("run_started_at"),
+        "updated_at": row.get("updated_at"),
         "status": row.get("status"),
         "conclusion": row.get("conclusion"),
         "html_url": row.get("html_url"),
     }
 
 
-def should_dispatch(last_run, *, now=None, max_native_age_seconds=420):
-    now = now or datetime.now(timezone.utc)
-    if last_run is None:
-        return True, "no_native_schedule_run"
-    created = _parse_time(last_run.get("created_at"))
-    if created is None:
-        return True, "native_schedule_timestamp_invalid"
-    age = (now - created).total_seconds()
-    if age < -60:
-        return True, "native_schedule_timestamp_in_future"
-    if age <= max_native_age_seconds:
-        return False, "recent_native_schedule_exists"
-    return True, "native_schedule_stale"
+def list_runs(event, repo=DEFAULT_REPO, workflow=DEFAULT_WORKFLOW, *, ref=DEFAULT_REF, token=None, opener=urlopen):
+    query = urlencode({"event": event, "branch": ref, "per_page": 10})
+    data = _request(
+        "GET",
+        f"/repos/{repo}/actions/workflows/{workflow}/runs?{query}",
+        token=token or None,
+        opener=opener,
+    )
+    rows = data.get("workflow_runs") or []
+    return [item for row in rows if (item := _run_summary(row)) is not None and item["head_branch"] == ref]
+
+
+def _result_time(run):
+    if not run:
+        return None
+    return (
+        _parse_time(run.get("updated_at"))
+        or _parse_time(run.get("run_started_at"))
+        or _parse_time(run.get("created_at"))
+    )
+
+
+def _age_seconds(run, now):
+    stamp = _result_time(run)
+    return None if stamp is None else (now - stamp).total_seconds()
+
+
+def _run_phase(run):
+    if run is None:
+        return "MISSING"
+    status = str(run.get("status") or "").lower()
+    conclusion = str(run.get("conclusion") or "").lower()
+    if status in ACTIVE_STATUSES:
+        return status.upper()
+    if status == "completed":
+        return "SUCCESS" if conclusion == "success" else f"COMPLETED_{(conclusion or 'UNKNOWN').upper()}"
+    return (status or "UNKNOWN").upper()
+
+
+def _recent_success(run, now, max_age_seconds):
+    if _run_phase(run) != "SUCCESS":
+        return False
+    age = _age_seconds(run, now)
+    return age is not None and -60 <= age <= max_age_seconds
+
+
+def _recent_active(run, now, max_age_seconds):
+    if _run_phase(run) not in {s.upper() for s in ACTIVE_STATUSES}:
+        return False
+    age = _age_seconds(run, now)
+    return age is not None and -60 <= age <= max_age_seconds
+
+
+def _observe_run(result, field, run, now, success_fresh_seconds):
+    """Keep the run identity and its derived freshness from the same snapshot."""
+    prefix = "native" if field == "native_schedule" else "fallback"
+    result[field] = run
+    result[f"{prefix}_result_age_seconds"] = _age_seconds(run, now)
+    result[f"{prefix}_result_fresh"] = _recent_success(run, now, success_fresh_seconds)
+
+
+def _cooldown_active(previous, now, cooldown_seconds):
+    stamp = _parse_time(previous.get("last_dispatch_accepted_at_utc"))
+    if stamp is None:
+        return False
+    age = (now - stamp).total_seconds()
+    return -60 <= age < cooldown_seconds
 
 
 def dispatch(
@@ -128,6 +260,16 @@ def dispatch(
     )
 
 
+def _api_error(result, previous, now, stage, exc, status_path):
+    result.update(_persistent(previous))
+    result["status"] = "API_ERROR"
+    result["reason"] = f"{stage}: {type(exc).__name__}: {str(exc)[:240]}"
+    result["api_error_at_utc"] = now.isoformat()
+    result["api_error_stage"] = stage
+    _write_state(status_path, result)
+    return result
+
+
 def run_once(
     *,
     token=None,
@@ -136,56 +278,182 @@ def run_once(
     ref=DEFAULT_REF,
     status_path="/var/lib/quant-detective/github-fallback-dispatch.json",
     now=None,
-    max_native_age_seconds=420,
+    native_success_fresh_seconds=NATIVE_SUCCESS_FRESH_SECONDS,
+    fallback_success_fresh_seconds=FALLBACK_SUCCESS_FRESH_SECONDS,
+    dispatch_cooldown_seconds=DISPATCH_COOLDOWN_SECONDS,
+    active_run_max_age_seconds=ACTIVE_RUN_MAX_AGE_SECONDS,
     opener=urlopen,
 ):
     now = now or datetime.now(timezone.utc)
     token = token if token is not None else os.getenv("QD_GITHUB_FALLBACK_TOKEN", "").strip()
+    previous = _load_state(status_path)
+    result = _base_result(now, repo, workflow, previous)
 
-    last = latest_native_schedule(repo, workflow, token=token or None, opener=opener)
-    do_dispatch, reason = should_dispatch(
-        last,
-        now=now,
-        max_native_age_seconds=max_native_age_seconds,
-    )
+    if not in_work_window(now):
+        result["status"] = "OUTSIDE_MARKET_WINDOW"
+        result["reason"] = "normal_no_run_outside_et_weekday_window"
+        _write_state(status_path, result)
+        return result
 
-    result = {
-        "checked_at_utc": now.isoformat(),
-        "repo": repo,
-        "workflow": workflow,
-        "native_schedule": last,
-        "reason": reason,
-        "dispatched": False,
-        "dispatch_run_id": None,
-        "dispatch_url": None,
-    }
+    try:
+        native_runs = list_runs("schedule", repo, workflow, ref=ref, token=token or None, opener=opener)
+    except Exception as exc:
+        return _api_error(result, previous, now, "list_native_schedule_runs", exc, status_path)
 
-    if do_dispatch:
-        if not token:
-            result["status"] = "TOKEN_MISSING"
-        else:
-            response = dispatch(
-                token=token,
-                repo=repo,
-                workflow=workflow,
-                ref=ref,
-                opener=opener,
-            )
-            result["status"] = "DISPATCHED"
-            result["dispatched"] = True
-            result["dispatch_run_id"] = response.get("workflow_run_id")
-            result["dispatch_url"] = response.get("html_url")
+    native = native_runs[0] if native_runs else None
+    _observe_run(result, "native_schedule", native, now, native_success_fresh_seconds)
+    native_phase = _run_phase(native)
+
+    # A completed successful scan is the only native state called healthy.
+    if _recent_success(native, now, native_success_fresh_seconds):
+        stamp = _result_time(native)
+        result["status"] = "NATIVE_SCHEDULE_SUCCESS"
+        result["reason"] = "recent_completed_success"
+        result["last_api_success_at_utc"] = now.isoformat()
+        result["last_native_scan_success_at_utc"] = _iso(stamp)
+        result["validation"]["native_scan_succeeded"] = True
+        _write_state(status_path, result)
+        return result
+
+    # Queued/in-progress/etc. exists but is not scan success. Suppress duplicate
+    # dispatch while GitHub is already trying to execute that native run.
+    if _recent_active(native, now, active_run_max_age_seconds):
+        result["status"] = f"NATIVE_SCHEDULE_{native_phase}"
+        result["reason"] = "recent_native_run_exists_but_scan_not_completed"
+        result["last_api_success_at_utc"] = now.isoformat()
+        _write_state(status_path, result)
+        return result
+
+    try:
+        fallback_runs = list_runs("workflow_dispatch", repo, workflow, ref=ref, token=token or None, opener=opener)
+    except Exception as exc:
+        return _api_error(result, previous, now, "list_workflow_dispatch_runs", exc, status_path)
+
+    fallback = fallback_runs[0] if fallback_runs else None
+    _observe_run(result, "workflow_dispatch", fallback, now, fallback_success_fresh_seconds)
+    result["last_api_success_at_utc"] = now.isoformat()
+    fallback_phase = _run_phase(fallback)
+
+    if _recent_active(fallback, now, active_run_max_age_seconds):
+        result["status"] = f"FALLBACK_RUN_{fallback_phase}"
+        result["reason"] = "recent_workflow_dispatch_is_active"
+        result["dispatch_run_id"] = fallback.get("id")
+        result["dispatch_url"] = fallback.get("html_url")
+        result["validation"]["fallback_run_created"] = True
+        _write_state(status_path, result)
+        return result
+
+    if _recent_success(fallback, now, fallback_success_fresh_seconds):
+        stamp = _result_time(fallback)
+        result["status"] = "FALLBACK_SCAN_SUCCESS"
+        result["reason"] = "recent_workflow_dispatch_completed_successfully"
+        result["last_fallback_scan_success_at_utc"] = _iso(stamp)
+        result["dispatch_run_id"] = fallback.get("id")
+        result["dispatch_url"] = fallback.get("html_url")
+        result["validation"]["fallback_run_created"] = True
+        result["validation"]["fallback_scan_succeeded"] = True
+        _write_state(status_path, result)
+        return result
+
+    # GitHub listing can lag just after dispatch acceptance. Persistent cooldown
+    # prevents a serial duplicate even when no run is visible yet.
+    if _cooldown_active(previous, now, dispatch_cooldown_seconds):
+        result["status"] = "DISPATCH_COOLDOWN"
+        result["reason"] = "recent_dispatch_acceptance_waiting_for_visibility_or_completion"
+        result["dispatch_run_id"] = previous.get("last_dispatch_run_id")
+        result["dispatch_url"] = previous.get("last_dispatch_url")
+        result["validation"]["fallback_dispatch_accepted"] = True
+        result["validation"]["fallback_run_created"] = bool(previous.get("last_dispatch_run_id"))
+        _write_state(status_path, result)
+        return result
+
+    if not token:
+        result["status"] = "TOKEN_MISSING"
+        result["reason"] = "fallback_needed_but_actions_write_token_not_configured"
+        _write_state(status_path, result)
+        return result
+
+    # Recovery race guard: re-read both event streams immediately before POST.
+    # If native schedule recovered or another external actor already dispatched,
+    # suppress this request rather than relying on the earlier snapshot.
+    try:
+        native_recheck = list_runs("schedule", repo, workflow, ref=ref, token=token, opener=opener)
+        fallback_recheck = list_runs("workflow_dispatch", repo, workflow, ref=ref, token=token, opener=opener)
+    except Exception as exc:
+        return _api_error(result, previous, now, "pre_dispatch_race_recheck", exc, status_path)
+
+    native_latest = native_recheck[0] if native_recheck else None
+    fallback_latest = fallback_recheck[0] if fallback_recheck else None
+    _observe_run(result, "native_schedule", native_latest, now, native_success_fresh_seconds)
+    _observe_run(result, "workflow_dispatch", fallback_latest, now, fallback_success_fresh_seconds)
+    if _recent_success(native_latest, now, native_success_fresh_seconds):
+        stamp = _result_time(native_latest)
+        result["status"] = "NATIVE_SCHEDULE_SUCCESS"
+        result["reason"] = "native_recovered_before_external_dispatch"
+        result["last_api_success_at_utc"] = now.isoformat()
+        result["last_native_scan_success_at_utc"] = _iso(stamp)
+        result["validation"]["native_scan_succeeded"] = True
+        _write_state(status_path, result)
+        return result
+    if _recent_active(native_latest, now, active_run_max_age_seconds):
+        phase = _run_phase(native_latest)
+        result["status"] = f"NATIVE_SCHEDULE_{phase}"
+        result["reason"] = "native_run_appeared_before_external_dispatch"
+        result["last_api_success_at_utc"] = now.isoformat()
+        _write_state(status_path, result)
+        return result
+    if _recent_active(fallback_latest, now, active_run_max_age_seconds):
+        phase = _run_phase(fallback_latest)
+        result["status"] = f"FALLBACK_RUN_{phase}"
+        result["reason"] = "workflow_dispatch_appeared_before_duplicate_request"
+        result["last_api_success_at_utc"] = now.isoformat()
+        result["dispatch_run_id"] = fallback_latest.get("id")
+        result["dispatch_url"] = fallback_latest.get("html_url")
+        result["validation"]["fallback_run_created"] = True
+        _write_state(status_path, result)
+        return result
+    if _recent_success(fallback_latest, now, fallback_success_fresh_seconds):
+        stamp = _result_time(fallback_latest)
+        result["status"] = "FALLBACK_SCAN_SUCCESS"
+        result["reason"] = "fallback_completed_before_duplicate_request"
+        result["last_api_success_at_utc"] = now.isoformat()
+        result["last_fallback_scan_success_at_utc"] = _iso(stamp)
+        result["dispatch_run_id"] = fallback_latest.get("id")
+        result["dispatch_url"] = fallback_latest.get("html_url")
+        result["validation"]["fallback_run_created"] = True
+        result["validation"]["fallback_scan_succeeded"] = True
+        _write_state(status_path, result)
+        return result
+
+    try:
+        response = dispatch(
+            token=token,
+            repo=repo,
+            workflow=workflow,
+            ref=ref,
+            opener=opener,
+        )
+    except Exception as exc:
+        return _api_error(result, previous, now, "create_workflow_dispatch", exc, status_path)
+
+    run_id = response.get("workflow_run_id")
+    run_url = response.get("html_url")
+    result["dispatched"] = True
+    result["dispatch_run_id"] = run_id
+    result["dispatch_url"] = run_url
+    result["last_api_success_at_utc"] = now.isoformat()
+    result["last_dispatch_accepted_at_utc"] = now.isoformat()
+    result["last_dispatch_run_id"] = run_id
+    result["last_dispatch_url"] = run_url
+    result["validation"]["fallback_dispatch_accepted"] = True
+    result["validation"]["fallback_run_created"] = bool(run_id)
+    if run_id:
+        result["status"] = "DISPATCH_RUN_CREATED"
+        result["reason"] = "workflow_dispatch_accepted_and_run_id_returned"
     else:
-        result["status"] = "NATIVE_SCHEDULE_HEALTHY"
-
-    if status_path:
-        target = Path(status_path)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        payload = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
-        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=target.parent, delete=False) as handle:
-            handle.write(payload)
-            temp = Path(handle.name)
-        os.replace(temp, target)
+        result["status"] = "DISPATCH_ACCEPTED_UNCONFIRMED"
+        result["reason"] = "workflow_dispatch_accepted_but_run_creation_not_confirmed"
+    _write_state(status_path, result)
     return result
 
 
@@ -194,6 +462,8 @@ def main():
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if result["status"] == "TOKEN_MISSING":
         raise SystemExit(3)
+    if result["status"] == "API_ERROR":
+        raise SystemExit(4)
 
 
 if __name__ == "__main__":
