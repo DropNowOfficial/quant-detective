@@ -731,6 +731,14 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8, *, cl
     for r in rows:
         if r.get("state") not in alert_states:
             continue
+        # Publication owns a fresh final clock check. Preserve the actual stock
+        # decision and original QQQ evidence; bound all displayed dependencies.
+        deadline = r["quality"]["valid_until_ms"]
+        benchmark = r["benchmark_dependency"]
+        if r.get("relative_change_vs_qqq_pp") is not None:
+            benchmark_deadline = (benchmark.get("quality") or {}).get("valid_until_ms")
+            deadline = (min(deadline, benchmark_deadline)
+                        if type(deadline) is int and type(benchmark_deadline) is int else None)
         alerts.append({
             "event_key": f"{et_date}|{r['symbol']}|{r['state']}",
             "symbol": r["symbol"],
@@ -750,6 +758,11 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8, *, cl
             "news": (r.get("news") or {}).get("items", [])[:3],
             "quality": r["quality"],
             "quality_policy_id": r["quality_policy_id"],
+            "valid_until_ms": deadline,
+            "known_at": r["known_at"],
+            "captured_at_ms": r["quality_evidence"]["captured_at_ms"],
+            "current_bar_time_utc": r["intraday"].get("current_bar_time_utc"),
+            "benchmark_dependency": benchmark,
         })
     return {
         "generated_at_utc": now.isoformat(),

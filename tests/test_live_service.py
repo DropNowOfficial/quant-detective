@@ -187,12 +187,27 @@ def test_cached_feature_status_still_expires_older_benchmark():
     s=Source();base=s.candles
     def older_benchmark(market,symbol,*a,**kw):
         out=base(market,symbol,*a,**kw)
-        if symbol=='BTCUSDT':out['received_at_utc']=iso(s.clock*1000-10000)
+        if symbol=='BTCUSDT':out['received_at_utc']=iso(s.clock*1000-4000)
         return out
     live=LiveService(catalog_fn=s.catalog,candles_fn=older_benchmark,clock=lambda:s.clock,autostart=False)
     try:
         config={'market':'binance_spot','interval':'1m','symbols':'ETHUSDT'}
         live.snapshot(config);live.tick();assert live.snapshot(config)['rows'][0]['status']=='READY'
-        s.clock+=30
+        s.clock+=33
         assert live.snapshot(config)['rows'][0]['status']=='STALE'
     finally:live.close()
+
+
+def test_cached_feature_quality_expires_exactly_at_shared_deadline():
+    s=Source(); live=s.service(); config={'market':'binance_spot','interval':'1m','symbols':'ETHUSDT'}
+    try:
+        live.snapshot(config); live.tick()
+        row=live.snapshot(config)['rows'][0]
+        assert row['quality']['confirmation_ok'] is True
+        assert row['quality_evidence']['captured_at_ms'] == NOW
+        s.clock += 36
+        expired=live.snapshot(config)['rows'][0]
+        assert expired['status'] == 'STALE' and expired['score'] is None
+        assert expired['quality_evidence']['captured_at_ms'] == NOW
+        assert expired['received_at_utc'] == iso(NOW)
+    finally: live.close()
