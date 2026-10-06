@@ -327,3 +327,113 @@ def test_missing_token_is_explicit_and_not_recovery(tmp_path):
     assert out["validation"]["fallback_dispatch_accepted"] is False
     assert out["validation"]["fallback_scan_succeeded"] is False
     assert not any(method=="POST" for method,_,_,_ in opener.calls)
+
+
+def test_stale_native_queued_does_not_block_fallback(tmp_path):
+    opener=opener_with(schedule_runs=[
+        run_row(
+            event="schedule",
+            status="queued",
+            created_at="2026-10-05T23:00:00Z",
+            updated_at="2026-10-05T23:00:00Z",
+        )
+    ])
+    out=run_once(
+        token="secret",
+        repo="owner/repo",
+        now=datetime(2026,10,5,23,40,tzinfo=timezone.utc),
+        status_path=tmp_path/"status.json",
+        active_run_max_age_seconds=900,
+        opener=opener,
+    )
+    assert out["status"]=="DISPATCH_RUN_CREATED"
+    assert out["validation"]["fallback_dispatch_accepted"] is True
+
+
+def test_stale_fallback_in_progress_does_not_block_new_dispatch(tmp_path):
+    opener=opener_with(
+        schedule_runs=[],
+        dispatch_runs=[
+            run_row(
+                event="workflow_dispatch",
+                status="in_progress",
+                created_at="2026-10-05T23:00:00Z",
+                updated_at="2026-10-05T23:00:00Z",
+                run_id=70,
+            )
+        ],
+    )
+    out=run_once(
+        token="secret",
+        repo="owner/repo",
+        now=datetime(2026,10,5,23,40,tzinfo=timezone.utc),
+        status_path=tmp_path/"status.json",
+        active_run_max_age_seconds=900,
+        opener=opener,
+    )
+    assert out["status"]=="DISPATCH_RUN_CREATED"
+    assert out["dispatch_run_id"]==123
+
+
+def test_native_recovery_between_checks_suppresses_dispatch(tmp_path):
+    calls=[]
+    schedule_responses=[
+        [],
+        [run_row(event="schedule",status="completed",conclusion="success",run_id=201)],
+    ]
+
+    def opener(req, timeout=None):
+        calls.append((req.method, req.full_url))
+        parsed=urlparse(req.full_url)
+        if "/runs" in parsed.path:
+            event=parse_qs(parsed.query).get("event", [None])[0]
+            if event=="schedule":
+                rows=schedule_responses.pop(0)
+                return Response({"workflow_runs":rows,"total_count":len(rows)})
+            if event=="workflow_dispatch":
+                return Response({"workflow_runs":[],"total_count":0})
+        if parsed.path.endswith("/dispatches"):
+            raise AssertionError("dispatch should be suppressed after native recovery")
+        raise AssertionError(req.full_url)
+
+    out=run_once(
+        token="secret",
+        repo="owner/repo",
+        now=datetime(2026,10,5,23,40,tzinfo=timezone.utc),
+        status_path=tmp_path/"status.json",
+        opener=opener,
+    )
+    assert out["status"]=="NATIVE_SCHEDULE_SUCCESS"
+    assert out["reason"]=="native_recovered_before_external_dispatch"
+    assert out["validation"]["native_scan_succeeded"] is True
+
+
+def test_external_run_appearing_between_checks_suppresses_duplicate(tmp_path):
+    dispatch_responses=[
+        [],
+        [run_row(event="workflow_dispatch",status="queued",run_id=301)],
+    ]
+
+    def opener(req, timeout=None):
+        parsed=urlparse(req.full_url)
+        if "/runs" in parsed.path:
+            event=parse_qs(parsed.query).get("event", [None])[0]
+            if event=="schedule":
+                return Response({"workflow_runs":[],"total_count":0})
+            if event=="workflow_dispatch":
+                rows=dispatch_responses.pop(0)
+                return Response({"workflow_runs":rows,"total_count":len(rows)})
+        if parsed.path.endswith("/dispatches"):
+            raise AssertionError("duplicate dispatch should be suppressed")
+        raise AssertionError(req.full_url)
+
+    out=run_once(
+        token="secret",
+        repo="owner/repo",
+        now=datetime(2026,10,5,23,40,tzinfo=timezone.utc),
+        status_path=tmp_path/"status.json",
+        opener=opener,
+    )
+    assert out["status"]=="FALLBACK_RUN_QUEUED"
+    assert out["reason"]=="workflow_dispatch_appeared_before_duplicate_request"
+    assert out["dispatch_run_id"]==301
