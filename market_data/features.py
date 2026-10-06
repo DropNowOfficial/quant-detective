@@ -1,9 +1,13 @@
 """Versioned minute-bar rules. No daily-HARNESS or profitability certification."""
 from __future__ import annotations
+from dataclasses import asdict, replace
 from datetime import datetime
 import math
 from statistics import fmean
 from .providers import INTERVALS
+from .quality import BarFact, BarQualityInput, evaluate_bars
+from .quality_profiles import minute_policy
+from .session_clock import schedule_at
 
 RULE_ID = 'MINUTE_MA5_V1'
 FRESH_RESPONSE_MS = 36_000
@@ -72,16 +76,35 @@ def stale_reason(row, now_ms):
     received = timestamp(row.get('received_at_utc'))
     end = row.get('signal_time_ms')
     step = INTERVALS[row['interval']] * 1000
-    if received is None or received > now_ms + 5000:
+    policy = minute_policy(step)
+    if received is None or received > now_ms + policy.future_clock_tolerance_ms:
         return '响应时间缺失或本机时钟偏差'
-    if now_ms - received > FRESH_RESPONSE_MS:
+    if now_ms >= received + policy.response_max_age_ms:
         return '成功抓取已超过36秒，等待刷新'
     benchmark_received=timestamp(row.get('benchmark_received_at_utc'))
-    if benchmark_received is not None and now_ms-benchmark_received>FRESH_RESPONSE_MS:
+    if benchmark_received is not None and now_ms >= benchmark_received + policy.response_max_age_ms:
         return '同源基准抓取已超过36秒，等待刷新'
-    if end is None or now_ms - end > step + 15_000:
+    if end is None or now_ms >= end + policy.bar_age_limit_ms:
         return '最新已收盘K线过时（含休市或源延迟）'
+    # Reuse the bounded shared decision without recomputing minute indicators.
+    # Legacy rows keep their old observation status; no green quality is invented.
+    expiry = (row.get('quality') or {}).get('valid_until_ms')
+    if type(expiry) is int and now_ms >= expiry:
+        return '输入质量有效期已结束，等待刷新'
     return None
+
+
+def _minute_quality(observation, rows, now_ms, policy):
+    facts = tuple(BarFact(int(r['open_time_ms']), int(r['open_time_ms'])+policy.interval_ms,
+                          r.get('closed', False), r.get('is_fill_forward', False)) for r in rows)
+    captured = timestamp(observation.get('received_at_utc'))
+    data = BarQualityInput(now_ms, captured, facts, observation.get('dropped_rows', 0), 0, None)
+    schedule = schedule_at(now_ms, calendar_name='CONTINUOUS', interval_ms=policy.interval_ms,
+                           grace_ms=policy.publication_grace_ms)
+    result = evaluate_bars(data, policy, schedule)
+    evidence = dict(captured_at_ms=captured, bars=[asdict(f) for f in facts],
+                    invalid_rows=data.invalid_rows, calendar_name='CONTINUOUS')
+    return result, evidence
 
 
 def analyze(observation, benchmark, instrument, now_ms, band=.5, min_rvol=1.2, min_turnover=0):
@@ -91,6 +114,8 @@ def analyze(observation, benchmark, instrument, now_ms, band=.5, min_rvol=1.2, m
         raise ValueError('周期只支持1m、5m、15m')
     market = observation.get('market')
     step = INTERVALS[interval] * 1000
+    policy = minute_policy(step)
+    quality, evidence = _minute_quality(observation, [], now_ms, policy)
     out = {k: observation.get(k) for k in ('market','source','symbol','interval','source_url',
                                           'requested_at_utc','received_at_utc','http_status','volume_unit')}
     out.update(rule_id=RULE_ID, status='BLOCKED', reason=None, price=None, price_unclosed=False,
@@ -98,6 +123,8 @@ def analyze(observation, benchmark, instrument, now_ms, band=.5, min_rvol=1.2, m
                benchmark_symbol=benchmark.get('symbol') if benchmark else None,
                benchmark_received_at_utc=benchmark.get('received_at_utc') if benchmark else None,
                warnings=observation.get('warnings', []), bars=[])
+    out.update(quality=asdict(quality), quality_policy_id=policy.policy_id,
+               quality_evidence=evidence, valid_until_ms=quality.valid_until_ms)
     if not observation.get('ok'):
         out.update(status='ERROR', reason=observation.get('error') or '行情请求失败')
         return out
@@ -108,12 +135,18 @@ def analyze(observation, benchmark, instrument, now_ms, band=.5, min_rvol=1.2, m
     try:
         rows = closed_rows(observation, now_ms, step)
         visible = [r for r in observation.get('rows', []) if finite(r.get('open_time_ms')) and r['open_time_ms'] <= now_ms
-                   and finite(r.get('close')) and r['close'] > 0]
+                   and not r.get('is_fill_forward', False) and finite(r.get('close')) and r['close'] > 0]
         if visible:
             last = max(visible, key=lambda r: r['open_time_ms'])
             out.update(price=last['close'], price_unclosed=not last.get('closed', False), price_time_ms=last['open_time_ms'])
-        if rows:
-            out['signal_time_ms'] = rows[-1]['open_time_ms'] + step
+        quality, evidence = _minute_quality(observation, rows, now_ms, policy)
+        out.update(quality=asdict(quality), quality_evidence=evidence,
+                   valid_until_ms=quality.valid_until_ms, signal_time_ms=quality.last_bar_end_ms)
+        # The core excludes synthetic rows from its completed evidence. Keep the
+        # calculator's original window intact, but never calculate on a tail
+        # that contains a row the shared decision did not certify as real.
+        if any(r.get('is_fill_forward', False) for r in rows[-61:]):
+            raise ValueError('最近61根计算依赖含填充K线：FILL_FORWARD_DEPENDENCY')
         if observation.get('dropped_rows', 0):
             raise ValueError('本次来源存在被剔除的无效K线')
         stale = stale_reason(out, now_ms)
@@ -123,8 +156,8 @@ def analyze(observation, benchmark, instrument, now_ms, band=.5, min_rvol=1.2, m
         if len(rows) < 61:
             raise ValueError(f'至少需要61根已收盘K线；当前{len(rows)}根')
         rows = rows[-121:]
-        if any(b['open_time_ms']-a['open_time_ms'] != step for a,b in zip(rows[-61:], rows[-60:])):
-            raise ValueError('最近61根K线不连续；不能跨缺口计算')
+        if not quality.confirmation_ok:
+            raise ValueError('最近61根K线质量不合格：' + ', '.join(quality.reason_codes))
         if benchmark and not benchmark.get('ok'):
             raise ValueError('同源基准获取失败：' + str(benchmark.get('error') or benchmark.get('http_status')))
         if not benchmark or benchmark.get('market') != market or benchmark.get('interval') != interval:
@@ -137,8 +170,20 @@ def analyze(observation, benchmark, instrument, now_ms, band=.5, min_rvol=1.2, m
         if any(r['open_time_ms'] not in bm for r in last21):
             raise ValueError('基准与品种的20根收益时间未严格对齐')
         bm_received = timestamp(benchmark.get('received_at_utc'))
-        if bm_received is None or now_ms-bm_received > FRESH_RESPONSE_MS or bm_received > now_ms+5000:
-            raise ValueError('基准抓取已过时或时间无效')
+        # The benchmark's existing return calculation consumes 21 aligned bars,
+        # not the instrument's 61-bar indicator window. Name that configuration.
+        benchmark_policy = replace(policy, policy_id=policy.policy_id+'_benchmark_return21',
+                                   min_completed_bars=21)
+        benchmark_quality, benchmark_evidence = _minute_quality(
+            benchmark, [bm[r['open_time_ms']] for r in last21], now_ms, benchmark_policy)
+        out['benchmark_dependency'] = dict(quality=asdict(benchmark_quality),
+            quality_policy_id=benchmark_policy.policy_id, captured_at_ms=bm_received,
+            quality_evidence=benchmark_evidence)
+        if not benchmark_quality.confirmation_ok:
+            raise ValueError('基准抓取已过时或时间无效：' + ', '.join(benchmark_quality.reason_codes))
+        quality = replace(quality, valid_until_ms=min(quality.valid_until_ms,
+                                                     benchmark_quality.valid_until_ms))
+        out.update(quality=asdict(quality), valid_until_ms=quality.valid_until_ms)
         closes = [r['close'] for r in rows]
         ma5, previous_ma5, older_ma5 = [fmean(closes[-5-i:len(closes)-i]) for i in (0,1,2)]
         ma20 = fmean(closes[-20:])
@@ -196,6 +241,10 @@ def analyze(observation, benchmark, instrument, now_ms, band=.5, min_rvol=1.2, m
         if stale: out.update(status='STALE',reason=stale,score=None)
     except (ValueError,KeyError,TypeError,OverflowError,ZeroDivisionError) as exc:
         out.update(status='BLOCKED',reason=str(exc),score=None)
+        quality = replace(quality, state='UNAVAILABLE', observation_ok=False, confirmation_ok=False,
+                          valid_until_ms=None,
+                          reason_codes=quality.reason_codes+('MINUTE_INPUT_UNAVAILABLE',))
+        out.update(quality=asdict(quality), valid_until_ms=None)
     return out
 
 

@@ -139,3 +139,113 @@ def test_band_explanation_compares_absolute_distance_to_threshold():
     band=next(c for c in out['checks'] if c['key']=='band')
     assert band['value']==abs(out['metrics']['distance_atr'])
     assert band['operator']=='≤'
+
+
+@pytest.mark.parametrize('interval,step', [('1m', 60_000), ('5m', 300_000), ('15m', 900_000)])
+def test_shared_gate_preserves_minute_math(interval, step):
+    obs, bench = observation(), baseline()
+    now = 121 * step + 5_000
+    for source in (obs, bench):
+        source.update(interval=interval, received_at_utc=iso(now), requested_at_utc=iso(now-100))
+        for i, row in enumerate(source['rows']):
+            row.update(open_time_ms=i*step, open_time_utc=iso(i*step))
+    # Golden output recorded from the unchanged calculator at A4 BASE.
+    baseline_result = {'metrics': {
+        'closed_price': 112.0, 'ma5': 111.8, 'ma20': 111.05,
+        'ma5_slope': 0.09999999999999432, 'ma5_short_slope': 0.10000000000000142,
+        'atr14': 0.5, 'atr_pct': 0.4464285714285714, 'distance_atr': 0.4000000000000057,
+        'vwap60': 109.1219512195122, 'vwap_basis': 'quote/base', 'rvol20': 2.5,
+        'return20_pct': 1.8181818181818077, 'rs20_pp': 1.6201620162016095,
+        'turnover60': 134220.0, 'taker_buy_ratio': 0.6,
+    }}
+    new_result = analyze(obs, bench, {}, now)
+    assert new_result['metrics'] == baseline_result['metrics']
+    assert new_result['status'] == 'READY' and new_result['score'] == 100.0
+    assert new_result['quality']['confirmation_ok'] is True
+    assert new_result['quality_policy_id'] == f'minute_ma5_v1_{step}ms'
+    assert new_result['quality']['evaluated_at_ms'] == now
+    assert new_result['quality_evidence']['captured_at_ms'] == now
+    assert new_result['valid_until_ms'] == now + 36_000
+
+
+@pytest.mark.parametrize('failure', ['short', 'gap', 'benchmark_alignment'])
+def test_61_bar_gap_and_benchmark_alignment_remain_blocked(failure):
+    obs, bench = observation(), baseline()
+    if failure == 'short': obs['rows'] = obs['rows'][-60:]
+    elif failure == 'gap': obs['rows'].pop(-8)
+    else: bench['rows'].pop(-21)
+    out = run(obs, bench)
+    assert out['status'] == 'BLOCKED' and out['score'] is None
+    assert out['quality']['confirmation_ok'] is False
+
+
+def test_benchmark_quality_keeps_only_existing_21_bar_dependency():
+    bench = baseline(); bench['rows'] = bench['rows'][-21:]
+    out = run(bench=bench)
+    assert out['status'] == 'READY'
+    dependency = out['benchmark_dependency']
+    assert dependency['quality']['sample_count'] == 21
+    assert dependency['quality']['confirmation_ok'] is True
+    assert dependency['quality_policy_id'].endswith('_benchmark_return21')
+    assert dependency['captured_at_ms'] == NOW
+
+
+def test_minute_source_capture_cannot_certify_bar_completed_after_receipt():
+    obs = observation(); obs['received_at_utc'] = iso(121*STEP-1)
+    out = run(obs)
+    assert out['status'] == 'BLOCKED'
+    assert 'BAR_AFTER_CAPTURE' in out['quality']['reason_codes']
+
+
+@pytest.mark.parametrize('deadline', ['response', 'bar', 'benchmark'])
+def test_shared_minute_validity_is_exclusive(deadline):
+    from market_data.features import stale_reason
+    obs, bench = observation(), baseline()
+    if deadline == 'benchmark': bench['received_at_utc'] = iso(NOW-4_000)
+    if deadline == 'bar':
+        end = 121*STEP; now = end+STEP+15_000
+        for source in (obs, bench): source['received_at_utc'] = iso(now)
+        out = analyze(obs, bench, {}, now)
+        assert out['status'] == 'STALE'
+    else:
+        out = run(obs, bench)
+        expiry = NOW+36_000-(4_000 if deadline == 'benchmark' else 0)
+        assert out['valid_until_ms'] == expiry
+        assert stale_reason(out, expiry-1) is None
+        assert stale_reason(out, expiry) is not None
+
+
+@pytest.mark.parametrize('interval,step', [('1m',60_000), ('5m',300_000), ('15m',900_000)])
+def test_fill_forward_grace_tail_cannot_enter_minute_math_or_signal(interval, step):
+    obs, bench = observation(), baseline(); now = 121*step+5_000
+    for source in (obs, bench):
+        source.update(interval=interval, received_at_utc=iso(now), requested_at_utc=iso(now-100))
+        for i,row in enumerate(source['rows']): row['open_time_ms']=i*step
+    obs['rows'][-1]['is_fill_forward'] = True
+    original = deepcopy(obs)
+    out = analyze(obs, bench, {}, now)
+    assert out['status'] == 'BLOCKED' and out['score'] is None
+    assert out['metrics'] == {}  # Do not silently recalculate on a different window.
+    assert out['quality']['confirmation_ok'] is False
+    assert out['signal_time_ms'] == out['quality']['last_bar_end_ms'] == 120*step
+    assert out['price'] == obs['rows'][-2]['close']
+    assert out['price_time_ms'] == 119*step
+    assert obs == original
+
+
+def test_fill_forward_outside_consumed_minute_window_leaves_real_math_unchanged():
+    obs=observation(); expected=run(obs)
+    obs['rows'][5]['is_fill_forward']=True
+    out=run(obs)
+    assert out['metrics'] == expected['metrics']
+    assert out['status'] == 'READY' and out['score'] == 100
+    assert out['signal_time_ms'] == out['quality']['last_bar_end_ms'] == 121*STEP
+    assert out['quality']['confirmation_ok'] is True
+
+
+def test_fill_forward_in_actual_benchmark_dependency_cannot_certify_relative_math():
+    bench=baseline(); bench['rows'][-1]['is_fill_forward']=True
+    out=run(bench=bench)
+    assert out['status'] == 'BLOCKED' and out['metrics'] == {}
+    assert out['quality']['confirmation_ok'] is False
+    assert out['benchmark_dependency']['quality']['last_bar_end_ms'] == 120*STEP

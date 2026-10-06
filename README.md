@@ -7,10 +7,11 @@
 ```bash
 git clone --branch feature/live-screener-20261004 https://github.com/DropNowOfficial/quant-detective.git
 cd quant-detective
-python -m market_data serve
+uv sync --frozen
+uv run --frozen qd-market serve
 ```
 
-Open `http://127.0.0.1:8767/`. Python 3.11+ and `curl` are required; the LIVE runtime uses only the standard library. On Windows, run `start-live.cmd` from the repository. The reproducible developer environment remains `uv sync --frozen` and `uv run qd-market serve`.
+Open `http://127.0.0.1:8767/`. Install uv, Python 3.11+ and `curl` first. `uv sync --frozen` installs the project dependencies into `.venv`; `uv run --frozen` selects that project environment without shell activation. If `uv` or `curl` is not found, install the missing prerequisite and reopen your terminal. On Windows, after syncing, double-click `start-live.cmd`; it checks and runs `.venv\Scripts\python.exe`, never an unrelated Python on PATH. If the environment is missing or incomplete, rerun `uv sync --frozen` in this repository.
 
 - **LIVE / SCREENER / STOCK:** ongoing provider GET requests, editable thresholds, ranked candidates, whole-row selection, source-specific charts and check-by-check explanations.
 - **Binance spot mirror, Gate USDT perpetual, OKX perpetual** public adapters; US/A-share and other original public directory adapters remain available. Live crypto comparisons use USDT-quoted instruments, not synthetic cross-currency returns. Derivative contracts never stand in for cash stocks.
@@ -22,8 +23,18 @@ Open `http://127.0.0.1:8767/`. Python 3.11+ and `curl` are required; the LIVE ru
 See the **[Chinese LIVE guide](docs/live-screener.zh-CN.md)**. The original eight-market one-shot K-line terminal is at `/market`; one-shot CLI requests still emit no signals:
 
 ```bash
-python -m market_data candles --market binance_spot --symbol ETHUSDT --interval 5m --limit 5
+uv run --frozen qd-market candles --market binance_spot --symbol ETHUSDT --interval 5m --limit 5
 ```
+
+## Optional local factor evidence
+
+Open `/factors` for source-bound definitions and evidence. Research CSV imports
+require the explicit `--factor-import` flag and a separate local SQLite store.
+Imported values remain reconstructed and unvalidated; local trial/lifecycle
+records cannot grant production eligibility or start research jobs.
+
+See the [factor foundations usage guide](docs/factor-foundations.md) and
+[dated verification scope](docs/factor-foundations-validation-20261006.md).
 
 ## Interactive research lab · 0.2.0
 

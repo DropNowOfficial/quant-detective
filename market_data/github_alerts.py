@@ -5,14 +5,18 @@ Event markers make repeated five-minute workflow runs idempotent.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 import json
+import math
 import os
 import sys
+import time
 from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
+
+from .quality_profiles import US_PUBLIC_5M_POLICY
 
 ET = ZoneInfo("America/New_York")
 API = "https://api.github.com"
@@ -45,6 +49,106 @@ def _event_mark(key):
 
 
 HEARTBEAT_MARK = "<!-- qd-heartbeat -->"
+ALERT_STATES = {"ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH"}
+QUALITY_FIELDS = {"state", "reason_codes", "observation_ok", "confirmation_ok", "evaluated_at_ms",
+                  "valid_until_ms", "expected_bar_end_ms", "last_bar_end_ms", "sample_count"}
+
+
+def _quality_complete(quality):
+    if not isinstance(quality, dict) or not QUALITY_FIELDS <= quality.keys():
+        return False
+    return (isinstance(quality["state"], str)
+            and quality["state"] in {"VALID", "OBSERVATION_ONLY", "UNAVAILABLE"}
+            and type(quality["observation_ok"]) is bool
+            and type(quality["confirmation_ok"]) is bool
+            and isinstance(quality["reason_codes"], (list, tuple))
+            and all(isinstance(reason, str) for reason in quality["reason_codes"])
+            and type(quality["evaluated_at_ms"]) is int and quality["evaluated_at_ms"] >= 0
+            and type(quality["valid_until_ms"]) is int
+            and quality["valid_until_ms"] > quality["evaluated_at_ms"]
+            and type(quality["sample_count"]) is int and quality["sample_count"] >= 0
+            and all(value is None or (type(value) is int and value >= 0)
+                    for value in (quality["expected_bar_end_ms"], quality["last_bar_end_ms"])))
+
+
+def _quality_usable(quality, now_ms, *, confirmation=False):
+    return (_quality_complete(quality) and quality["observation_ok"] is True
+            and quality["state"] in {"VALID", "OBSERVATION_ONLY"}
+            and quality["sample_count"] > 0 and quality["last_bar_end_ms"] is not None
+            # This publisher consumes completed-bar decisions, not IBKR quote
+            # clocks. A1 selects completed bars only at/before evaluation.
+            and quality["last_bar_end_ms"] <= quality["evaluated_at_ms"]
+            and (quality["expected_bar_end_ms"] is None
+                 or quality["expected_bar_end_ms"] <= quality["last_bar_end_ms"])
+            and quality["evaluated_at_ms"] <= now_ms < quality["valid_until_ms"]
+            and (not confirmation or (quality["state"] == "VALID"
+                 and quality["confirmation_ok"] is True and not quality["reason_codes"])))
+
+
+def _source_capture_ms(observed_at):
+    """Read the original receipt, never substitute evaluation/publication time."""
+    if not isinstance(observed_at, str):
+        return None
+    try:
+        observed = datetime.fromisoformat(observed_at.replace('Z', '+00:00'))
+        if observed.utcoffset() is None:
+            return None
+        return int(observed.timestamp() * 1000)
+    except (ValueError, OverflowError, OSError):
+        return None
+
+
+def _capture_consistent(quality, captured_at_ms):
+    return (type(captured_at_ms) is int and captured_at_ms >= 0
+            and captured_at_ms <= quality["evaluated_at_ms"] + US_PUBLIC_5M_POLICY.future_clock_tolerance_ms
+            and quality["last_bar_end_ms"] <= captured_at_ms)
+
+
+def _confirmation_usable(event, now_ms):
+    quality = event.get("quality")
+    expiry = event.get("valid_until_ms")
+    policy_id = event.get("quality_policy_id")
+    if (not isinstance(policy_id, str) or not policy_id.strip()
+            or type(expiry) is not int or now_ms >= expiry
+            or not _quality_usable(quality, now_ms, confirmation=True)
+            or not _capture_consistent(quality, event.get("captured_at_ms"))):
+        return False
+    if expiry > quality["valid_until_ms"]:
+        return False
+    # Any populated relative result carries the original QQQ dependency. Its
+    # independent observation deadline cannot be extended by the stock receipt.
+    if event.get("relative_change_vs_qqq_pp") is not None:
+        benchmark = event.get("benchmark_dependency")
+        if (not isinstance(benchmark, dict) or benchmark.get("reason_codes") != []
+                or not _quality_usable(benchmark.get("quality"), now_ms)
+                or not _capture_consistent(benchmark["quality"], _source_capture_ms(benchmark.get("known_at")))):
+            return False
+        if expiry > benchmark["quality"]["valid_until_ms"]:
+            return False
+        change = benchmark.get("change_pct")
+        if (not isinstance(change, (int, float)) or isinstance(change, bool)
+                or not math.isfinite(change)):
+            return False
+    return True
+
+
+def _quality_label(event, now_ms):
+    quality = event.get("quality")
+    if (not event.get("quality_policy_id") or not _quality_complete(quality)
+            or type(event.get("valid_until_ms")) is not int):
+        return "LEGACY_UNVALIDATED"
+    if not _quality_usable(quality, now_ms) or now_ms >= event["valid_until_ms"]:
+        return "UNAVAILABLE_OR_EXPIRED_OBSERVATION"
+    return quality["state"]
+
+
+def _time_ms(value):
+    if type(value) is not int or value < 0:
+        return "n/a"
+    try:
+        return datetime.fromtimestamp(value / 1000, timezone.utc).isoformat()
+    except (ValueError, OverflowError, OSError):
+        return "n/a"
 
 
 def _heartbeat_markdown(report):
@@ -78,7 +182,8 @@ def _heartbeat_markdown(report):
     return "\n".join(lines)
 
 
-def _event_markdown(event):
+def _event_markdown(event, *, now_ms):
+    quality = event.get("quality") if isinstance(event.get("quality"), dict) else {}
     lines = [
         _event_mark(event["event_key"]),
         f"### {event['symbol']} — {event['state']}",
@@ -92,6 +197,11 @@ def _event_markdown(event):
         f"- Same-time RVOL: **{_fmt(event.get('same_time_rvol'))}** ({event.get('same_time_rvol_samples', 0)} historical sessions)",
         f"- Relative change vs QQQ: **{_fmt(event.get('relative_change_vs_qqq_pp'))} pp**",
         f"- State reason: {event.get('reason')}",
+        f"- Input quality: **{_quality_label(event, now_ms)}** ({event.get('quality_policy_id') or 'n/a'})",
+        f"- Market bar time: {event.get('current_bar_time_utc') or 'n/a'}; completed watermark: {_time_ms(quality.get('last_bar_end_ms'))}",
+        f"- Source observed at: {event.get('known_at') or 'n/a'}; captured at: {_time_ms(event.get('captured_at_ms'))}",
+        f"- Quality evaluated at: {_time_ms(quality.get('evaluated_at_ms'))}; publication checked at: {_time_ms(now_ms)}",
+        f"- Valid until (exclusive): {_time_ms(event.get('valid_until_ms'))}",
     ]
     if event.get("leader_reasons"):
         lines.append("- Leader trigger: " + "; ".join(event["leader_reasons"]))
@@ -132,7 +242,13 @@ def _seen_markers(issue, comments):
     return text
 
 
-def publish(report):
+def publish(report, *, now_ms: int | None = None) -> dict:
+    # Wall time is sampled only at this process boundary, never from generated_at
+    # or a source receipt. Explicit now_ms makes replay deterministic.
+    live_clock = now_ms is None
+    now_ms = int(time.time() * 1000) if live_clock else now_ms
+    if type(now_ms) is not int or now_ms < 0:
+        raise ValueError("now_ms must be a nonnegative integer")
     alerts = report.get("alerts") or []
     repo = os.getenv("GITHUB_REPOSITORY")
     token = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
@@ -180,10 +296,18 @@ def publish(report):
     seen = _seen_markers(issue, comments)
     published = 0
     for event in alerts:
+        if event.get("state") not in ALERT_STATES:
+            continue
+        # GitHub acquisition/heartbeat work can outlive a generated decision.
+        # Live mode samples again immediately before each event; replay remains
+        # fixed to the caller's explicit clock and never reads implicit time.
+        event_now_ms = int(time.time() * 1000) if live_clock else now_ms
+        if event["state"] == "ENTRY_CONFIRMED" and not _confirmation_usable(event, event_now_ms):
+            continue
         mark = _event_mark(event["event_key"])
         if mark in seen:
             continue
-        body = _event_markdown(event)
+        body = _event_markdown(event, now_ms=event_now_ms)
         _api("POST", f"/repos/{repo}/issues/{issue['number']}/comments", token=token, body={"body": body})
         seen += "\n" + mark
         published += 1

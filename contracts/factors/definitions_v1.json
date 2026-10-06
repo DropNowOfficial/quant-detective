@@ -1,0 +1,397 @@
+[
+  {
+    "ref": {
+      "factor_id": "us.daily.ma5_slope_1",
+      "version": "1.0.0"
+    },
+    "name": "Daily MA5 single-step slope",
+    "purpose": "Source-bound existing research output; factor effectiveness unvalidated",
+    "market": "us_equity",
+    "frequency": "daily",
+    "unit": "USD per session",
+    "formula_text": "Completed-session MA5 minus previous completed-session MA5",
+    "calculator_key": "us.daily.ma5_slope_1",
+    "input_fields": [
+      "daily.ma5_slope_1d"
+    ],
+    "min_history": {
+      "completed_sessions": 6
+    },
+    "missing_policy": "Preserve missing values and source/provenance gaps; never fill zero",
+    "window": {
+      "completed_sessions": 5
+    },
+    "lag": {
+      "completed_sessions": 1
+    },
+    "direction": "descriptive"
+  },
+  {
+    "ref": {
+      "factor_id": "us.intraday.distance_ma5_atr5",
+      "version": "1.0.0"
+    },
+    "name": "Intraday distance from completed-day MA5 / ATR5",
+    "purpose": "Source-bound existing research output; factor effectiveness unvalidated",
+    "market": "us_equity",
+    "frequency": "5m",
+    "unit": "ATR5 units",
+    "formula_text": "(Existing current price - completed-day MA5) / completed-day ATR5",
+    "calculator_key": "us.intraday.distance_ma5_atr5",
+    "input_fields": [
+      "intraday.d5_atr",
+      "daily.ma5",
+      "daily.atr5"
+    ],
+    "min_history": {
+      "completed_sessions": 6
+    },
+    "missing_policy": "Preserve missing values and source/provenance gaps; never fill zero",
+    "window": {
+      "completed_sessions": 5
+    },
+    "lag": {
+      "completed_sessions": 1
+    },
+    "direction": "descriptive"
+  },
+  {
+    "ref": {
+      "factor_id": "us.intraday.relative_qqq_change",
+      "version": "1.0.0"
+    },
+    "name": "Intraday change relative to QQQ",
+    "purpose": "Source-bound existing research output; factor effectiveness unvalidated",
+    "market": "us_equity",
+    "frequency": "5m",
+    "unit": "percentage points",
+    "formula_text": "Existing stock change_pct minus aligned qualified QQQ change_pct",
+    "calculator_key": "us.intraday.relative_qqq_change",
+    "input_fields": [
+      "relative_change_vs_qqq_pp",
+      "benchmark_dependency"
+    ],
+    "min_history": {
+      "bars": 1
+    },
+    "missing_policy": "Preserve missing values and source/provenance gaps; never fill zero",
+    "window": {
+      "bars": 1
+    },
+    "lag": {
+      "bars": 0
+    },
+    "direction": "descriptive"
+  },
+  {
+    "ref": {
+      "factor_id": "us.intraday.rvol_same_time20",
+      "version": "1.0.0"
+    },
+    "name": "Same-time cumulative RTH RVOL20",
+    "purpose": "Source-bound existing research output; factor effectiveness unvalidated",
+    "market": "us_equity",
+    "frequency": "5m",
+    "unit": "ratio",
+    "formula_text": "Current completed RTH cumulative volume / median same-time cumulative volume of 20 complete comparable sessions",
+    "calculator_key": "us.intraday.rvol_same_time20",
+    "input_fields": [
+      "intraday.same_time_rvol",
+      "quality_evidence.history"
+    ],
+    "min_history": {
+      "regular_sessions": 20
+    },
+    "missing_policy": "Preserve missing values and source/provenance gaps; never fill zero",
+    "window": {
+      "regular_sessions": 20
+    },
+    "lag": {
+      "regular_sessions": 1
+    },
+    "direction": "descriptive"
+  },
+  {
+    "ref": {
+      "factor_id": "minute.rvol_prior20",
+      "version": "1.0.0"
+    },
+    "name": "Minute current-bar / prior20 mean volume",
+    "purpose": "Source-bound existing research output; factor effectiveness unvalidated",
+    "market": "source market",
+    "frequency": "selected minute interval",
+    "unit": "ratio",
+    "formula_text": "Existing last completed bar volume / mean volume of preceding 20 completed bars",
+    "calculator_key": "minute.rvol_prior20",
+    "input_fields": [
+      "metrics.rvol20"
+    ],
+    "min_history": {
+      "bars": 21
+    },
+    "missing_policy": "Preserve missing values and source/provenance gaps; never fill zero",
+    "window": {
+      "bars": 20
+    },
+    "lag": {
+      "bars": 1
+    },
+    "direction": "descriptive"
+  },
+  {
+    "ref": {
+      "factor_id": "research.daily.volume_ratio20",
+      "version": "1.0.0"
+    },
+    "name": "Daily current volume / prior20 mean volume",
+    "purpose": "Source-bound existing research output; factor effectiveness unvalidated",
+    "market": "us_equity",
+    "frequency": "daily",
+    "unit": "ratio",
+    "formula_text": "Existing completed signal-day volume / mean volume of preceding 20 sessions",
+    "calculator_key": "research.daily.volume_ratio20",
+    "input_fields": [
+      "features.volume_ratio"
+    ],
+    "min_history": {
+      "completed_sessions": 21
+    },
+    "missing_policy": "Preserve missing values and source/provenance gaps; never fill zero",
+    "window": {
+      "completed_sessions": 20
+    },
+    "lag": {
+      "completed_sessions": 1
+    },
+    "direction": "descriptive"
+  },
+  {
+    "ref": {
+      "factor_id": "research.daily.adv20",
+      "version": "1.0.0"
+    },
+    "name": "Daily prior20 dollar liquidity",
+    "purpose": "Source-bound existing research output; factor effectiveness unvalidated",
+    "market": "us_equity",
+    "frequency": "daily",
+    "unit": "USD per session",
+    "formula_text": "Existing mean(close * volume) over the preceding 20 completed sessions",
+    "calculator_key": "research.daily.adv20",
+    "input_fields": [
+      "features.adv20"
+    ],
+    "min_history": {
+      "completed_sessions": 20
+    },
+    "missing_policy": "Preserve missing values and source/provenance gaps; never fill zero",
+    "window": {
+      "completed_sessions": 20
+    },
+    "lag": {
+      "completed_sessions": 1
+    },
+    "direction": "descriptive"
+  },
+  {
+    "ref": {
+      "factor_id": "us.intraday.vwap_rth_hlc3",
+      "version": "1.0.0"
+    },
+    "name": "RTH cumulative HLC3 VWAP approximation",
+    "purpose": "Source-bound existing research output; factor effectiveness unvalidated",
+    "market": "us_equity",
+    "frequency": "5m",
+    "unit": "USD",
+    "formula_text": "Existing completed RTH cumulative sum(HLC3 * volume) / sum(volume); pre/post excluded",
+    "calculator_key": "us.intraday.vwap_rth_hlc3",
+    "input_fields": [
+      "intraday.rth_vwap_approx"
+    ],
+    "min_history": {
+      "bars": 1
+    },
+    "missing_policy": "Preserve missing values and source/provenance gaps; never fill zero",
+    "window": {
+      "regular_sessions": 1
+    },
+    "lag": {
+      "bars": 0
+    },
+    "direction": "descriptive"
+  },
+  {
+    "ref": {
+      "factor_id": "minute.vwap60",
+      "version": "1.0.0"
+    },
+    "name": "Minute trailing60 VWAP",
+    "purpose": "Source-bound existing research output; factor effectiveness unvalidated",
+    "market": "source market",
+    "frequency": "selected minute interval",
+    "unit": "source price unit",
+    "formula_text": "Existing 60-bar quote/base VWAP when available; otherwise HLC3 volume-weighted approximation, basis retained in evidence",
+    "calculator_key": "minute.vwap60",
+    "input_fields": [
+      "metrics.vwap60",
+      "metrics.vwap_basis"
+    ],
+    "min_history": {
+      "bars": 60
+    },
+    "missing_policy": "Preserve missing values and source/provenance gaps; never fill zero",
+    "window": {
+      "bars": 60
+    },
+    "lag": {
+      "bars": 0
+    },
+    "direction": "descriptive"
+  },
+  {
+    "ref": {
+      "factor_id": "locked.amihud",
+      "version": "1.0.0"
+    },
+    "name": "Amihud",
+    "purpose": "Locked, unconnected; no calculator enabled",
+    "market": "unconnected",
+    "frequency": "unconnected",
+    "unit": "unspecified",
+    "formula_text": "Locked, unconnected; no calculator enabled",
+    "calculator_key": null,
+    "input_fields": [
+      "unconnected"
+    ],
+    "min_history": {},
+    "missing_policy": "No observation until a reviewed implementation and source evidence exist",
+    "window": {},
+    "lag": {},
+    "direction": "unspecified"
+  },
+  {
+    "ref": {
+      "factor_id": "locked.residual_volatility",
+      "version": "1.0.0"
+    },
+    "name": "Residual Volatility",
+    "purpose": "Locked, unconnected",
+    "market": "unconnected",
+    "frequency": "unconnected",
+    "unit": "unspecified",
+    "formula_text": "Locked, unconnected",
+    "calculator_key": null,
+    "input_fields": [
+      "unconnected"
+    ],
+    "min_history": {},
+    "missing_policy": "No observation until a reviewed implementation and source evidence exist",
+    "window": {},
+    "lag": {},
+    "direction": "unspecified"
+  },
+  {
+    "ref": {
+      "factor_id": "locked.residual_momentum",
+      "version": "1.0.0"
+    },
+    "name": "Residual Momentum",
+    "purpose": "Locked, unconnected; NEEDS BACKTEST",
+    "market": "unconnected",
+    "frequency": "unconnected",
+    "unit": "unspecified",
+    "formula_text": "Locked, unconnected; NEEDS BACKTEST",
+    "calculator_key": null,
+    "input_fields": [
+      "unconnected"
+    ],
+    "min_history": {},
+    "missing_policy": "No observation until a reviewed implementation and source evidence exist",
+    "window": {},
+    "lag": {},
+    "direction": "unspecified"
+  },
+  {
+    "ref": {
+      "factor_id": "locked.surprise_discrepancy",
+      "version": "1.0.0"
+    },
+    "name": "Surprise Discrepancy",
+    "purpose": "Locked, unconnected; multi-field",
+    "market": "unconnected",
+    "frequency": "unconnected",
+    "unit": "unspecified",
+    "formula_text": "Locked, unconnected; multi-field",
+    "calculator_key": null,
+    "input_fields": [
+      "unconnected"
+    ],
+    "min_history": {},
+    "missing_policy": "No observation until a reviewed implementation and source evidence exist",
+    "window": {},
+    "lag": {},
+    "direction": "unspecified"
+  },
+  {
+    "ref": {
+      "factor_id": "locked.capital_allocation_intent",
+      "version": "1.0.0"
+    },
+    "name": "Capital Allocation Intent",
+    "purpose": "Locked, unconnected",
+    "market": "unconnected",
+    "frequency": "unconnected",
+    "unit": "unspecified",
+    "formula_text": "Locked, unconnected",
+    "calculator_key": null,
+    "input_fields": [
+      "unconnected"
+    ],
+    "min_history": {},
+    "missing_policy": "No observation until a reviewed implementation and source evidence exist",
+    "window": {},
+    "lag": {},
+    "direction": "unspecified"
+  },
+  {
+    "ref": {
+      "factor_id": "locked.effective_factor_dimension",
+      "version": "1.0.0"
+    },
+    "name": "Effective Factor Dimension",
+    "purpose": "Locked, unconnected; entropy primary",
+    "market": "unconnected",
+    "frequency": "unconnected",
+    "unit": "unspecified",
+    "formula_text": "Locked, unconnected; entropy primary",
+    "calculator_key": null,
+    "input_fields": [
+      "unconnected"
+    ],
+    "min_history": {},
+    "missing_policy": "No observation until a reviewed implementation and source evidence exist",
+    "window": {},
+    "lag": {},
+    "direction": "unspecified"
+  },
+  {
+    "ref": {
+      "factor_id": "locked.exposure_graph_multiplex",
+      "version": "1.0.0"
+    },
+    "name": "Exposure Graph Multiplex",
+    "purpose": "Locked, unconnected",
+    "market": "unconnected",
+    "frequency": "unconnected",
+    "unit": "unspecified",
+    "formula_text": "Locked, unconnected",
+    "calculator_key": null,
+    "input_fields": [
+      "unconnected"
+    ],
+    "min_history": {},
+    "missing_policy": "No observation until a reviewed implementation and source evidence exist",
+    "window": {},
+    "lag": {},
+    "direction": "unspecified"
+  }
+]
