@@ -10,7 +10,7 @@ cd quant-detective
 python -m market_data serve
 ```
 
-Open `http://127.0.0.1:8767/`. Python 3.11+ and `curl` are required; the LIVE runtime uses only the standard library. On Windows, run `start-live.cmd` from the repository. The reproducible developer environment remains `uv sync --frozen` and `uv run qd-market serve`.
+Open `http://127.0.0.1:8767/`. Python 3.11+, `curl` and the project dependencies are required; use `uv sync --frozen` before starting the server. On Windows, run `start-live.cmd` from the repository. The reproducible developer environment remains `uv sync --frozen` and `uv run qd-market serve`.
 
 - **LIVE / SCREENER / STOCK:** ongoing provider GET requests, editable thresholds, ranked candidates, whole-row selection, source-specific charts and check-by-check explanations.
 - **Binance spot mirror, Gate USDT perpetual, OKX perpetual** public adapters; US/A-share and other original public directory adapters remain available. Live crypto comparisons use USDT-quoted instruments, not synthetic cross-currency returns. Derivative contracts never stand in for cash stocks.
@@ -24,6 +24,16 @@ See the **[Chinese LIVE guide](docs/live-screener.zh-CN.md)**. The original eigh
 ```bash
 python -m market_data candles --market binance_spot --symbol ETHUSDT --interval 5m --limit 5
 ```
+
+## Optional local factor evidence
+
+Open `/factors` for source-bound definitions and evidence. Research CSV imports
+require the explicit `--factor-import` flag and a separate local SQLite store.
+Imported values remain reconstructed and unvalidated; local trial/lifecycle
+records cannot grant production eligibility or start research jobs.
+
+See the [factor foundations usage guide](docs/factor-foundations.md) and
+[dated verification scope](docs/factor-foundations-validation-20261006.md).
 
 ## Interactive research lab · 0.2.0
 
