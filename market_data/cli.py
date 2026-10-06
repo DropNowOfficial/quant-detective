@@ -48,6 +48,8 @@ def main():
 
     serve = sub.add_parser('serve')
     serve.add_argument('--port', type=int, default=8767)
+    serve.add_argument('--factor-import', action='store_true', help='Enable guarded local CSV factor import')
+    serve.add_argument('--factor-store-path', default='runtime/factors.sqlite')
 
     watch = sub.add_parser('watch')
     watch.add_argument('--symbols', default=','.join(DEFAULT_SYMBOLS))
@@ -104,7 +106,8 @@ def main():
         return
 
     if args.command == 'serve':
-        app = make_server(args.port)
+        app = make_server(args.port, factor_store_path=args.factor_store_path,
+                          enable_factor_import=args.factor_import)
         print(f'Quant Detective LIVE：http://127.0.0.1:{app.server_port}/（公开行情分批12秒轮询，页面打开后启动扫描）', flush=True)
         try:
             app.serve_forever()

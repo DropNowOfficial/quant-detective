@@ -1,4 +1,4 @@
-"""Local UI for public observations. No arbitrary files, URLs or write endpoints."""
+"""Local observations plus explicitly opt-in, protected external-factor imports."""
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -9,9 +9,22 @@ from urllib.parse import parse_qs, urlsplit
 from . import providers
 from .transport import FetchError, fetch
 from .live import LiveService
+from .factor_routes import FactorRoutes, SESSION_PATH, WRITE_PATHS
+from factors.importer import DEFAULT_UNIVERSE
 
 
 class MarketHandler(BaseHTTPRequestHandler):
+    def send_error(self, code, message=None, explain=None):
+        # HTTP parser errors may contain a request method/path. Never echo them.
+        super().send_error(code)
+
+    def log_error(self, format, *args):
+        self.log_message("HTTP error")
+
+    def log_request(self, code="-", size="-"):
+        # Never log an untrusted path/query, headers, payload or process CSRF token.
+        self.log_message("HTTP response %s %s", code, size)
+
     def local_request(self):
         allowed = {f'{host}:{self.server.server_port}' for host in ['127.0.0.1', 'localhost']}
         hosts = self.headers.get_all('Host') or []
@@ -23,6 +36,9 @@ class MarketHandler(BaseHTTPRequestHandler):
 
     def send_json(self, value, status=200):
         body = (json.dumps(value, ensure_ascii=False, allow_nan=False) + '\n').encode()
+        routes = getattr(self.server, 'factor_routes', None)
+        if status >= 400 and routes is not None:
+            body = routes.redact_error_body(body)
         self.send_response(status)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.send_header('Content-Length', str(len(body)))
@@ -50,6 +66,9 @@ class MarketHandler(BaseHTTPRequestHandler):
             return
         try:
             parsed = urlsplit(self.path)
+            if parsed.path == SESSION_PATH and self.server.factor_routes is not None:
+                self.server.factor_routes.session(self)
+                return
             pages = {'/': 'live.html', '/index.html': 'live.html', '/market': 'template.html', '/research': 'research.html'}
             if parsed.path in pages:
                 body = Path(__file__).with_name(pages[parsed.path]).read_bytes()
@@ -62,7 +81,9 @@ class MarketHandler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
                 return
             if parsed.path == '/health':
-                self.send_json({'ok': True, 'mode': 'PUBLIC_READ_ONLY', 'real_time_claim': False,
+                import_enabled = self.server.factor_routes is not None
+                self.send_json({'ok': True, 'mode': 'LOCAL_RESEARCH_IMPORT' if import_enabled else 'PUBLIC_READ_ONLY',
+                                'factor_import_enabled': import_enabled, 'real_time_claim': False,
                                 'orders_enabled': False, 'api_keys_used': False, 'refresh_seconds': 12})
                 return
             if parsed.path == '/api/research-summary':
@@ -109,21 +130,41 @@ class MarketHandler(BaseHTTPRequestHandler):
             self.send_json({'ok': False, **exc.receipt, 'rows': [], 'instruments': []}, 502)
 
     def do_POST(self):
-        self.send_error(405, 'Only read-only GET is supported')
+        if self.server.factor_routes is not None and urlsplit(self.path).path in WRITE_PATHS:
+            try:
+                self.server.factor_routes.post(self)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+            return
+        self.method_not_allowed()
 
-    do_PUT = do_DELETE = do_PATCH = do_POST
+    def method_not_allowed(self):
+        self.send_error(405, 'Method not supported')
+
+    do_PUT = do_DELETE = do_PATCH = method_not_allowed
 
 
 class MarketServer(ThreadingHTTPServer):
     def server_close(self):
+        if getattr(self, 'factor_routes', None) is not None:
+            self.factor_routes.close()
         if hasattr(self, 'live'):
             self.live.close()
         super().server_close()
 
 
-def make_server(port=8767, fetcher=fetch):
+def make_server(port=8767, fetcher=fetch, *, factor_store_path=None, enable_factor_import=False,
+                factor_universe=DEFAULT_UNIVERSE):
     server = MarketServer(('127.0.0.1', port), MarketHandler)
     server.daemon_threads = True
     server.fetcher = fetcher
     server.live = LiveService(fetcher=fetcher)
-    return server
+    server.factor_routes = None
+    try:
+        if enable_factor_import:
+            path = factor_store_path if factor_store_path is not None else Path("runtime/factors.sqlite")
+            server.factor_routes = FactorRoutes(path, factor_universe)
+        return server
+    except BaseException:
+        server.server_close()
+        raise
