@@ -308,3 +308,32 @@ def test_factor_routes_reject_absolute_request_targets(tmp_path):
         assert status == 400 and json.loads(body)["error"] == "INVALID_REQUEST_TARGET"
         status, body = request(app, "http://example.test/api/factors/session")
         assert status == 400 and json.loads(body)["error"] == "INVALID_REQUEST_TARGET"
+
+
+@pytest.mark.parametrize("method,route", [("POST", "/api/factors/import/preview"),
+                                                ("POST", "/api/factors/import/commit"),
+                                                ("POST", "/unrelated"),
+                                                ("GET", "/api/factors/session"),
+                                                ("GET", "/unrelated")])
+def test_malformed_bracket_target_has_safe_http_rejection(tmp_path, capsys, method, route):
+    from http.client import RemoteDisconnected
+    from contextlib import closing
+    import sqlite3
+    with running(tmp_path, enable_factor_import=True) as app:
+        session_token = token(app)
+        target = f"http://[{session_token}]{route}"
+        disconnected = False
+        try:
+            status, body = request(app, target, method, {}, {"X-Factor-CSRF": session_token})
+        except RemoteDisconnected:
+            disconnected = True
+            status, body = None, b""
+    captured = capsys.readouterr()
+    leaked = session_token in captured.err + captured.out or session_token.encode() in body
+    assert leaked is False
+    assert disconnected is False
+    assert status == 400 and json.loads(body)["error"] == "INVALID_REQUEST_TARGET"
+    with closing(sqlite3.connect(tmp_path / "factors.sqlite")) as database:
+        payloads = list(database.iterdump())
+    persisted = any(session_token in row for row in payloads)
+    assert persisted is False

@@ -52,7 +52,12 @@ length exceeds the limit. Body reading has a five-second timeout. Definition
 wrapper JSON is at most 64 KiB, CSV at most 20,000 logical data rows, and preview
 validity is 15 minutes with exclusive expiry. Oversize data is rejected, never
 truncated or partially saved. In-memory preview retention is bounded to 64
-entries and 64 MiB; a full live cache returns `PREVIEW_CAPACITY`. Expired entries
+entries and 64 MiB; the same byte budget covers retained entries plus the one
+serialized in-flight preview builder. Normalized rows are counted incrementally
+before retaining/hashing the full preview, so legal repeated provenance cannot
+expand past that budget. Oversize normalized content returns `PREVIEW_CAPACITY`
+without partial store/cache data. Canonical hashing streams rows without a full
+all-row JSON string. A full live cache also returns `PREVIEW_CAPACITY`. Expired entries
 are reclaimed when a new preview arrives. Shutdown releases this DB's previews.
 
 Other POSTs, including `/api/orders`, and all PUT/PATCH/DELETE retain 405.

@@ -290,3 +290,73 @@ def test_source_adjustment_history_are_canonical_input_dependencies(importer, st
         changed = preview(importer, store, universe, meta=metadata(**changes))
         assert first.content_hash != changed.content_hash
         assert first.sample_rows[0]["input_hash"] != changed.sample_rows[0]["input_hash"]
+
+
+def test_expanded_provenance_rejected_before_full_hash_or_materialization(importer, store, universe, monkeypatch):
+    monkeypatch.setattr(importer, "_PREVIEWS", {})
+    monkeypatch.setattr(importer, "MAX_CACHE_BYTES", 200_000)
+    descriptor = metadata(source_ref="x" * 60_000)
+    assert len(json.dumps(descriptor).encode()) < 64 * 1024
+    data = csv_bytes(*({"observed_at": (T - timedelta(seconds=index)).isoformat()} for index in range(12)))
+    parsed = []
+    original = importer._parse_row
+    def tracked_parse(*args, **kwargs):
+        parsed.append(1)
+        return original(*args, **kwargs)
+    def full_hash_must_not_run(*args, **kwargs):
+        raise AssertionError("oversized normalized preview reached full hashing")
+    monkeypatch.setattr(importer, "_parse_row", tracked_parse)
+    monkeypatch.setattr(importer, "_content_hash", full_hash_must_not_run)
+    with pytest.raises(ValueError, match="^PREVIEW_CAPACITY$"):
+        preview(importer, store, universe, data, meta=descriptor)
+    assert len(parsed) <= 3
+    assert importer._PREVIEWS == {}
+    assert store.revision() == 0 and store.definitions() == []
+
+
+def test_concurrent_expanded_previews_share_build_budget(importer, store, universe, monkeypatch):
+    monkeypatch.setattr(importer, "_PREVIEWS", {})
+    descriptor = metadata(source_ref="x" * 60_000)
+    data = csv_bytes({}, {"observed_at": (T - timedelta(seconds=1)).isoformat()})
+    example = preview(importer, store, universe, data, meta=descriptor)
+    one_preview_bytes = importer._PREVIEWS[example.preview_id].bytes_used
+    importer.discard_store_previews(store.path)
+    monkeypatch.setattr(importer, "MAX_CACHE_BYTES", one_preview_bytes + 512)
+    hash_calls = []
+    original = importer._content_hash
+    def counted_hash(*args, **kwargs):
+        hash_calls.append(1)
+        return original(*args, **kwargs)
+    monkeypatch.setattr(importer, "_content_hash", counted_hash)
+    barrier = Barrier(2)
+    def build(index):
+        with FactorStore(store.path) as connection:
+            barrier.wait()
+            try:
+                result = preview(importer, connection, universe, data, meta=descriptor)
+                return result.preview_id
+            except ValueError as exc:
+                assert str(exc) == "PREVIEW_CAPACITY"
+                return None
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(build, range(2)))
+    assert sum(result is not None for result in results) == 1
+    assert len(hash_calls) == 1
+    assert len(importer._PREVIEWS) == 1
+    assert sum(entry.bytes_used for entry in importer._PREVIEWS.values()) <= importer.MAX_CACHE_BYTES
+    assert store.revision() == 0 and store.definitions() == []
+
+
+def test_incremental_preview_hash_matches_store_canonical_hash(importer, store, universe):
+    from contextlib import closing
+    import sqlite3
+    data = csv_bytes(
+        {"instrument_id": "SYNTH2", "value": "0", "observed_at": (T - timedelta(seconds=3)).isoformat()},
+        {"observed_at": (T - timedelta(seconds=2)).isoformat(), "effective_available_at": (T + timedelta(seconds=1)).isoformat()},
+        {"value": "", "missing_reason": "缺少来源值", "observed_at": (T - timedelta(seconds=1)).isoformat()})
+    result = preview(importer, store, universe, data, meta=metadata(source_ref="synthetic-来源"))
+    committed = importer.commit_import(result.preview_id, request_id="streamed-hash", store=store, now=T)
+    with closing(sqlite3.connect(store.path)) as database:
+        stored_hash = database.execute("SELECT content_hash FROM datasets WHERE dataset_id=? AND version=?",
+                                       (committed.dataset_id, committed.version)).fetchone()[0]
+    assert result.content_hash == stored_hash

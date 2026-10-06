@@ -65,7 +65,11 @@ class MarketHandler(BaseHTTPRequestHandler):
         if not self.local_request():
             return
         try:
-            parsed = urlsplit(self.path)
+            try:
+                parsed = urlsplit(self.path)
+            except ValueError:
+                self.send_json({"ok": False, "error": "INVALID_REQUEST_TARGET"}, 400)
+                return
             if parsed.path == SESSION_PATH and self.server.factor_routes is not None:
                 self.server.factor_routes.session(self)
                 return
@@ -130,7 +134,17 @@ class MarketHandler(BaseHTTPRequestHandler):
             self.send_json({'ok': False, **exc.receipt, 'rows': [], 'instruments': []}, 502)
 
     def do_POST(self):
-        if self.server.factor_routes is not None and urlsplit(self.path).path in WRITE_PATHS:
+        if self.server.factor_routes is None:
+            self.method_not_allowed()
+            return
+        try:
+            if not self.path.startswith("/") or self.path.startswith("//"):
+                raise ValueError
+            parsed = urlsplit(self.path)
+        except ValueError:
+            self.send_json({"ok": False, "error": "INVALID_REQUEST_TARGET"}, 400)
+            return
+        if parsed.path in WRITE_PATHS:
             try:
                 self.server.factor_routes.post(self)
             except (BrokenPipeError, ConnectionResetError):

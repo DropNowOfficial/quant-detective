@@ -81,7 +81,11 @@ class FactorRoutes:
     def session(self, handler):
         if not self._guard(handler, write=False):
             return
-        parsed = urlsplit(handler.path)
+        try:
+            parsed = urlsplit(handler.path)
+        except ValueError:
+            handler.send_json({"ok": False, "error": "INVALID_REQUEST_TARGET"}, 400)
+            return
         if parsed.scheme or parsed.netloc:
             handler.send_json({"ok": False, "error": "INVALID_REQUEST_TARGET"}, 400)
             return
@@ -122,7 +126,11 @@ class FactorRoutes:
             return None
 
     def post(self, handler):
-        parsed = urlsplit(handler.path)
+        try:
+            parsed = urlsplit(handler.path)
+        except ValueError:
+            handler.send_json({"ok": False, "error": "INVALID_REQUEST_TARGET"}, 400)
+            return
         if not self._guard(handler, write=True):
             return
         if parsed.scheme or parsed.netloc:

@@ -159,8 +159,26 @@ def _content_hash(manifest, definition, observations):
     metadata = manifest.model_dump(mode="json")
     for key in ("dataset_id", "version", "imported_at", "file_sha256"):
         metadata.pop(key)
-    return fingerprint({"manifest": metadata, "definitions": [definition.model_dump(mode="json")],
-                        "rows": sorted((source_content(item) for item in observations), key=canonical_json)})
+    # source_ref is identical in every parsed row. Removing that constant from
+    # sort keys preserves full canonical JSON order without repeating potentially
+    # 64 KiB provenance in every key. Hash one full row at a time, never one
+    # materialized all-row JSON tree/string; bytes remain identical to B1.
+    def sort_key(item):
+        projected = source_content(item)
+        projected.pop("source_ref")
+        return canonical_json(projected)
+    digest = hashlib.sha256()
+    digest.update(b'{"definitions":[')
+    digest.update(canonical_json(definition.model_dump(mode="json")).encode())
+    digest.update(b'],"manifest":')
+    digest.update(canonical_json(metadata).encode())
+    digest.update(b',"rows":[')
+    for index, item in enumerate(sorted(observations, key=sort_key)):
+        if index:
+            digest.update(b",")
+        digest.update(canonical_json(source_content(item)).encode())
+    digest.update(b"]}")
+    return digest.hexdigest()
 
 
 def preview_import(csv_bytes: bytes, definition_json: dict, mapping: dict[str, str], *,
@@ -168,104 +186,128 @@ def preview_import(csv_bytes: bytes, definition_json: dict, mapping: dict[str, s
                    universe: InstrumentUniverse = DEFAULT_UNIVERSE) -> ImportPreview:
     """Validate all bounded rows without changing catalog, revision or evidence."""
     _clock(now)
-    if not isinstance(universe, InstrumentUniverse):
-        raise ValueError("INVALID_INSTRUMENT_UNIVERSE")
-    expected_revision = store.revision()
-    errors: list[ImportIssue] = []
-    observations = []
-    proposed_definition = proposed_manifest = None
+    # Serialize builders so the existing shared byte budget covers retained
+    # previews plus the one in-flight normalized output. No new/lower cap.
+    with _CACHE_LOCK:
+        for key in [key for key, item in _PREVIEWS.items() if now >= item.expires_at]:
+            del _PREVIEWS[key]
+        if len(_PREVIEWS) >= MAX_PREVIEWS:
+            raise ValueError("PREVIEW_CAPACITY")
+        retained_bytes = sum(item.bytes_used for item in _PREVIEWS.values())
+        if not isinstance(universe, InstrumentUniverse):
+            raise ValueError("INVALID_INSTRUMENT_UNIVERSE")
+        expected_revision = store.revision()
+        errors: list[ImportIssue] = []
+        observations = []
+        proposed_definition = proposed_manifest = None
 
-    def error(code, row=None, field=None):
-        errors.append(ImportIssue(row, code, field))
+        def error(code, row=None, field=None):
+            errors.append(ImportIssue(row, code, field))
 
-    if not isinstance(csv_bytes, bytes):
-        error("CSV_BYTES_REQUIRED")
-    elif len(csv_bytes) > MAX_REQUEST_BYTES:
-        error("CSV_TOO_LARGE")
-    try:
-        serialized = canonical_json(definition_json)
-        if len(serialized.encode()) > MAX_DEFINITION_BYTES:
-            error("DEFINITION_TOO_LARGE")
-        elif not isinstance(definition_json, dict) or set(definition_json) != {"definition", "manifest"}:
-            error("INVALID_DEFINITION_DOCUMENT")
-        elif (not isinstance(definition_json["manifest"], dict)
-              or set(definition_json["manifest"]) != MANIFEST_FIELDS):
-            error("INVALID_MANIFEST_FIELDS")
-        else:
-            proposed_definition = FactorDefinition.model_validate_json(canonical_json(definition_json["definition"]))
-            metadata = definition_json["manifest"]
-            proposed_manifest = DatasetManifest.model_validate_json(canonical_json({
-                **metadata, "file_sha256": hashlib.sha256(csv_bytes).hexdigest(),
-                "imported_at": now.isoformat(), "availability_basis": AVAILABILITY_BASIS, "row_count": 0}))
-            if proposed_manifest.universe_version != universe.version:
-                error("UNIVERSE_VERSION_MISMATCH")
-            for existing in store.definitions():
-                if existing.ref == proposed_definition.ref and existing != proposed_definition:
-                    error("DEFINITION_VERSION_CONFLICT")
-                    break
-    except (ValueError, TypeError, OverflowError, RecursionError):
-        error("INVALID_DEFINITION_DOCUMENT")
-
-    if (not isinstance(mapping, dict) or not REQUIRED_FIELDS <= set(mapping)
-            or set(mapping) - (REQUIRED_FIELDS | OPTIONAL_FIELDS)
-            or any(not isinstance(value, str) or not value.strip() for value in mapping.values())
-            or len(set(mapping.values())) != len(mapping)):
-        error("INVALID_MAPPING")
-
-    if not errors:
+        if not isinstance(csv_bytes, bytes):
+            error("CSV_BYTES_REQUIRED")
+        elif len(csv_bytes) > MAX_REQUEST_BYTES:
+            error("CSV_TOO_LARGE")
         try:
-            text = csv_bytes.decode("utf-8", errors="strict")
-        except UnicodeDecodeError:
-            error("INVALID_UTF8")
-        else:
-            if "\x00" in text:
-                error("INVALID_CSV")
+            serialized = canonical_json(definition_json)
+            if len(serialized.encode()) > MAX_DEFINITION_BYTES:
+                error("DEFINITION_TOO_LARGE")
+            elif not isinstance(definition_json, dict) or set(definition_json) != {"definition", "manifest"}:
+                error("INVALID_DEFINITION_DOCUMENT")
+            elif (not isinstance(definition_json["manifest"], dict)
+                  or set(definition_json["manifest"]) != MANIFEST_FIELDS):
+                error("INVALID_MANIFEST_FIELDS")
             else:
-                reader = csv.reader(io.StringIO(text, newline=""), strict=True)
-                try:
-                    header = next(reader, [])
-                    if (not header or len(set(header)) != len(header)
-                            or set(header) != set(mapping.values())):
-                        error("INVALID_CSV_HEADER")
-                    else:
-                        seen = set()
-                        for count, cells in enumerate(reader, start=1):
-                            row_number = reader.line_num
-                            if count > MAX_ROWS:
-                                error("TOO_MANY_ROWS", row_number)
-                                break
-                            if len(cells) != len(header):
-                                error("INVALID_CSV_ROW", row_number)
-                                continue
-                            row = {key: cells[header.index(column)].strip() for key, column in mapping.items()}
-                            item = _parse_row(row, row_number, proposed_definition, proposed_manifest, universe, now, error)
-                            if item is not None:
-                                identity = (item.instrument_id, item.observed_at)
-                                if identity in seen:
-                                    error("DUPLICATE_OBSERVATION", row_number)
-                                seen.add(identity)
-                                observations.append(item)
-                        if not observations and not errors:
-                            error("EMPTY_CSV")
-                except csv.Error:
-                    error("INVALID_CSV", reader.line_num)
+                proposed_definition = FactorDefinition.model_validate_json(canonical_json(definition_json["definition"]))
+                metadata = definition_json["manifest"]
+                proposed_manifest = DatasetManifest.model_validate_json(canonical_json({
+                    **metadata, "file_sha256": hashlib.sha256(csv_bytes).hexdigest(),
+                    "imported_at": now.isoformat(), "availability_basis": AVAILABILITY_BASIS, "row_count": 0}))
+                if proposed_manifest.universe_version != universe.version:
+                    error("UNIVERSE_VERSION_MISMATCH")
+                for existing in store.definitions():
+                    if existing.ref == proposed_definition.ref and existing != proposed_definition:
+                        error("DEFINITION_VERSION_CONFLICT")
+                        break
+        except (ValueError, TypeError, OverflowError, RecursionError):
+            error("INVALID_DEFINITION_DOCUMENT")
 
-    if proposed_manifest:
-        proposed_manifest = proposed_manifest.model_copy(update={"row_count": len(observations)})
-    content_hash = (_content_hash(proposed_manifest, proposed_definition, observations)
-                    if not errors else None)
-    preview_id = secrets.token_urlsafe(24)
-    expires_at = now + PREVIEW_TTL
-    definition_blob = proposed_definition.model_dump_json() if proposed_definition else None
-    manifest_blob = proposed_manifest.model_dump_json() if proposed_manifest else None
-    row_blobs = tuple(item.model_dump_json() for item in observations) if not errors else ()
-    bytes_used = sum(len(blob.encode()) for blob in (*row_blobs, definition_blob or "", manifest_blob or "")) + 512
-    entry = _CachedPreview(_store_key(store), now, expires_at, expected_revision, definition_blob,
-                           manifest_blob, row_blobs, bool(errors), bytes_used)
-    _cache(preview_id, entry, now)
-    return ImportPreview(preview_id, content_hash, expected_revision, expires_at, errors,
-                         ["PIT_EVIDENCE_REQUIRED", "EXTERNAL_VALUES_UNVERIFIED"],
-                         [item.model_dump(mode="json") for item in observations[:SAMPLE_ROWS]], proposed_manifest)
+        if (not isinstance(mapping, dict) or not REQUIRED_FIELDS <= set(mapping)
+                or set(mapping) - (REQUIRED_FIELDS | OPTIONAL_FIELDS)
+                or any(not isinstance(value, str) or not value.strip() for value in mapping.values())
+                or len(set(mapping.values())) != len(mapping)):
+            error("INVALID_MAPPING")
+
+        definition_blob = proposed_definition.model_dump_json() if proposed_definition else None
+        manifest_blob = proposed_manifest.model_dump_json() if proposed_manifest else None
+        # Reserve the largest permitted row-count encoding before row building.
+        budget_manifest = (proposed_manifest.model_copy(update={"row_count": MAX_ROWS}).model_dump_json()
+                           if proposed_manifest else "")
+        metadata_bytes = sum(len(blob.encode()) for blob in (definition_blob or "", budget_manifest)) + 512
+        bytes_used = metadata_bytes
+        row_blobs = []
+        if retained_bytes + bytes_used > MAX_CACHE_BYTES:
+            raise ValueError("PREVIEW_CAPACITY")
+
+        if not errors:
+            try:
+                text = csv_bytes.decode("utf-8", errors="strict")
+            except UnicodeDecodeError:
+                error("INVALID_UTF8")
+            else:
+                if "\x00" in text:
+                    error("INVALID_CSV")
+                else:
+                    reader = csv.reader(io.StringIO(text, newline=""), strict=True)
+                    try:
+                        header = next(reader, [])
+                        if (not header or len(set(header)) != len(header)
+                                or set(header) != set(mapping.values())):
+                            error("INVALID_CSV_HEADER")
+                        else:
+                            seen = set()
+                            for count, cells in enumerate(reader, start=1):
+                                row_number = reader.line_num
+                                if count > MAX_ROWS:
+                                    error("TOO_MANY_ROWS", row_number)
+                                    break
+                                if len(cells) != len(header):
+                                    error("INVALID_CSV_ROW", row_number)
+                                    continue
+                                row = {key: cells[header.index(column)].strip() for key, column in mapping.items()}
+                                item = _parse_row(row, row_number, proposed_definition, proposed_manifest, universe, now, error)
+                                if item is not None:
+                                    identity = (item.instrument_id, item.observed_at)
+                                    if identity in seen:
+                                        error("DUPLICATE_OBSERVATION", row_number)
+                                    blob = item.model_dump_json()
+                                    row_bytes = len(blob.encode())
+                                    if retained_bytes + bytes_used + row_bytes > MAX_CACHE_BYTES:
+                                        raise ValueError("PREVIEW_CAPACITY")
+                                    bytes_used += row_bytes
+                                    row_blobs.append(blob)
+                                    seen.add(identity)
+                                    observations.append(item)
+                            if not observations and not errors:
+                                error("EMPTY_CSV")
+                    except csv.Error:
+                        error("INVALID_CSV", reader.line_num)
+
+        if proposed_manifest:
+            proposed_manifest = proposed_manifest.model_copy(update={"row_count": len(observations)})
+        content_hash = (_content_hash(proposed_manifest, proposed_definition, observations)
+                        if not errors else None)
+        preview_id = secrets.token_urlsafe(24)
+        expires_at = now + PREVIEW_TTL
+        manifest_blob = proposed_manifest.model_dump_json() if proposed_manifest else None
+        row_blobs = tuple(row_blobs) if not errors else ()
+        bytes_used = sum(len(blob.encode()) for blob in (*row_blobs, definition_blob or "", manifest_blob or "")) + 512
+        entry = _CachedPreview(_store_key(store), now, expires_at, expected_revision, definition_blob,
+                               manifest_blob, row_blobs, bool(errors), bytes_used)
+        _cache(preview_id, entry, now)
+        return ImportPreview(preview_id, content_hash, expected_revision, expires_at, errors,
+                             ["PIT_EVIDENCE_REQUIRED", "EXTERNAL_VALUES_UNVERIFIED"],
+                             [item.model_dump(mode="json") for item in observations[:SAMPLE_ROWS]], proposed_manifest)
 
 
 def _parse_row(row, row_number, definition, manifest, universe, now, error):
