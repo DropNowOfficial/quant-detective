@@ -395,3 +395,137 @@ def test_dataset_manifest_is_persistent_and_requires_open_store(tmp_path):
         assert second.dataset_manifest("synthetic-dataset", 1) == manifest()
     with pytest.raises(ValueError, match="^STORE_CLOSED$"):
         second.dataset_manifest("synthetic-dataset", 1)
+
+
+@pytest.mark.parametrize("mode", ["live", "strict_replay", "exploratory"])
+@pytest.mark.parametrize("delayed_grade", ["FORWARD_OBSERVED", "RECONSTRUCTED"])
+def test_newer_publication_survives_delayed_provider_delivery_of_older_publication(store, mode, delayed_grade):
+    commit(store)
+    published_new = T + timedelta(days=1)
+    delivered_old = T + timedelta(days=2)
+    newer = observation(value=12.0, source_published_at=published_new,
+                        provider_available_at=published_new, ingested_at=published_new,
+                        computed_at=published_new, effective_available_at=published_new,
+                        input_hash="c" * 64)
+    store.commit_dataset(manifest(version=2, imported_at=published_new), [newer],
+                         expected_revision=1, request_id="new-publication")
+    with closing(sqlite3.connect(store.path)) as database:
+        original_manifests = database.execute(
+            "SELECT dataset_id, version, payload, content_hash, audit_hash FROM datasets ORDER BY version"
+        ).fetchall()
+        original_rows = database.execute(
+            "SELECT dataset_version, payload, audit_hash FROM observations ORDER BY dataset_version"
+        ).fetchall()
+    delayed = observation(provider_available_at=delivered_old, ingested_at=delivered_old,
+                          computed_at=delivered_old, effective_available_at=delivered_old,
+                          pit_grade=delayed_grade)
+    store.commit_dataset(manifest(version=3, imported_at=delivered_old), [delayed],
+                         expected_revision=2, request_id="delayed-old-publication")
+    assert [row.value for row in store.observations(definition().ref, as_of=T, mode=mode)] == [10.0]
+    assert [row.value for row in store.observations(definition().ref, as_of=published_new, mode=mode)] == [12.0]
+    assert [row.value for row in store.observations(definition().ref, as_of=delivered_old, mode=mode)] == [12.0]
+    assert store.revision() == 3
+    with closing(sqlite3.connect(store.path)) as database:
+        assert database.execute(
+            "SELECT dataset_id, version, payload, content_hash, audit_hash FROM datasets WHERE version<=2 ORDER BY version"
+        ).fetchall() == original_manifests
+        assert database.execute(
+            "SELECT dataset_version, payload, audit_hash FROM observations WHERE dataset_version<=2 ORDER BY dataset_version"
+        ).fetchall() == original_rows
+
+
+@pytest.mark.parametrize("mode", ["live", "strict_replay", "exploratory"])
+def test_source_publication_order_preserves_selected_provenance_rules(store, mode):
+    commit(store)
+    newer_time = T + timedelta(days=1)
+    receipt_time = T + timedelta(days=2)
+    newest = observation(value=12.0, source_published_at=newer_time, provider_available_at=newer_time,
+                         ingested_at=receipt_time, computed_at=receipt_time,
+                         effective_available_at=newer_time, input_hash="c" * 64, pit_grade="RECONSTRUCTED")
+    store.commit_dataset(manifest(version=2, imported_at=receipt_time), [newest],
+                         expected_revision=1, request_id="newer-reconstructed")
+    delayed = observation(provider_available_at=receipt_time, ingested_at=receipt_time,
+                          computed_at=receipt_time, effective_available_at=receipt_time)
+    store.commit_dataset(manifest(version=3, imported_at=receipt_time), [delayed],
+                         expected_revision=2, request_id="older-actual-delayed")
+    if mode == "strict_replay":
+        with pytest.raises(ValueError, match="^PIT_EVIDENCE_REQUIRED$"):
+            store.observations(definition().ref, as_of=receipt_time, mode=mode)
+    else:
+        selected = store.observations(definition().ref, as_of=receipt_time, mode=mode)
+        assert [row.value for row in selected] == ([10.0] if mode == "live" else [12.0])
+        assert selected[0].pit_grade == ("FORWARD_OBSERVED" if mode == "live" else "RECONSTRUCTED")
+
+
+@pytest.mark.parametrize("mode", ["live", "strict_replay", "exploratory"])
+def test_newer_publication_is_hidden_until_provider_and_computation_are_available(store, mode):
+    commit(store)
+    publication = T + timedelta(days=1)
+    provider = T + timedelta(days=2)
+    computed = T + timedelta(days=3)
+    newer = observation(value=12.0, source_published_at=publication, provider_available_at=provider,
+                        ingested_at=provider, computed_at=computed, effective_available_at=computed,
+                        input_hash="c" * 64)
+    store.commit_dataset(manifest(version=2, imported_at=provider), [newer],
+                         expected_revision=1, request_id="delayed-newer")
+    for as_of in [T, publication, provider, computed - timedelta(microseconds=1)]:
+        assert [row.value for row in store.observations(definition().ref, as_of=as_of, mode=mode)] == [10.0]
+    assert [row.value for row in store.observations(definition().ref, as_of=computed, mode=mode)] == [12.0]
+
+
+@pytest.mark.parametrize("mode", ["live", "strict_replay", "exploratory"])
+@pytest.mark.parametrize("changed_field", ["value", "missing", "input_hash", "input_refs"])
+def test_equal_publication_conflicting_source_identity_fails_closed_only_when_available(store, mode, changed_field):
+    from test_factor_models import quality
+    commit(store)
+    later = T + timedelta(days=1)
+    changes = {
+        "value": {"value": 12.0},
+        "missing": {"value": None, "missing_reason": "NO_SOURCE_VALUE", "quality": quality(
+            state="UNAVAILABLE", reason_codes=("NO_SOURCE_VALUE",), observation_ok=False,
+            confirmation_ok=False, valid_until_ms=None)},
+        "input_hash": {"input_hash": "c" * 64},
+        "input_refs": {"input_refs": ["different-source-input:1"]},
+    }
+    conflict = observation(provider_available_at=later, ingested_at=later, computed_at=later,
+                           effective_available_at=later, **changes[changed_field])
+    store.commit_dataset(manifest(version=2, imported_at=later), [conflict],
+                         expected_revision=1, request_id="same-publication-conflict")
+    with closing(sqlite3.connect(store.path)) as database:
+        before = database.execute("SELECT payload, audit_hash FROM observations ORDER BY dataset_version").fetchall()
+    assert [row.value for row in store.observations(definition().ref, as_of=T, mode=mode)] == [10.0]
+    with pytest.raises(ValueError, match="^SOURCE_REVISION_AMBIGUOUS$"):
+        store.observations(definition().ref, as_of=later, mode=mode)
+    assert store.revision() == 2
+    with closing(sqlite3.connect(store.path)) as database:
+        assert database.execute("SELECT payload, audit_hash FROM observations ORDER BY dataset_version").fetchall() == before
+
+
+@pytest.mark.parametrize("mode", ["live", "strict_replay", "exploratory"])
+def test_lower_publication_conflict_does_not_block_clear_newer_publication(store, mode):
+    commit(store)
+    newer_time = T + timedelta(days=1)
+    later = T + timedelta(days=2)
+    newer = observation(value=12.0, source_published_at=newer_time, provider_available_at=newer_time,
+                        ingested_at=newer_time, computed_at=newer_time, effective_available_at=newer_time,
+                        input_hash="c" * 64)
+    store.commit_dataset(manifest(version=2, imported_at=newer_time), [newer],
+                         expected_revision=1, request_id="clear-newer")
+    lower_conflict = observation(value=99.0, provider_available_at=later, ingested_at=later,
+                                 computed_at=later, effective_available_at=later, input_hash="d" * 64)
+    store.commit_dataset(manifest(version=3, imported_at=later), [lower_conflict],
+                         expected_revision=2, request_id="lower-conflict")
+    assert [row.value for row in store.observations(definition().ref, as_of=later, mode=mode)] == [12.0]
+
+
+@pytest.mark.parametrize("mode", ["live", "strict_replay", "exploratory"])
+def test_equivalent_same_publication_evidence_uses_deterministic_ties(store, mode):
+    commit(store)
+    later = T + timedelta(days=1)
+    equivalent = observation(provider_available_at=later, ingested_at=later,
+                             computed_at=later, effective_available_at=later)
+    store.commit_dataset(manifest(version=2, imported_at=later), [equivalent],
+                         expected_revision=1, request_id="equivalent")
+    chosen = store.observations(definition().ref, as_of=later, mode=mode)
+    assert [row.value for row in chosen] == [10.0]
+    assert chosen[0].provider_available_at == later

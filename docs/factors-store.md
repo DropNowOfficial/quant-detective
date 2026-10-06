@@ -121,10 +121,19 @@ synchronous SQLite interface does not share a connection across threads.
   - UTC `as_of`; mode is `live`, `strict_replay`, or `exploratory`
   - Only effective availability <= `as_of` is eligible, including all actual
     forward dependencies; future revisions never change past results
-  - Latest source/provider revision wins per factor ref/instrument/observed event;
-    delayed computation of older source evidence cannot override newer source
-    evidence. Ties use effective availability then atomic store revision, with
-    deterministic dataset ordering
+  - Latest source publication wins per factor ref/instrument/observed event;
+    delayed provider delivery or computation of an older publication cannot
+    override a newer eligible publication. Provider/effective availability remain
+    visibility gates. Equivalent same-publication evidence uses provider then
+    effective availability, atomic store revision and dataset identity as stable
+    tie-breaks, never as invented source-revision chronology
+  - Conflicting value/missing reason/input hash/input references at the highest
+    eligible publication vintage fail closed with `SOURCE_REVISION_AMBIGUOUS`.
+    There is no independently verified source-revision identity to settle such
+    same-publication conflicts in this schema. Conflicts at lower old vintages
+    cannot block a clear newer publication, and future unavailable rows do not
+    change past queries. Records stay immutable for inspection; this query/use
+    error does not automatically change lifecycle state
   - `live` excludes reconstructed rows
   - `strict_replay` rejects any selected reconstructed row with
     `ValueError('PIT_EVIDENCE_REQUIRED')`. A later actual forward row may supersede
@@ -172,6 +181,7 @@ Store semantic errors are exact `ValueError(code)` strings:
 - `ROW_COUNT_MISMATCH`, `DUPLICATE_OBSERVATION`, `UNKNOWN_DEFINITION`
 - `SOURCE_MISMATCH`, `IMPORT_BEFORE_INGESTION`
 - `INVALID_QUERY_MODE`, `UTC_REQUIRED`, `PIT_EVIDENCE_REQUIRED`, `STORE_CLOSED`
+- `SOURCE_REVISION_AMBIGUOUS`
 
 Strict model failures are Pydantic `ValidationError` with field locations/types;
 explicit validator codes include `UNKNOWN_CALCULATOR`, `INVALID_INPUT_FIELDS`,

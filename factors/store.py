@@ -319,6 +319,9 @@ class FactorStore:
         require_utc(as_of)
         ref = _snapshot(ref, FactorRef, "INVALID_FACTOR_REF")
         selected = {}
+        ambiguous = set()
+        # SQL delivery order is only a deterministic tie-break, never source
+        # revision chronology. Publication vintage is compared below.
         for (payload,) in self._db.execute(
                 "SELECT payload FROM observations "
                 "WHERE factor_id=? AND factor_version=? AND effective_us<=? "
@@ -328,7 +331,19 @@ class FactorStore:
             if row.pit_grade == "RECONSTRUCTED" and mode == "live":
                 continue
             key = row.instrument_id, row.observed_at
-            selected[key] = row
+            previous = selected.get(key)
+            if previous is None or row.source_published_at > previous.source_published_at:
+                selected[key] = row
+                ambiguous.discard(key)
+            elif row.source_published_at == previous.source_published_at:
+                identity = (row.value, row.missing_reason, row.input_hash, row.input_refs)
+                previous_identity = (previous.value, previous.missing_reason,
+                                     previous.input_hash, previous.input_refs)
+                if identity != previous_identity:
+                    ambiguous.add(key)
+                selected[key] = row
+        if ambiguous:
+            raise ValueError("SOURCE_REVISION_AMBIGUOUS")
         if mode == "strict_replay" and any(row.pit_grade == "RECONSTRUCTED" for row in selected.values()):
             raise ValueError("PIT_EVIDENCE_REQUIRED")
         return sorted(selected.values(), key=lambda row: (row.observed_at, row.instrument_id))
