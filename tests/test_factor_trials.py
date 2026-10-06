@@ -75,15 +75,48 @@ def test_trial_records_are_immutable_replayed_and_independent(store):
                 connection.execute(action)
 
 
-def test_disabled_budget_starts_no_job(store):
+def test_disabled_budget_starts_no_job(store, monkeypatch):
+    import asyncio
+    import multiprocessing.process
+    import os
+    import socket
+    import subprocess
+    import threading
+    import urllib.request
+    from unittest.mock import Mock
+
     from factors.trials import ResearchBudget, record_budget
-    jobs_started = []
+
+    # Observe real execution/network APIs, not a detached local jobs list. These
+    # guards also prevent an accidental regression from launching real work.
+    boundaries = (
+        (subprocess, 'Popen'), (os, 'system'), (threading.Thread, 'start'),
+        (multiprocessing.process.BaseProcess, 'start'),
+        (asyncio.BaseEventLoop, 'create_task'),
+        (socket.socket, 'connect'), (socket.socket, 'connect_ex'),
+        (urllib.request, 'urlopen'),
+    )
+    guards = []
+    for owner, name in boundaries:
+        guard = Mock(side_effect=AssertionError('Budget recording attempted '+name))
+        monkeypatch.setattr(owner, name, guard)
+        guards.append(guard)
+    before_revision = store.revision()
     budget = ResearchBudget(batch_id='batch-1', candidate_limit=4, trial_limit=8,
         compute_seconds_limit=600, paid_spend_limit=0)
     assert budget.enabled is False
     assert record_budget(budget, store=store) == 'batch-1'
-    assert store.budget('batch-1') == budget
-    assert jobs_started == []
+    stored = store.budget('batch-1')
+    assert stored == budget and stored.enabled is False and stored.paid_spend_limit == 0
+    assert store.revision() == before_revision + 1
+    # Exact repeats are still record-only and cannot dispatch a deferred run.
+    assert record_budget(budget, store=store) == 'batch-1'
+    assert store.revision() == before_revision + 1
+    assert store.definitions() == [definition()]
+    assert store.trials(definition().ref) == []
+    assert store.lifecycle_history(definition().ref) == []
+    for guard in guards:
+        guard.assert_not_called()
     with pytest.raises(ValidationError):
         ResearchBudget(batch_id='paid', candidate_limit=1, trial_limit=1, compute_seconds_limit=1, paid_spend_limit=1)
     with pytest.raises(ValidationError):
