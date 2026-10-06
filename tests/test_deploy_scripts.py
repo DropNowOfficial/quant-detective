@@ -67,7 +67,18 @@ def test_github_fallback_dispatch_timer_is_wired_safely():
     updater=(ROOT/"deploy/update-production.sh").read_text()
     assert "EnvironmentFile=-/etc/quant-detective/github-fallback.env" in service
     assert "SuccessExitStatus=3" in service
-    assert "OnUnitInactiveSec=5min" in timer
+    calendar = [line.removeprefix("OnCalendar=") for line in timer.splitlines()
+                if line.startswith("OnCalendar=")]
+    assert calendar == [
+        "Mon..Fri *-*-* 04..19:00/5:00 America/New_York",
+        "Mon..Fri *-*-* 20:00:00 America/New_York",
+        "Mon..Fri *-*-* 20:05:00 America/New_York",
+    ]
+    # A monotonic trigger would also wake the timer overnight and on weekends.
+    for directive in ("OnActiveSec", "OnBootSec", "OnStartupSec",
+                      "OnUnitActiveSec", "OnUnitInactiveSec"):
+        assert not any(line.startswith(f"{directive}=") for line in timer.splitlines())
+    assert "Unit=quant-detective-github-fallback.service" in timer
     assert "QD_GITHUB_FALLBACK_TOKEN=" in env
     assert "quant-detective-github-fallback.timer" in updater
     assert "github-fallback.env.example" in updater

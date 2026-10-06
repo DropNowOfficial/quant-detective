@@ -161,6 +161,7 @@ def _run_summary(row):
         return None
     return {
         "id": row.get("id"),
+        "head_branch": row.get("head_branch"),
         "event": row.get("event"),
         "created_at": row.get("created_at"),
         "run_started_at": row.get("run_started_at"),
@@ -171,8 +172,8 @@ def _run_summary(row):
     }
 
 
-def list_runs(event, repo=DEFAULT_REPO, workflow=DEFAULT_WORKFLOW, *, token=None, opener=urlopen):
-    query = urlencode({"event": event, "per_page": 10})
+def list_runs(event, repo=DEFAULT_REPO, workflow=DEFAULT_WORKFLOW, *, ref=DEFAULT_REF, token=None, opener=urlopen):
+    query = urlencode({"event": event, "branch": ref, "per_page": 10})
     data = _request(
         "GET",
         f"/repos/{repo}/actions/workflows/{workflow}/runs?{query}",
@@ -180,7 +181,7 @@ def list_runs(event, repo=DEFAULT_REPO, workflow=DEFAULT_WORKFLOW, *, token=None
         opener=opener,
     )
     rows = data.get("workflow_runs") or []
-    return [item for row in rows if (item := _run_summary(row)) is not None]
+    return [item for row in rows if (item := _run_summary(row)) is not None and item["head_branch"] == ref]
 
 
 def _result_time(run):
@@ -222,6 +223,14 @@ def _recent_active(run, now, max_age_seconds):
         return False
     age = _age_seconds(run, now)
     return age is not None and -60 <= age <= max_age_seconds
+
+
+def _observe_run(result, field, run, now, success_fresh_seconds):
+    """Keep the run identity and its derived freshness from the same snapshot."""
+    prefix = "native" if field == "native_schedule" else "fallback"
+    result[field] = run
+    result[f"{prefix}_result_age_seconds"] = _age_seconds(run, now)
+    result[f"{prefix}_result_fresh"] = _recent_success(run, now, success_fresh_seconds)
 
 
 def _cooldown_active(previous, now, cooldown_seconds):
@@ -287,20 +296,13 @@ def run_once(
         return result
 
     try:
-        native_runs = list_runs("schedule", repo, workflow, token=token or None, opener=opener)
+        native_runs = list_runs("schedule", repo, workflow, ref=ref, token=token or None, opener=opener)
     except Exception as exc:
         return _api_error(result, previous, now, "list_native_schedule_runs", exc, status_path)
 
     native = native_runs[0] if native_runs else None
-    result["native_schedule"] = native
+    _observe_run(result, "native_schedule", native, now, native_success_fresh_seconds)
     native_phase = _run_phase(native)
-    native_age = _age_seconds(native, now)
-    result["native_result_age_seconds"] = native_age
-    result["native_result_fresh"] = bool(
-        native_phase == "SUCCESS"
-        and native_age is not None
-        and -60 <= native_age <= native_success_fresh_seconds
-    )
 
     # A completed successful scan is the only native state called healthy.
     if _recent_success(native, now, native_success_fresh_seconds):
@@ -323,21 +325,14 @@ def run_once(
         return result
 
     try:
-        fallback_runs = list_runs("workflow_dispatch", repo, workflow, token=token or None, opener=opener)
+        fallback_runs = list_runs("workflow_dispatch", repo, workflow, ref=ref, token=token or None, opener=opener)
     except Exception as exc:
         return _api_error(result, previous, now, "list_workflow_dispatch_runs", exc, status_path)
 
     fallback = fallback_runs[0] if fallback_runs else None
-    result["workflow_dispatch"] = fallback
+    _observe_run(result, "workflow_dispatch", fallback, now, fallback_success_fresh_seconds)
     result["last_api_success_at_utc"] = now.isoformat()
     fallback_phase = _run_phase(fallback)
-    fallback_age = _age_seconds(fallback, now)
-    result["fallback_result_age_seconds"] = fallback_age
-    result["fallback_result_fresh"] = bool(
-        fallback_phase == "SUCCESS"
-        and fallback_age is not None
-        and -60 <= fallback_age <= fallback_success_fresh_seconds
-    )
 
     if _recent_active(fallback, now, active_run_max_age_seconds):
         result["status"] = f"FALLBACK_RUN_{fallback_phase}"
@@ -382,16 +377,17 @@ def run_once(
     # If native schedule recovered or another external actor already dispatched,
     # suppress this request rather than relying on the earlier snapshot.
     try:
-        native_recheck = list_runs("schedule", repo, workflow, token=token, opener=opener)
-        fallback_recheck = list_runs("workflow_dispatch", repo, workflow, token=token, opener=opener)
+        native_recheck = list_runs("schedule", repo, workflow, ref=ref, token=token, opener=opener)
+        fallback_recheck = list_runs("workflow_dispatch", repo, workflow, ref=ref, token=token, opener=opener)
     except Exception as exc:
         return _api_error(result, previous, now, "pre_dispatch_race_recheck", exc, status_path)
 
     native_latest = native_recheck[0] if native_recheck else None
     fallback_latest = fallback_recheck[0] if fallback_recheck else None
+    _observe_run(result, "native_schedule", native_latest, now, native_success_fresh_seconds)
+    _observe_run(result, "workflow_dispatch", fallback_latest, now, fallback_success_fresh_seconds)
     if _recent_success(native_latest, now, native_success_fresh_seconds):
         stamp = _result_time(native_latest)
-        result["native_schedule"] = native_latest
         result["status"] = "NATIVE_SCHEDULE_SUCCESS"
         result["reason"] = "native_recovered_before_external_dispatch"
         result["last_api_success_at_utc"] = now.isoformat()
@@ -401,7 +397,6 @@ def run_once(
         return result
     if _recent_active(native_latest, now, active_run_max_age_seconds):
         phase = _run_phase(native_latest)
-        result["native_schedule"] = native_latest
         result["status"] = f"NATIVE_SCHEDULE_{phase}"
         result["reason"] = "native_run_appeared_before_external_dispatch"
         result["last_api_success_at_utc"] = now.isoformat()
@@ -409,7 +404,6 @@ def run_once(
         return result
     if _recent_active(fallback_latest, now, active_run_max_age_seconds):
         phase = _run_phase(fallback_latest)
-        result["workflow_dispatch"] = fallback_latest
         result["status"] = f"FALLBACK_RUN_{phase}"
         result["reason"] = "workflow_dispatch_appeared_before_duplicate_request"
         result["last_api_success_at_utc"] = now.isoformat()
@@ -420,7 +414,6 @@ def run_once(
         return result
     if _recent_success(fallback_latest, now, fallback_success_fresh_seconds):
         stamp = _result_time(fallback_latest)
-        result["workflow_dispatch"] = fallback_latest
         result["status"] = "FALLBACK_SCAN_SUCCESS"
         result["reason"] = "fallback_completed_before_duplicate_request"
         result["last_api_success_at_utc"] = now.isoformat()

@@ -99,7 +99,7 @@ def main():
                 once=args.once,
                 output=args.output,
             )
-        except (ValueError, TypeError, OSError) as exc:
+        except (ValueError, TypeError, OSError, RuntimeError) as exc:
             parser.exit(2, f'watch failed: {exc}\n')
         return
 

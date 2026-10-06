@@ -1,5 +1,9 @@
 from datetime import datetime, timedelta, timezone
+import json
 
+import pytest
+
+from market_data import cli, github_alerts, us_watch
 from market_data.us_watch import classify, _daily_metrics, _intraday_metrics
 
 
@@ -100,3 +104,63 @@ def test_one_percent_day_move_is_not_silenced():
                                      move_from_rth_open_pct=0.1, d5_atr=0.6), qqq_change=0.7)
     assert result["leader_detected"]
     assert result["state"] == "LEADER_HOT_NO_CHASE"
+
+
+@pytest.mark.parametrize("rows,incomplete", [
+    ([], ["AAA", "BBB"]),
+    ([{"symbol": "AAA", "status": "ERROR"}, {"symbol": "BBB", "status": "ERROR"}], ["AAA", "BBB"]),
+    ([{"symbol": "AAA", "status": "OK"}, {"symbol": "BBB", "status": "ERROR"}], ["BBB"]),
+    ([{"symbol": "AAA", "status": "OK"}], ["BBB"]),
+])
+def test_incomplete_one_shot_preserves_report_and_publication_before_failing(monkeypatch, tmp_path, rows, incomplete):
+    output = tmp_path / "report.json"
+    report = {"generated_at_et": "2026-10-05T16:05:00-04:00", "rows": rows,
+              "alerts": [{"symbol": "AAA", "state": "LEADER_WATCH"}]}
+    monkeypatch.setattr(us_watch, "scan_once", lambda **kwargs: report)
+    published = []
+
+    def publish(value):
+        assert json.loads(output.read_text()) == value
+        published.append(value.copy())
+
+    monkeypatch.setattr(github_alerts, "publish", publish)
+    with pytest.raises(RuntimeError, match="one-shot scan incomplete"):
+        us_watch.run(symbols=("AAA", "BBB"), once=True, github_alerts=True, output=output)
+    saved = json.loads(output.read_text())
+    assert saved["rows"] == rows
+    assert saved["alerts"] == report["alerts"]
+    assert saved["scan_status"] == "INCOMPLETE"
+    assert saved["incomplete_symbols"] == incomplete
+    assert published == [saved]
+
+
+def test_complete_one_shot_without_alerts_succeeds(monkeypatch, tmp_path):
+    report = {"rows": [{"symbol": "AAA", "status": "OK"}], "alerts": []}
+    monkeypatch.setattr(us_watch, "scan_once", lambda **kwargs: report)
+    result = us_watch.run(symbols=("AAA",), once=True, output=tmp_path / "report.json")
+    assert result["scan_status"] == "COMPLETE"
+    assert result["incomplete_symbols"] == []
+
+
+def test_continuous_scan_retries_after_incomplete_results(monkeypatch):
+    failed = {"rows": [{"symbol": "AAA", "status": "ERROR"}], "alerts": []}
+    healthy = {"rows": [{"symbol": "AAA", "status": "OK"}], "alerts": []}
+    reports = iter([failed, healthy])
+    ticks = iter([0, 0, 61])
+    monkeypatch.setattr(us_watch, "scan_once", lambda **kwargs: next(reports))
+    monkeypatch.setattr(us_watch.time, "monotonic", lambda: next(ticks))
+    monkeypatch.setattr(us_watch.time, "sleep", lambda seconds: None)
+    assert us_watch.run(symbols=("AAA",), duration_minutes=1) is healthy
+
+
+def test_watch_cli_reports_incomplete_one_shot_as_failure(monkeypatch, capsys):
+    monkeypatch.setattr("sys.argv", ["qd-market", "watch", "--once", "--symbols", "AAA"])
+
+    def failed_watch(**kwargs):
+        raise RuntimeError("one-shot scan incomplete: AAA")
+
+    monkeypatch.setattr(cli, "run_us_watch", failed_watch)
+    with pytest.raises(SystemExit) as exc:
+        cli.main()
+    assert exc.value.code == 2
+    assert "watch failed: one-shot scan incomplete" in capsys.readouterr().err

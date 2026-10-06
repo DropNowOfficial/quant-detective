@@ -4,6 +4,8 @@ from pathlib import Path
 from urllib.error import URLError
 from urllib.parse import parse_qs, urlparse
 
+import pytest
+
 from market_data.github_fallback_dispatch import run_once
 
 
@@ -24,9 +26,11 @@ def run_row(
     created_at="2026-10-05T23:37:00Z",
     updated_at="2026-10-05T23:38:00Z",
     run_id=99,
+    head_branch="main",
 ):
     return {
         "id":run_id,
+        "head_branch":head_branch,
         "event":event,
         "created_at":created_at,
         "run_started_at":created_at if status!="queued" else None,
@@ -407,6 +411,8 @@ def test_native_recovery_between_checks_suppresses_dispatch(tmp_path):
     assert out["status"]=="NATIVE_SCHEDULE_SUCCESS"
     assert out["reason"]=="native_recovered_before_external_dispatch"
     assert out["validation"]["native_scan_succeeded"] is True
+    assert out["native_result_fresh"] is True
+    assert out["native_result_age_seconds"] == 120.0
 
 
 def test_external_run_appearing_between_checks_suppresses_duplicate(tmp_path):
@@ -438,6 +444,51 @@ def test_external_run_appearing_between_checks_suppresses_duplicate(tmp_path):
     assert out["status"]=="FALLBACK_RUN_QUEUED"
     assert out["reason"]=="workflow_dispatch_appeared_before_duplicate_request"
     assert out["dispatch_run_id"]==301
+    assert out["fallback_result_age_seconds"] == 120.0
+    assert out["fallback_result_fresh"] is False
+
+
+@pytest.mark.parametrize("event", ["schedule", "workflow_dispatch"])
+@pytest.mark.parametrize("status,conclusion", [("queued", None), ("completed", "success")])
+def test_runs_on_another_ref_do_not_suppress_requested_dispatch(tmp_path, event, status, conclusion):
+    unrelated = run_row(event=event, status=status, conclusion=conclusion, head_branch="experimental")
+    opener = opener_with(schedule_runs=[unrelated] if event == "schedule" else [],
+                         dispatch_runs=[unrelated] if event == "workflow_dispatch" else [])
+    out = run_once(token="secret", repo="owner/repo", ref="release/review",
+                   now=datetime(2026, 10, 5, 23, 40, tzinfo=timezone.utc),
+                   status_path=tmp_path / "status.json", opener=opener)
+    assert out["status"] == "DISPATCH_RUN_CREATED"
+    for method, url, data, headers in opener.calls:
+        if method == "GET":
+            assert parse_qs(urlparse(url).query)["branch"] == ["release/review"]
+        elif method == "POST":
+            assert json.loads(data)["ref"] == "release/review"
+
+
+@pytest.mark.parametrize("event", ["schedule", "workflow_dispatch"])
+@pytest.mark.parametrize("status,conclusion", [("in_progress", None), ("completed", "success")])
+def test_race_recheck_refreshes_observed_age_and_freshness(tmp_path, event, status, conclusion):
+    counts = {"schedule": 0, "workflow_dispatch": 0}
+    recovered = run_row(event=event, status=status, conclusion=conclusion, run_id=401)
+
+    def opener(req, timeout=None):
+        assert req.method == "GET", "recovered run should suppress dispatch"
+        requested_event = parse_qs(urlparse(req.full_url).query)["event"][0]
+        counts[requested_event] += 1
+        rows = [recovered] if requested_event == event and counts[requested_event] == 2 else []
+        return Response({"workflow_runs": rows})
+
+    out = run_once(token="secret", repo="owner/repo",
+                   now=datetime(2026, 10, 5, 23, 40, tzinfo=timezone.utc),
+                   status_path=tmp_path / "status.json", opener=opener)
+    prefix = "native" if event == "schedule" else "fallback"
+    field = "native_schedule" if event == "schedule" else "workflow_dispatch"
+    assert out[field]["id"] == 401
+    assert out[field]["head_branch"] == "main"
+    assert out[f"{prefix}_result_age_seconds"] == 120.0
+    assert out[f"{prefix}_result_fresh"] is (conclusion == "success")
+    assert out["validation"]["heartbeat_fresh"] is None
+    assert out["validation"]["notification_delivered"] is None
 
 
 def test_systemd_timer_uses_established_et_weekday_window():
