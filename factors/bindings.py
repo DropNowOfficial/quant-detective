@@ -127,6 +127,23 @@ def _native_evidence(row, kind, id, generated):
                 original_receipt_at=receipt)
 
 
+
+def _dependency_evidence(value):
+    """Retain original dependency inputs, source identity and receipt clocks.
+
+    Wrapper/computation/freshness evaluation clocks are operational, not source
+    input identity. Original capture/publication/provider timestamps stay bound.
+    """
+    operational = {'recorded_at', 'computed_at', 'generated_at_utc',
+                   'evaluated_at_ms', 'valid_until_ms', 'response_age_seconds'}
+    if isinstance(value, dict):
+        return {key: _dependency_evidence(item) for key, item in value.items()
+                if key not in operational}
+    if isinstance(value, (list, tuple)):
+        return [_dependency_evidence(item) for item in value]
+    return value
+
+
 def _wrap(row, kind, id, value, generated):
     if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float))
                               or not math.isfinite(value)):
@@ -155,6 +172,15 @@ def _wrap(row, kind, id, value, generated):
     dependencies = [_time(x) for x in times.get('dependency_available_ats', [])]
     if id == 'us.intraday.relative_qqq_change':
         dependency = row.get('benchmark_dependency') or {}
+        original_dependency = _dependency_evidence(dependency)
+        dependency_hash = fingerprint(original_dependency)
+        times['input_hash'] = fingerprint({'stock_report_input_hash': times['input_hash'],
+                                           'benchmark_dependency': original_dependency})
+        source_identity = dependency.get('source_ref') or dependency.get('source') or 'SOURCE_IDENTITY_UNKNOWN'
+        original_receipt = dependency.get('known_at') or 'SOURCE_RECEIPT_UNKNOWN'
+        dependency_ref = ('benchmark_dependency:QQQ; source=' + str(source_identity)
+                          + '; known_at=' + str(original_receipt) + '; evidence_sha256=' + dependency_hash)
+        times['input_refs'] = [*times['input_refs'], dependency_ref]
         if dependency.get('known_at'):
             dependencies.append(_time(dependency['known_at']))
         other_quality = dependency.get('quality') or {}

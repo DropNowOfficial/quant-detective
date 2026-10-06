@@ -50,8 +50,14 @@ async function factorWorkflow(browser){
   const port=await new Promise((resolve,reject)=>{let data='';const timeout=setTimeout(()=>reject(new Error('Synthetic server did not start: '+diagnostics)),15000);child.once('exit',code=>{clearTimeout(timeout);reject(new Error('Synthetic server exited '+code+': '+diagnostics));});child.stdout.on('data',chunk=>{data+=chunk.toString();if(/^[0-9]+\n/.test(data)){clearTimeout(timeout);resolve(Number(data.trim()));}});});
   const origin='http://127.0.0.1:'+port,page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[],writes=[];
   page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(request.method()==='POST')writes.push(request.url());});
+  await page.addInitScript(()=>{
+   const original=File.prototype.text;window.factorReadControls=new Map();
+   File.prototype.text=function(){const result=original.call(this);if(!this.name.startsWith('delayed-'))return result;
+    let resolve;const pending=new Promise(yes=>{resolve=yes;});
+    window.factorReadControls.set(this.name,{release:async()=>resolve(await result)});return pending;};
+  });
   await page.goto(origin+'/factors');
-  await page.waitForSelector('#factor-select option');
+  await page.waitForSelector('#factor-select option[value="minute.vwap60@1.0.0"]');
   assert.equal(await page.locator('#factor-select option').count(),16,'The catalog has exactly nine bound definitions and seven locked components.');
   await page.locator('#factor-select').selectOption('locked.amihud@1.0.0');
   await page.waitForFunction(()=>document.querySelector('#evidence-status').textContent.includes('无本次观测'));
@@ -80,6 +86,36 @@ async function factorWorkflow(browser){
   assert.ok(await page.locator('#save-import').isDisabled());assert.equal(writes.filter(url=>url.endsWith('/commit')).length,0);
   await upload(row);await page.locator('#preview-import').click();
   await page.waitForFunction(()=>document.querySelector('#preview-status').dataset.state==='ready');
+  // Hold real File.text() completions to expose replacement/read ordering.
+  for(const kind of ['csv','definition']){
+   const filename='delayed-replacement-'+kind,input=kind==='csv'?'#csv-file':'#definition-file';
+   const buffer=Buffer.from(kind==='csv'?headers.join(',')+'\n'+row.join(',')+'\n':JSON.stringify(document));
+   await page.locator(input).setInputFiles({name:filename,mimeType:kind==='csv'?'text/csv':'application/json',buffer});
+   await page.waitForFunction(name=>window.factorReadControls.has(name),filename);
+   assert.ok(await page.locator('#preview-import').isDisabled(),kind+' replacement disables preview during read');
+   assert.ok(await page.locator('#save-import').isDisabled(),kind+' replacement invalidates old preview');
+   await page.evaluate(()=>document.querySelector('#save-import').click());
+   assert.equal(writes.filter(url=>url.endsWith('/commit')).length,0);
+   await page.evaluate(async name=>await window.factorReadControls.get(name).release(),filename);
+   if(kind==='csv')for(let i=0;i<fields.length;i++)await page.locator('#mapping-'+fields[i]).selectOption(headers[i]);
+   await page.waitForFunction(()=>!document.querySelector('#preview-import').disabled);
+   assert.ok(await page.locator('#save-import').isDisabled(),'Replacement completion needs a fresh preview');
+   await page.locator('#preview-import').click();
+   await page.waitForFunction(()=>document.querySelector('#preview-status').dataset.state==='ready');
+   const oldName='delayed-old-'+kind;
+   const oldBuffer=Buffer.from(kind==='csv'?headers.join(',')+'\n'+bad.join(',')+'\n':JSON.stringify({...document,definition:{...definition,name:'Late stale definition',ref:{factor_id:'external.stale_discard',version:'1'}}}));
+   await page.locator(input).setInputFiles({name:oldName,mimeType:kind==='csv'?'text/csv':'application/json',buffer:oldBuffer});
+   await page.waitForFunction(name=>window.factorReadControls.has(name),oldName);
+   await page.locator(input).setInputFiles({name:'latest-'+kind,mimeType:kind==='csv'?'text/csv':'application/json',buffer});
+   if(kind==='csv')for(let i=0;i<fields.length;i++)await page.locator('#mapping-'+fields[i]).selectOption(headers[i]);
+   await page.waitForFunction(()=>!document.querySelector('#preview-import').disabled);
+   await page.evaluate(async name=>await window.factorReadControls.get(name).release(),oldName);
+   await page.locator('#preview-import').click();
+   await page.waitForFunction(()=>document.querySelector('#preview-status').dataset.state==='ready');
+   assert.match(await page.locator('#preview-samples').innerText(),/SYNTH/);
+   assert.match(await page.locator('#preview-samples').innerText(),/external.browser_value/);
+   assert.ok(await page.locator('#save-import').isEnabled());
+  }
   assert.equal(await page.locator('#definition-name').textContent(),definition.name);
   assert.equal(await page.locator('#definition-name img').count(),0);
   assert.equal(await page.evaluate(()=>window.factorXss),undefined);

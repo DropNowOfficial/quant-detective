@@ -243,3 +243,75 @@ def test_same_time_rvol_preserves_distinct_session_sample_evidence():
     observation=next(item for item in binding.observations_from_report(report,recorded_at=T)
                      if item.ref.factor_id=='us.intraday.rvol_same_time20')
     assert 'RVOL_COMPARABLE_SESSIONS=20' in observation.availability_basis
+
+
+def native_relative_report():
+    """Synthetic original US and QQQ dependency, without factor_evidence override."""
+    now=T+timedelta(hours=2)
+    capture=int(now.timestamp()*1000)
+    row=dict(symbol='SYNTH',source='synthetic stock source',
+             daily={'ma5':100.0,'atr5':2.0},
+             intraday={'d5_atr':.1,'change_pct':1.0,'current_bar_time_utc':(now-timedelta(minutes=1)).isoformat()},
+             relative_change_vs_qqq_pp=.7,
+             quality=asdict(quality(evaluated_at_ms=capture,valid_until_ms=capture+60000,last_bar_end_ms=capture-60000)),
+             quality_evidence={'captured_at_ms':capture,'daily':{'captured_at_ms':capture-3600000}},
+             benchmark_dependency={'symbol':'QQQ','source_ref':'synthetic benchmark source',
+                                   'change_pct':.3,'known_at':(now-timedelta(seconds=5)).isoformat(),
+                                   'quality':asdict(quality(evaluated_at_ms=capture,valid_until_ms=capture+30000,
+                                                           last_bar_end_ms=capture-60000)),
+                                   'quality_evidence':{'captured_at_ms':capture-5000,'input_hash':'b'*64}})
+    return {'generated_at_utc':now.isoformat(),'rows':[row]}
+
+
+def relative_observation(binding, report, recorded_at=T):
+    return next(item for item in binding.observations_from_report(report,recorded_at=recorded_at)
+                if item.ref.factor_id=='us.intraday.relative_qqq_change')
+
+
+def test_qqq_only_input_and_provenance_changes_bind_relative_identity():
+    from copy import deepcopy
+    from factors import registry
+    binding=binding_module()
+    original=native_relative_report()
+    first=relative_observation(binding,original)
+    definition=registry.get(first.ref)
+    for field,new_value in [('change_pct',.4),('source_ref','revised QQQ source'),
+                            ('known_at',(T+timedelta(hours=2,seconds=-4)).isoformat())]:
+        revised=deepcopy(original)
+        revised['rows'][0]['benchmark_dependency'][field]=new_value
+        second=relative_observation(binding,revised)
+        assert second.value==first.value==.7
+        assert second.input_hash!=first.input_hash,field
+        assert second.input_refs!=first.input_refs,field
+        assert mathematical_fingerprint(definition,second)!=mathematical_fingerprint(definition,first),field
+        stock_before=next(item for item in binding.observations_from_report(original,recorded_at=T)
+                          if item.ref.factor_id=='us.intraday.distance_ma5_atr5')
+        stock_after=next(item for item in binding.observations_from_report(revised,recorded_at=T)
+                         if item.ref.factor_id=='us.intraday.distance_ma5_atr5')
+        assert stock_before.input_hash==stock_after.input_hash
+    revised=deepcopy(original)
+    revised['rows'][0]['benchmark_dependency']['quality_evidence']['input_hash']='c'*64
+    changed_source=relative_observation(binding,revised)
+    assert changed_source.value==first.value
+    assert changed_source.input_hash!=first.input_hash
+    assert changed_source.input_refs!=first.input_refs
+    assert any('QQQ' in ref and 'synthetic benchmark source' in ref for ref in first.input_refs)
+    assert any((T+timedelta(hours=2,seconds=-5)).isoformat() in ref for ref in first.input_refs)
+
+
+def test_relative_identity_excludes_wrapper_and_benchmark_evaluation_clocks():
+    from copy import deepcopy
+    from factors import registry
+    binding=binding_module()
+    original=native_relative_report()
+    first=relative_observation(binding,original)
+    second=relative_observation(binding,original,recorded_at=T+timedelta(days=4))
+    assert first==second
+    revised=deepcopy(original)
+    revised['rows'][0]['benchmark_dependency']['quality']['evaluated_at_ms']+=1000
+    revised['rows'][0]['benchmark_dependency']['quality']['valid_until_ms']+=1000
+    third=relative_observation(binding,revised)
+    assert third.input_hash==first.input_hash
+    assert third.input_refs==first.input_refs
+    definition=registry.get(first.ref)
+    assert mathematical_fingerprint(definition,third)==mathematical_fingerprint(definition,first)

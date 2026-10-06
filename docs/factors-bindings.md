@@ -108,6 +108,14 @@ thus produce no observation. An explicit source-bound research report is require
 for the two research bindings. A summary's `snapshot_known_at` or current run time
 alone is not sufficient per-feature source evidence.
 
+The relative-QQQ binding also hashes the complete original benchmark dependency
+(input value, source identity, capture/source timestamps and stable evidence),
+and retains a QQQ dependency input reference with original source/receipt and
+evidence fingerprint. Missing benchmark source identity is labeled unknown.
+Operational wrapper/computation/freshness-evaluation clocks are excluded from
+that mathematical input identity; changed original QQQ inputs/provenance still
+change the hash even when the already computed relative value is unchanged.
+
 Original `QualityResult` source freshness is retained separately from validation
 and eligibility; benchmark capture/expiry is bounded on the relative dependency,
 and minute report quality already includes its actual populated benchmark expiry.
@@ -132,6 +140,12 @@ row errors, warnings, ten-row sample, fingerprint, original revision and propose
 manifest. It never saves a preview automatically. A separate explicit button
 commits only the frozen preview handle and a stable retry request ID. Editing
 files/mapping invalidates the prior preview; exclusive expiry disables save.
+Selecting or clearing a replacement immediately clears that parsed source and
+blocks preview/save while either file is being read. Read completion invalidates
+the prior generation again. Exact source/mapping generation and file-read
+identity follow preview and commit; late superseded reads (including failures)
+and old preview responses are discarded. A commit uses its frozen preview's
+definition reference rather than a subsequently selected file.
 Saved/replayed results display B2's retained original manifest.
 
 Session token exists only in process/page memory and the CSRF request header.
@@ -147,3 +161,9 @@ factor-server import workflow. It never fetches a real provider or sends a
 notification. Screenshots go only into the ignored task workspace. Actual
 browser acceptance is separate from `make verify`; see the task report for the
 verified runtime and any browser startup/access blocker.
+
+`node tests/test_factor_import_state.cjs` executes the actual page script in a
+minimal DOM/fetch fixture to test asynchronous replacement/read/preview/save
+state. It is a focused unit test, not browser rendering or visual acceptance.
+The supported browser entry additionally holds real `File.text()` completions
+to cover CSV/JSON replacement and out-of-order completion.
