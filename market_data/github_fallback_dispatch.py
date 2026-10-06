@@ -30,6 +30,7 @@ ACTIVE_STATUSES = frozenset({"queued", "in_progress", "requested", "waiting", "p
 DISPATCH_COOLDOWN_SECONDS = 240
 NATIVE_SUCCESS_FRESH_SECONDS = 420
 FALLBACK_SUCCESS_FRESH_SECONDS = 240
+ACTIVE_RUN_MAX_AGE_SECONDS = 900
 
 
 class DispatchError(RuntimeError):
@@ -216,6 +217,13 @@ def _recent_success(run, now, max_age_seconds):
     return age is not None and -60 <= age <= max_age_seconds
 
 
+def _recent_active(run, now, max_age_seconds):
+    if _run_phase(run) not in {s.upper() for s in ACTIVE_STATUSES}:
+        return False
+    age = _age_seconds(run, now)
+    return age is not None and -60 <= age <= max_age_seconds
+
+
 def _cooldown_active(previous, now, cooldown_seconds):
     stamp = _parse_time(previous.get("last_dispatch_accepted_at_utc"))
     if stamp is None:
@@ -264,6 +272,7 @@ def run_once(
     native_success_fresh_seconds=NATIVE_SUCCESS_FRESH_SECONDS,
     fallback_success_fresh_seconds=FALLBACK_SUCCESS_FRESH_SECONDS,
     dispatch_cooldown_seconds=DISPATCH_COOLDOWN_SECONDS,
+    active_run_max_age_seconds=ACTIVE_RUN_MAX_AGE_SECONDS,
     opener=urlopen,
 ):
     now = now or datetime.now(timezone.utc)
@@ -306,9 +315,9 @@ def run_once(
 
     # Queued/in-progress/etc. exists but is not scan success. Suppress duplicate
     # dispatch while GitHub is already trying to execute that native run.
-    if native_phase in {s.upper() for s in ACTIVE_STATUSES}:
+    if _recent_active(native, now, active_run_max_age_seconds):
         result["status"] = f"NATIVE_SCHEDULE_{native_phase}"
-        result["reason"] = "native_run_exists_but_scan_not_completed"
+        result["reason"] = "recent_native_run_exists_but_scan_not_completed"
         result["last_api_success_at_utc"] = now.isoformat()
         _write_state(status_path, result)
         return result
@@ -330,9 +339,9 @@ def run_once(
         and -60 <= fallback_age <= fallback_success_fresh_seconds
     )
 
-    if fallback_phase in {s.upper() for s in ACTIVE_STATUSES}:
+    if _recent_active(fallback, now, active_run_max_age_seconds):
         result["status"] = f"FALLBACK_RUN_{fallback_phase}"
-        result["reason"] = "existing_workflow_dispatch_is_active"
+        result["reason"] = "recent_workflow_dispatch_is_active"
         result["dispatch_run_id"] = fallback.get("id")
         result["dispatch_url"] = fallback.get("html_url")
         result["validation"]["fallback_run_created"] = True
@@ -366,6 +375,60 @@ def run_once(
     if not token:
         result["status"] = "TOKEN_MISSING"
         result["reason"] = "fallback_needed_but_actions_write_token_not_configured"
+        _write_state(status_path, result)
+        return result
+
+    # Recovery race guard: re-read both event streams immediately before POST.
+    # If native schedule recovered or another external actor already dispatched,
+    # suppress this request rather than relying on the earlier snapshot.
+    try:
+        native_recheck = list_runs("schedule", repo, workflow, token=token, opener=opener)
+        fallback_recheck = list_runs("workflow_dispatch", repo, workflow, token=token, opener=opener)
+    except Exception as exc:
+        return _api_error(result, previous, now, "pre_dispatch_race_recheck", exc, status_path)
+
+    native_latest = native_recheck[0] if native_recheck else None
+    fallback_latest = fallback_recheck[0] if fallback_recheck else None
+    if _recent_success(native_latest, now, native_success_fresh_seconds):
+        stamp = _result_time(native_latest)
+        result["native_schedule"] = native_latest
+        result["status"] = "NATIVE_SCHEDULE_SUCCESS"
+        result["reason"] = "native_recovered_before_external_dispatch"
+        result["last_api_success_at_utc"] = now.isoformat()
+        result["last_native_scan_success_at_utc"] = _iso(stamp)
+        result["validation"]["native_scan_succeeded"] = True
+        _write_state(status_path, result)
+        return result
+    if _recent_active(native_latest, now, active_run_max_age_seconds):
+        phase = _run_phase(native_latest)
+        result["native_schedule"] = native_latest
+        result["status"] = f"NATIVE_SCHEDULE_{phase}"
+        result["reason"] = "native_run_appeared_before_external_dispatch"
+        result["last_api_success_at_utc"] = now.isoformat()
+        _write_state(status_path, result)
+        return result
+    if _recent_active(fallback_latest, now, active_run_max_age_seconds):
+        phase = _run_phase(fallback_latest)
+        result["workflow_dispatch"] = fallback_latest
+        result["status"] = f"FALLBACK_RUN_{phase}"
+        result["reason"] = "workflow_dispatch_appeared_before_duplicate_request"
+        result["last_api_success_at_utc"] = now.isoformat()
+        result["dispatch_run_id"] = fallback_latest.get("id")
+        result["dispatch_url"] = fallback_latest.get("html_url")
+        result["validation"]["fallback_run_created"] = True
+        _write_state(status_path, result)
+        return result
+    if _recent_success(fallback_latest, now, fallback_success_fresh_seconds):
+        stamp = _result_time(fallback_latest)
+        result["workflow_dispatch"] = fallback_latest
+        result["status"] = "FALLBACK_SCAN_SUCCESS"
+        result["reason"] = "fallback_completed_before_duplicate_request"
+        result["last_api_success_at_utc"] = now.isoformat()
+        result["last_fallback_scan_success_at_utc"] = _iso(stamp)
+        result["dispatch_run_id"] = fallback_latest.get("id")
+        result["dispatch_url"] = fallback_latest.get("html_url")
+        result["validation"]["fallback_run_created"] = True
+        result["validation"]["fallback_scan_succeeded"] = True
         _write_state(status_path, result)
         return result
 
