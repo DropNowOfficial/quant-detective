@@ -546,3 +546,74 @@ def test_real_gateway_numeric_timestamp_qualifies_without_capture_substitution()
     assert type(q["updated_ms"]) is float
     assert _realtime_quote(q,now_ms=NOW_MS,max_age_ms=6000) is True
     assert _realtime_quote(q,now_ms=NOW_MS+6000,max_age_ms=6000) is False
+
+
+@pytest.mark.parametrize("stock_change,after_state",[(0.2,"WATCH"),(2.0,"LEADER_WATCH")])
+def test_live_relative_evidence_is_bounded_by_qqq_expiry(tmp_path,stock_change,after_state):
+    now=[NOW.timestamp()]
+    class OlderQQQGateway(FakeGateway):
+        def snapshots(self, contracts):
+            out=super().snapshots(contracts)
+            out["NVDA"].update(last=101.0,change_pct=stock_change)
+            out["QQQ"].update(change_pct=-1.0,updated_ms=NOW_MS-5999)
+            return out
+    d=daemon(tmp_path,gateway=OlderQQQGateway(clock=lambda:now[0]),clock=lambda:now[0],structure_seconds=600)
+    d.initialize()
+    first=d.cycle()["rows"][0]
+    assert first["state"]=="LEADER_WATCH"
+    assert first["relative_change_vs_qqq_pp"]==stock_change+1.0
+    assert first["quality"]["valid_until_ms"]==NOW_MS+1
+    assert first["benchmark_quality"]["valid_until_ms"]==NOW_MS+1
+    now[0]+=0.001
+    after=d.cycle()["rows"][0]
+    assert after["state"]==after_state
+    assert after["relative_change_vs_qqq_pp"] is None
+    assert after["quality"]["valid_until_ms"]>NOW_MS+1
+    assert "STALE_QUOTE" in after["benchmark_quality"]["reason_codes"]
+    assert after["leader_reasons"]==(["IBKR day +2.00%"] if stock_change==2.0 else [])
+
+
+@pytest.mark.parametrize("stock_change,after_state",[(0.2,"WATCH"),(2.0,"LEADER_WATCH")])
+def test_public_relative_evidence_is_bounded_by_benchmark_expiry(tmp_path,stock_change,after_state):
+    now=[NOW.timestamp()]
+    def scan(symbols, *, now=None, clock=None):
+        report=fake_scan(symbols,now=now,clock=clock)
+        s=report["rows"][0]
+        s["intraday"]["change_pct"]=stock_change
+        s.update(state="LEADER_WATCH",benchmark_dependency={"change_pct":-1.0,"reason_codes":[],
+                 "quality":{**s["quality"],"valid_until_ms":NOW_MS+1000}})
+        return report
+    d=daemon(tmp_path,gateway=FakeGateway(False),scan_fn=scan,clock=lambda:now[0],structure_seconds=600)
+    d.initialize()
+    first=d.cycle()["rows"][0]
+    assert first["state"]=="LEADER_WATCH"
+    assert first["relative_change_vs_qqq_pp"]==stock_change+1.0
+    assert first["quality"]["valid_until_ms"]==NOW_MS+1000
+    assert first["benchmark_quality"]["valid_until_ms"]==NOW_MS+1000
+    now[0]+=1
+    after=d.cycle()["rows"][0]
+    assert after["state"]==after_state
+    assert after["relative_change_vs_qqq_pp"] is None
+    assert after["quality"]["valid_until_ms"]==NOW_MS+120000
+    assert after["leader_reasons"]==(["day +2.00%"] if stock_change==2.0 else [])
+
+
+def test_live_structural_state_retains_public_benchmark_deadline(tmp_path):
+    def scan(symbols, *, now=None, clock=None):
+        report=fake_scan(symbols,now=now,clock=clock)
+        s=report["rows"][0]
+        s.update(state="LEADER_WATCH",benchmark_dependency={"change_pct":-1.0,"reason_codes":[],
+                 "quality":{**s["quality"],"valid_until_ms":NOW_MS+1000}})
+        return report
+    class CurrentGateway(FakeGateway):
+        def snapshots(self, contracts):
+            out=super().snapshots(contracts)
+            out["NVDA"].update(last=101.0,change_pct=0.2)
+            return out
+    d=daemon(tmp_path,gateway=CurrentGateway(),scan_fn=scan)
+    d.initialize()
+    row=d.cycle()["rows"][0]
+    assert row["state"]=="WATCH"
+    assert row["structural_state"]=="LEADER_WATCH"
+    assert row["quality"]["valid_until_ms"]==NOW_MS+1000
+    assert row["structural_benchmark_quality"]["valid_until_ms"]==NOW_MS+1000

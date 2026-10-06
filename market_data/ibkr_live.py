@@ -130,11 +130,15 @@ def _public_state(structural, *, now_ms, quality):
     ) else None
     decision = classify(structural.get("daily") or {}, structural.get("intraday") or {},
                         qqq_change=qqq_change, quality=quality)
-    return {**structural, **decision, "quality": asdict(quality)}
+    retained_benchmark = _finite(decision["relative_change_vs_qqq_pp"])
+    if retained_benchmark:
+        quality = replace(quality, valid_until_ms=min(quality.valid_until_ms, expiry))
+    return {**structural, **decision, "quality": asdict(quality),
+            "benchmark_quality": benchmark_quality if retained_benchmark else None}
 
 
 def _live_state(symbol, quote, structural, qqq_change, *, now_ms: int, quality: QualityResult) -> dict:
-    """Keep hybrid geometry; callers supply joint structural/quote quality."""
+    """Keep hybrid geometry; callers supply joint populated-dependency quality."""
     quality = _current_quality(quality, now_ms)
     price = quote.get("last")
     change = quote.get("change_pct")
@@ -404,11 +408,19 @@ class HybridDaemon:
             quote_quality = quote_qualities.get(symbol) or _quote_quality(
                 quote, now_ms=now_ms, max_age_ms=self.quote_policy.response_max_age_ms)
             if mode.startswith("IBKR_") and quote_quality.observation_ok:
-                quality = _combined_quality(structural_quality, quote_quality, now_ms)
+                # The retained public structural_state has its own benchmark
+                # deadline, independently of the fast path's live QQQ source.
+                public_quality = replace(structural_quality,
+                                         valid_until_ms=structural["quality"]["valid_until_ms"])
+                quality = _combined_quality(public_quality, quote_quality, now_ms)
+                if quality.observation_ok and _finite(quote.get("change_pct")) and _finite(qqq_change):
+                    quality = _combined_quality(quality, qqq_quality, now_ms)
                 row = _live_state(symbol, quote, structural, qqq_change,
                                   now_ms=now_ms, quality=quality)
                 row["quality_policy_id"] = self.quote_policy.policy_id
                 row["structural_quality"] = asdict(structural_quality)
+                row["benchmark_quality"] = asdict(qqq_quality) if qqq_quality is not None else None
+                row["structural_benchmark_quality"] = structural["benchmark_quality"]
             else:
                 reason = ("IBKR realtime quote unavailable/not subscribed for this symbol; showing structural state only"
                           if mode.startswith("IBKR_") else "IBKR unavailable; public structural state only")
@@ -422,7 +434,9 @@ class HybridDaemon:
                     "leader_reasons": structural["leader_reasons"],
                     "ibkr_quote_missing": True,
                     "market_data_availability": (quote or {}).get("market_data_availability"),
-                    "quality": asdict(structural_quality),
+                    "quality": structural["quality"],
+                    "structural_quality": asdict(structural_quality),
+                    "benchmark_quality": structural["benchmark_quality"],
                     "quality_policy_id": US_PUBLIC_5M_POLICY.policy_id,
                 }
             row["structural_quality_policy_id"] = US_PUBLIC_5M_POLICY.policy_id
