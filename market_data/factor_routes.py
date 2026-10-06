@@ -184,7 +184,8 @@ class FactorRoutes:
             handler.send_json({"ok": False, "error": "FACTOR_STORE_UNAVAILABLE"}, 503)
 
 
-READ_PATHS = frozenset({'/api/factors', '/api/factors/observations'})
+READ_PATHS = frozenset({'/api/factors', '/api/factors/observations',
+                        '/api/factors/lifecycle', '/api/factors/trials'})
 
 
 def read_factors(handler, parsed):
@@ -197,9 +198,13 @@ def read_factors(handler, parsed):
 
     now = datetime.now(UTC)
     query = parse_qs(parsed.query, keep_blank_values=True)
-    allowed = set() if parsed.path == '/api/factors' else {'factor_id', 'version', 'as_of', 'mode'}
+    history = parsed.path in {'/api/factors/lifecycle', '/api/factors/trials'}
+    allowed = (set() if parsed.path == '/api/factors' else {'factor_id', 'version'} if history
+               else {'factor_id', 'version', 'as_of', 'mode'})
+    if parsed.path == '/api/factors/lifecycle':
+        allowed |= {'as_of'}
     if (parsed.fragment or set(query) - allowed or any(len(values) != 1 or not values[0] for values in query.values())
-            or (parsed.path.endswith('/observations') and not {'factor_id', 'version'} <= set(query))):
+            or (parsed.path != '/api/factors' and not {'factor_id', 'version'} <= set(query))):
         handler.send_json({'ok': False, 'error': 'INVALID_FACTOR_QUERY'}, 400)
         return
     try:
@@ -210,6 +215,38 @@ def read_factors(handler, parsed):
         mode = values.get('mode', 'exploratory')
         if mode not in {'live', 'strict_replay', 'exploratory'}:
             raise ValueError('INVALID_QUERY_MODE')
+        if history:
+            from factors.lifecycle import lifecycle_state
+            from factors.trials import trial_evidence
+            ref = FactorRef(factor_id=values['factor_id'], version=values['version'])
+            path = handler.server.factor_store_path
+            initialized = False
+            events, checks, trials = [], [], []
+            if path is not None and path.is_file():
+                with FactorStore(path, read_only=True) as store:
+                    store.resolve_definition(ref)
+                    initialized = store.governance_initialized()
+                    state = lifecycle_state(ref, store=store, as_of=as_of)
+                    if parsed.path == '/api/factors/lifecycle':
+                        events = [event.model_dump(mode='json') for event in store.lifecycle_history(ref, as_of=as_of)]
+                        checks = store.lifecycle_check_artifacts(ref, as_of=as_of)
+                    else:
+                        trials = [{'record': record.model_dump(mode='json'),
+                                   'evidence': trial_evidence(record.run_id, store=store, required_kind=record.report_kind)}
+                                  for record in store.trials(ref)]
+            else:
+                definition = registry.get(ref)
+                state = 'LEGACY_UNVALIDATED' if definition.calculator_key is not None else 'candidate'
+            payload = {'ok': True, 'ref': ref.model_dump(mode='json'),
+                       'history_initialized': initialized,
+                       'history_scope': 'APPEND_ONLY_LOCAL_AUDIT', 'eligible_for_production': False}
+            if parsed.path == '/api/factors/lifecycle':
+                payload.update(lifecycle_state=state, as_of=as_of.isoformat(), events=events, checks=checks,
+                               message='No recorded lifecycle transitions' if not events else 'Local lifecycle history')
+            else:
+                payload.update(trials=trials, message='未运行 / No recorded trials' if not trials else 'Declared trials; unverified evidence')
+            handler.send_json(payload)
+            return
         # Already captured application reports and analyses only; never initiate
         # live.snapshot(), providers, a scan, or file reads chosen by a query.
         reports = deepcopy(handler.server.factor_reports)
@@ -223,12 +260,18 @@ def read_factors(handler, parsed):
         virtual = registry.definitions()
         catalog = {(item.ref.factor_id, item.ref.version): item for item in virtual}
         routes = handler.server.factor_routes
+        path = handler.server.factor_store_path
         external = []
-        if routes is not None:
-            with FactorStore(routes.path) as store:
+        states = {}
+        if path is not None and path.is_file():
+            from factors.lifecycle import lifecycle_state
+            with FactorStore(path, read_only=True) as store:
                 for item in store.definitions():
                     registry.check_reserved_definition(item)
                     catalog[(item.ref.factor_id, item.ref.version)] = item
+                for item in catalog.values():
+                    if store.lifecycle_history(item.ref):
+                        states[(item.ref.factor_id, item.ref.version)] = lifecycle_state(item.ref, store=store)
                 if parsed.path.endswith('/observations'):
                     ref = FactorRef(factor_id=values['factor_id'], version=values['version'])
                     external = store.observations(ref, as_of=as_of, mode=mode)
@@ -246,7 +289,7 @@ def read_factors(handler, parsed):
                                     and evidence_card(observation, now=now)['current_observation']
                                     for observation in bound) else 'UNAVAILABLE',
                                 'VALIDATION_STATUS': 'NEEDS BACKTEST',
-                                'lifecycle_state': 'LEGACY_UNVALIDATED' if builtin else 'CANDIDATE',
+                                'lifecycle_state': states.get((item.ref.factor_id, item.ref.version), 'LEGACY_UNVALIDATED' if builtin else 'CANDIDATE'),
                                 'eligible_for_production': False})
             handler.send_json({'ok': True, 'factors': factors, 'hypotheses': registry.hypotheses(),
                                'axes': ['CONTRACT_STATUS', 'DATA_STATUS', 'VALIDATION_STATUS'],
@@ -262,6 +305,8 @@ def read_factors(handler, parsed):
                 raise ValueError('PIT_EVIDENCE_REQUIRED')
             cards = [evidence_card(item, now=now) for item in sorted(
                 [*selected, *external], key=lambda item: (item.observed_at, item.instrument_id))]
+            for card in cards:
+                card['lifecycle_state'] = states.get((ref.factor_id, ref.version), card['lifecycle_state'])
             handler.send_json({'ok': True, 'ref': ref.model_dump(mode='json'), 'mode': mode,
                                'as_of': as_of.isoformat(), 'cards': cards,
                                'message': '无本次观测' if not cards else 'Last source-bound evidence; eligibility unvalidated',

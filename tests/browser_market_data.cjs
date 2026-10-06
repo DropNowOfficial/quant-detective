@@ -62,6 +62,9 @@ async function factorWorkflow(browser){
   await page.locator('#factor-select').selectOption('locked.amihud@1.0.0');
   await page.waitForFunction(()=>document.querySelector('#evidence-status').textContent.includes('无本次观测'));
   assert.equal(await page.locator('#evidence-list [data-observation]').count(),0,'Unimplemented components must never invent observations.');
+  await page.waitForFunction(()=>document.querySelector('#trial-list').textContent.includes('No recorded trials'));
+  assert.match(await page.locator('#lifecycle-list').innerText(),/No recorded lifecycle transitions/);
+  assert.match(await page.locator('#history-status').innerText(),/candidate/);
   await page.locator('#factor-select').selectOption('minute.vwap60@1.0.0');
   await page.waitForSelector('#evidence-list [data-observation]');
   assert.match(await page.locator('#evidence-list').innerText(),/202.25/);

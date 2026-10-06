@@ -77,7 +77,8 @@ stores reject operations with `STORE_CLOSED`; closing twice is harmless. This
 synchronous SQLite interface does not share a connection across threads.
 
 - `revision() -> int`: monotonically increases once for each new definition
-  registration or atomic dataset commit; content/request replays do not increase it
+  registration, atomic dataset commit, or C1 accepted lifecycle/trial/budget append;
+  content/request replays do not increase it. Local approval staging does not advance it
 - `definitions() -> list[FactorDefinition]`: independent snapshots, ordered by
   factor ID then version
 - `dataset_manifest(dataset_id, version) -> DatasetManifest | None`: read the
@@ -192,3 +193,14 @@ explicit validator codes include `UNKNOWN_CALCULATOR`, `INVALID_INPUT_FIELDS`,
 schema errors. The mathematical fingerprint helper raises
 `DEFINITION_REF_MISMATCH`. Unexpected SQLite failures remain SQLite exceptions,
 with their transaction fully rolled back.
+
+
+## C1 local governance extension
+
+[governance_v1](../contracts/factors/governance_v1.md) specifies the non-promoting
+lifecycle, immutable trials and disabled budget records. Evidence/approval/check
+records are append-only and accepted transitions commit atomically under the
+original expected revision. The nine virtual legacy baselines remain unchanged.
+`FactorStore(path, read_only=True)` never creates or migrates a database; old
+schemas return uninitialized/empty governance history. No governance write route
+or production cutover exists.

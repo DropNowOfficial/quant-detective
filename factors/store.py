@@ -56,6 +56,44 @@ CREATE TABLE IF NOT EXISTS observations (
 );
 CREATE INDEX IF NOT EXISTS observations_asof
 ON observations(factor_id, factor_version, effective_us);
+CREATE TABLE IF NOT EXISTS lifecycle_events (
+    event_id TEXT PRIMARY KEY,
+    factor_id TEXT NOT NULL,
+    factor_version TEXT NOT NULL,
+    at_us INTEGER NOT NULL,
+    store_revision INTEGER NOT NULL UNIQUE,
+    payload TEXT NOT NULL,
+    audit_hash TEXT NOT NULL,
+    result TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS lifecycle_history
+ON lifecycle_events(factor_id, factor_version, at_us, store_revision);
+CREATE TABLE IF NOT EXISTS lifecycle_approvals (
+    approval_id TEXT PRIMARY KEY,
+    event_id TEXT NOT NULL UNIQUE,
+    payload TEXT NOT NULL,
+    audit_hash TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS lifecycle_checks (
+    check_id TEXT PRIMARY KEY,
+    event_id TEXT NOT NULL UNIQUE,
+    factor_id TEXT NOT NULL,
+    factor_version TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    audit_hash TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS trials (
+    run_id TEXT PRIMARY KEY,
+    store_revision INTEGER NOT NULL UNIQUE,
+    payload TEXT NOT NULL,
+    audit_hash TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS research_budgets (
+    batch_id TEXT PRIMARY KEY,
+    store_revision INTEGER NOT NULL UNIQUE,
+    payload TEXT NOT NULL,
+    audit_hash TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS requests (
     request_id TEXT PRIMARY KEY,
     operation TEXT NOT NULL,
@@ -84,15 +122,22 @@ def _snapshot(value, model, error):
 
 
 class FactorStore:
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, *, read_only: bool = False):
+        if type(read_only) is not bool:
+            raise ValueError('INVALID_READ_ONLY_MODE')
         self.path = Path(path)
-        self._db = sqlite3.connect(self.path, isolation_level=None)
+        self._read_only = read_only
+        self._db = (sqlite3.connect(self.path.resolve().as_uri() + '?mode=ro', uri=True, isolation_level=None)
+                    if read_only else sqlite3.connect(self.path, isolation_level=None))
         self._closed = False
         try:
             self._db.execute("PRAGMA foreign_keys=ON")
+            if read_only:
+                return
             self._db.executescript(_SCHEMA)
             # Even accidental internal SQL cannot rewrite evidence records.
-            for table in ("definitions", "datasets", "observations", "requests"):
+            for table in ("definitions", "datasets", "observations", "requests", "lifecycle_events",
+                          "lifecycle_approvals", "lifecycle_checks", "trials", "research_budgets"):
                 for action in ("UPDATE", "DELETE"):
                     self._db.execute(
                         f"CREATE TRIGGER IF NOT EXISTS immutable_{table}_{action.lower()} "
@@ -122,6 +167,8 @@ class FactorStore:
     @contextmanager
     def _transaction(self):
         self._ensure_open()
+        if self._read_only:
+            raise ValueError("STORE_READ_ONLY")
         self._db.execute("BEGIN IMMEDIATE")
         try:
             yield
@@ -348,3 +395,139 @@ class FactorStore:
         if mode == "strict_replay" and any(row.pit_grade == "RECONSTRUCTED" for row in selected.values()):
             raise ValueError("PIT_EVIDENCE_REQUIRED")
         return sorted(selected.values(), key=lambda row: (row.observed_at, row.instrument_id))
+
+
+    def resolve_definition(self, ref: FactorRef) -> FactorDefinition:
+        """Resolve a retained external version or the immutable virtual catalog."""
+        from .registry import get
+        self._ensure_open()
+        ref = _snapshot(ref, FactorRef, 'INVALID_FACTOR_REF')
+        item = self._existing_definition(ref)
+        if item is not None:
+            check_reserved_definition(item)
+            return item
+        return get(ref)
+
+    def governance_initialized(self) -> bool:
+        self._ensure_open()
+        return all(self._has_table(name) for name in (
+            'lifecycle_events', 'lifecycle_approvals', 'lifecycle_checks', 'trials', 'research_budgets'))
+
+    def _has_table(self, name):
+        self._ensure_open()
+        return self._db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)).fetchone() is not None
+
+    def lifecycle_history(self, ref: FactorRef, *, as_of: datetime | None = None) -> list:
+        from .lifecycle import LifecycleEvent
+        ref = _snapshot(ref, FactorRef, 'INVALID_FACTOR_REF')
+        if as_of is not None:
+            require_utc(as_of)
+        if not self._has_table('lifecycle_events'):
+            return []
+        sql = 'SELECT payload FROM lifecycle_events WHERE factor_id=? AND factor_version=?'
+        args = _ref_key(ref)
+        if as_of is not None:
+            sql += ' AND at_us<=?'
+            args = (*args, _micros(as_of))
+        return [LifecycleEvent.model_validate_json(row[0]) for row in self._db.execute(
+            sql+' ORDER BY at_us, store_revision', args)]
+
+    def lifecycle_check_artifacts(self, ref: FactorRef, *, as_of: datetime | None = None) -> list[dict]:
+        events = self.lifecycle_history(ref, as_of=as_of)
+        if not self._has_table('lifecycle_checks'):
+            return []
+        return [json.loads(row[0]) for event in events for row in self._db.execute(
+            'SELECT payload FROM lifecycle_checks WHERE event_id=?', (event.event_id,))]
+
+    def lifecycle_approval(self, event_id: str) -> dict | None:
+        self._ensure_open()
+        if not self._has_table('lifecycle_approvals'):
+            return None
+        row = self._db.execute('SELECT payload FROM lifecycle_approvals WHERE event_id=?', (event_id,)).fetchone()
+        return json.loads(row[0]) if row else None
+
+    def _lifecycle_replay(self, event):
+        row = self._db.execute('SELECT payload, result FROM lifecycle_events WHERE event_id=?',
+                               (event.event_id,)).fetchone()
+        if row is None:
+            return None
+        if row[0] != canonical_json(event.model_dump(mode='json')):
+            raise ValueError('EVENT_ID_CONFLICT')
+        from .lifecycle import TransitionResult
+        return TransitionResult.model_validate_json(row[1])
+
+    def _append_lifecycle(self, event, approval, check, result):
+        payload = event.model_dump(mode='json')
+        self._db.execute('INSERT INTO lifecycle_approvals VALUES (?, ?, ?, ?)',
+            (approval['approval_id'], event.event_id, canonical_json(approval), fingerprint(approval)))
+        self._db.execute('INSERT INTO lifecycle_checks VALUES (?, ?, ?, ?, ?, ?)',
+            (check['check_id'], event.event_id, *_ref_key(event.factor_ref), canonical_json(check), fingerprint(check)))
+        self._db.execute('INSERT INTO lifecycle_events VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            (event.event_id, *_ref_key(event.factor_ref), _micros(event.at), result.revision,
+             canonical_json(payload), fingerprint(payload), result.model_dump_json()))
+
+    def _record_trial(self, record):
+        payload = record.model_dump(mode='json')
+        serialized = canonical_json(payload)
+        with self._transaction():
+            for ref in record.factor_refs:
+                self.resolve_definition(ref)
+            existing = self._db.execute('SELECT payload FROM trials WHERE run_id=?', (record.run_id,)).fetchone()
+            if existing:
+                if existing[0] != serialized:
+                    raise ValueError('TRIAL_ID_CONFLICT')
+                return record.run_id
+            self._db.execute('INSERT INTO trials VALUES (?, ?, ?, ?)',
+                (record.run_id, self._next_revision(), serialized, fingerprint(payload)))
+        return record.run_id
+
+    def trial(self, run_id: str):
+        from .trials import TrialRecord
+        if not isinstance(run_id, str) or not run_id.strip():
+            raise ValueError('INVALID_RUN_ID')
+        if not self._has_table('trials'):
+            return None
+        row = self._db.execute('SELECT payload FROM trials WHERE run_id=?', (run_id,)).fetchone()
+        return TrialRecord.model_validate_json(row[0]) if row else None
+
+    def trials(self, ref: FactorRef) -> list:
+        from .trials import TrialRecord
+        ref = _snapshot(ref, FactorRef, 'INVALID_FACTOR_REF')
+        if not self._has_table('trials'):
+            return []
+        records = [TrialRecord.model_validate_json(row[0]) for row in self._db.execute(
+            'SELECT payload FROM trials ORDER BY store_revision')]
+        return [record for record in records if ref in record.factor_refs]
+
+    def _record_budget(self, budget):
+        payload = budget.model_dump(mode='json')
+        serialized = canonical_json(payload)
+        with self._transaction():
+            existing = self._db.execute('SELECT payload FROM research_budgets WHERE batch_id=?', (budget.batch_id,)).fetchone()
+            if existing:
+                if existing[0] != serialized:
+                    raise ValueError('BUDGET_ID_CONFLICT')
+                return budget.batch_id
+            self._db.execute('INSERT INTO research_budgets VALUES (?, ?, ?, ?)',
+                (budget.batch_id, self._next_revision(), serialized, fingerprint(payload)))
+        return budget.batch_id
+
+    def budget(self, batch_id: str):
+        from .trials import ResearchBudget
+        if not isinstance(batch_id, str) or not batch_id.strip():
+            raise ValueError('INVALID_BATCH_ID')
+        if not self._has_table('research_budgets'):
+            return None
+        row = self._db.execute('SELECT payload FROM research_budgets WHERE batch_id=?', (batch_id,)).fetchone()
+        return ResearchBudget.model_validate_json(row[0]) if row else None
+
+    def observation_manifests(self, observation: FactorObservation) -> list[DatasetManifest]:
+        """Original manifest provenance for exactly the selected immutable row."""
+        self._ensure_open()
+        observation = _snapshot(observation, FactorObservation, 'INVALID_OBSERVATION')
+        payload = canonical_json(observation.model_dump(mode='json'))
+        return [DatasetManifest.model_validate_json(row[0]) for row in self._db.execute(
+            'SELECT datasets.payload FROM datasets JOIN observations '
+            'ON datasets.dataset_id=observations.dataset_id AND datasets.version=observations.dataset_version '
+            'WHERE observations.factor_id=? AND observations.factor_version=? AND observations.payload=? '
+            'ORDER BY datasets.dataset_id, datasets.version', (*_ref_key(observation.ref), payload))]

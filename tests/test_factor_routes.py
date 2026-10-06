@@ -457,3 +457,95 @@ def test_external_similar_prefix_is_not_a_locked_component(tmp_path):
         catalog=json.loads(body)['factors']
         assert len([item for item in catalog if item['binding_status']=='UNIMPLEMENTED'])==7
         assert next(item for item in catalog if item['definition']['ref']['factor_id']=='locked.external_research')['binding_status']=='EXTERNAL_VALUE'
+
+
+def test_history_reads_without_import_enable_and_never_write(tmp_path):
+    from test_factor_models import definition
+    from test_factor_trials import trial
+    from factors.trials import record_trial
+    from test_factor_lifecycle import event, approved
+    path = tmp_path / 'factors.sqlite'
+    with FactorStore(path) as store:
+        store.register_definition(definition(), expected_revision=0, request_id='candidate')
+        assert approved(store, event(store, 'retired')).accepted
+        record_trial(trial(status='FAILED', error_reason='<script>failure</script>'), store=store)
+        revision = store.revision()
+    with running(tmp_path) as app:
+        query = '?factor_id=external_value&version=1'
+        status, body = request(app, '/api/factors/lifecycle'+query)
+        lifecycle = json.loads(body)
+        assert status == 200 and lifecycle['lifecycle_state'] == 'retired'
+        assert lifecycle['events'][0]['to_state'] == 'retired'
+        status, body = request(app, '/api/factors/trials'+query)
+        payload = json.loads(body)
+        assert status == 200 and payload['trials'][0]['record']['status'] == 'FAILED'
+        assert payload['trials'][0]['record']['report_kind'] == 'factor'
+        assert payload['trials'][0]['evidence']['promotable'] is False
+        assert request(app, '/api/factors/lifecycle'+query, 'POST', {'approval':True})[0] == 405
+        assert request(app, '/api/factors/trials'+query, 'POST', {'approval':True})[0] == 405
+        _, body = request(app, '/api/factors')
+        row = next(x for x in json.loads(body)['factors'] if x['definition']['ref']['factor_id']=='external_value')
+        assert row['lifecycle_state'] == 'retired' and row['eligible_for_production'] is False
+    with FactorStore(path) as store:
+        assert store.revision() == revision
+
+
+@pytest.mark.parametrize('route', ['/api/factors/lifecycle', '/api/factors/trials'])
+@pytest.mark.parametrize('query', ['', '?factor_id=minute.vwap60', '?factor_id=minute.vwap60&version=1.0.0&sql=select',
+    '?factor_id=minute.vwap60&factor_id=other&version=1.0.0', '?factor_id=minute.vwap60&version=1.0.0&mode=live',
+    '?factor_id=minute.vwap60&version=1.0.0&as_of=2026-10-06T12:00:00'])
+def test_history_query_discipline(tmp_path, route, query):
+    with running(tmp_path) as app:
+        assert request(app, route+query)[0] == 400
+    assert not (tmp_path/'factors.sqlite').exists()
+
+
+def test_empty_history_is_honest_and_read_only(tmp_path):
+    with running(tmp_path) as app:
+        query = '?factor_id=minute.vwap60&version=1.0.0'
+        status, body = request(app, '/api/factors/lifecycle'+query)
+        payload = json.loads(body)
+        assert status == 200 and payload['events'] == []
+        assert payload['lifecycle_state'] == 'LEGACY_UNVALIDATED'
+        status, body = request(app, '/api/factors/trials'+query)
+        payload = json.loads(body)
+        assert status == 200 and payload['trials'] == [] and payload['message'] == '未运行 / No recorded trials'
+    assert not (tmp_path/'factors.sqlite').exists()
+
+
+def test_read_old_schema_does_not_initialize_governance(tmp_path):
+    from contextlib import closing
+    import sqlite3
+    path = tmp_path/'factors.sqlite'
+    with closing(sqlite3.connect(path)) as connection:
+        connection.executescript('CREATE TABLE metadata(singleton INTEGER PRIMARY KEY, revision INTEGER); INSERT INTO metadata VALUES(1,0); CREATE TABLE definitions(factor_id TEXT, version TEXT, payload TEXT, audit_hash TEXT);')
+    before = path.read_bytes()
+    with running(tmp_path) as app:
+        status, body = request(app, '/api/factors/lifecycle?factor_id=minute.vwap60&version=1.0.0')
+        payload = json.loads(body)
+        assert status == 200 and payload['history_initialized'] is False and payload['events'] == []
+        assert payload['lifecycle_state'] == 'LEGACY_UNVALIDATED'
+        status, body = request(app, '/api/factors/trials?factor_id=minute.vwap60&version=1.0.0')
+        assert status == 200 and json.loads(body)['trials'] == []
+    assert path.read_bytes() == before
+    with closing(sqlite3.connect(path)) as connection:
+        assert connection.execute("SELECT name FROM sqlite_master WHERE name LIKE 'lifecycle_%'").fetchall() == []
+
+
+def test_virtual_component_local_history_state_is_not_hidden_by_catalog(tmp_path):
+    from factors.lifecycle import LifecycleEvent, local_operation, record_transition
+    from factors.models import FactorRef
+    from test_factor_models import T
+    ref = FactorRef(factor_id='locked.amihud', version='1.0.0')
+    with FactorStore(tmp_path/'factors.sqlite') as store:
+        event = LifecycleEvent(event_id='component-retire',factor_ref=ref,from_state='candidate',
+            to_state='retired',at=T,actor='local reviewer',reason='Retain unimplemented component definition',
+            evidence_ids=[],expected_revision=0)
+        with local_operation(store, actor_label=event.actor, event=event, now=T,
+                             approval_id='component-approval',approval_reason='Explicit local retirement') as context:
+            assert record_transition(event, store=store, approvals={'context':context}).accepted
+        assert store.definitions() == []
+    with running(tmp_path) as app:
+        _, body = request(app, '/api/factors')
+        entry = next(x for x in json.loads(body)['factors'] if x['definition']['ref']==ref.model_dump(mode='json'))
+        assert entry['lifecycle_state'] == 'retired' and entry['binding_status'] == 'UNIMPLEMENTED'

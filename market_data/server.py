@@ -182,12 +182,14 @@ def make_server(port=8767, fetcher=fetch, *, factor_store_path=None, enable_fact
     server.fetcher = fetcher
     server.live = LiveService(fetcher=fetcher)
     server.factor_routes = None
+    server.factor_store_path = Path(factor_store_path) if factor_store_path is not None else None
     from copy import deepcopy
     server.factor_reports = deepcopy(factor_reports or {})
     try:
         if enable_factor_import:
             path = factor_store_path if factor_store_path is not None else Path("runtime/factors.sqlite")
             server.factor_routes = FactorRoutes(path, factor_universe)
+            server.factor_store_path = server.factor_routes.path
         return server
     except BaseException:
         server.server_close()

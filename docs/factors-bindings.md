@@ -132,6 +132,13 @@ quality expiry with their value, age, original clocks and `EXPIRED_QUALITY`.
 - GET `/api/factors/observations` requires exactly one nonblank `factor_id` and
   `version`; optional `as_of` (timezone-aware ISO), `mode` (`exploratory` default,
   `live` or `strict_replay`). Unknown/duplicate keys fail; no arbitrary SQL/path
+- GET `/api/factors/lifecycle` requires exactly one factor_id/version; optional
+  timezone-aware as_of reads accepted local events/checks only
+- GET `/api/factors/trials` requires exactly one factor_id/version and reads
+  immutable factor/strategy/forward records with honest missing-evidence limits
+- History query keys are strict; duplicate/unknown/blank keys fail. Reads use an
+  explicitly configured existing DB in SQLite read-only mode and never initialize
+  a missing/old schema. No trials are shown as 未运行 / No recorded trials
 - Existing B2 session/preview/commit remain the only writable routes, opt-in
 
 The page reads CSV and strict definition+manifest JSON into page memory, exposes
@@ -167,3 +174,15 @@ minimal DOM/fetch fixture to test asynchronous replacement/read/preview/save
 state. It is a focused unit test, not browser rendering or visual acceptance.
 The supported browser entry additionally holds real `File.text()` completions
 to cover CSV/JSON replacement and out-of-order completion.
+
+
+C1 adds read-only local lifecycle/trial history under the
+[non-promoting governance contract](../contracts/factors/governance_v1.md).
+Untouched catalog labels retain the B3 display casing; accepted local records
+show their lowercase governed state separately from the unchanged three axes.
+Local audit actor labels are not authenticated external identities. Reconstructed
+B3 observations remain ineligible for production, and LEGACY_UNVALIDATED never
+authorizes a migration. Existing alerts still follow the original A-quality gate.
+`node tests/test_factor_history_state.cjs` checks the actual script's literal-text
+history, failed trial/kind display and late-selection isolation. It is unit
+evidence, not browser/visual acceptance.
