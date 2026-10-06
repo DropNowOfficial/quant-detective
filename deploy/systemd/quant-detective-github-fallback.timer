@@ -1,12 +1,12 @@
 [Unit]
-Description=Check GitHub fallback every five minutes; dispatcher enforces ET weekday window
+Description=Check GitHub fallback during the established ET weekday market window
 
 [Timer]
-# Intentionally wakes outside market hours so the status file records
-# OUTSIDE_MARKET_WINDOW. github_fallback_dispatch.py performs zero GitHub API
-# calls and never dispatches outside Mon-Fri 04:00-20:10 America/New_York.
-OnBootSec=3min
-OnUnitInactiveSec=5min
+# Every 5 minutes, Mon-Fri 04:00-19:55 America/New_York.
+OnCalendar=Mon..Fri *-*-* 04..19:00/5:00 America/New_York
+# Final two checks around the existing 20:02 ET hosted fallback slot.
+OnCalendar=Mon..Fri *-*-* 20:00:00 America/New_York
+OnCalendar=Mon..Fri *-*-* 20:05:00 America/New_York
 AccuracySec=10s
 RandomizedDelaySec=15s
 Persistent=true
