@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.error import URLError
 from urllib.parse import parse_qs, urlparse
 
@@ -437,3 +438,12 @@ def test_external_run_appearing_between_checks_suppresses_duplicate(tmp_path):
     assert out["status"]=="FALLBACK_RUN_QUEUED"
     assert out["reason"]=="workflow_dispatch_appeared_before_duplicate_request"
     assert out["dispatch_run_id"]==301
+
+
+def test_systemd_timer_uses_established_et_weekday_window():
+    root=Path(__file__).resolve().parents[1]
+    text=(root/"deploy/systemd/quant-detective-github-fallback.timer").read_text()
+    assert "Mon..Fri *-*-* 04..19:00/5:00 America/New_York" in text
+    assert "Mon..Fri *-*-* 20:00:00 America/New_York" in text
+    assert "Mon..Fri *-*-* 20:05:00 America/New_York" in text
+    assert "OnUnitInactiveSec=5min" not in text
