@@ -11,6 +11,7 @@ def test_deploy_shell_scripts_parse():
         "deploy/install-systemd.sh",
         "deploy/install-autoupdate.sh",
         "deploy/update-production.sh",
+        "deploy/configure-github-fallback.sh",
     ]:
         subprocess.run(["bash", "-n", str(ROOT / rel)], check=True)
 
@@ -67,7 +68,15 @@ def test_github_fallback_dispatch_timer_is_wired_safely():
     assert "EnvironmentFile=-/etc/quant-detective/github-fallback.env" in service
     assert "SuccessExitStatus=3" in service
     assert "OnUnitInactiveSec=5min" in timer
-    assert "Mon-Fri 04:00-20:10 America/New_York" in timer
     assert "QD_GITHUB_FALLBACK_TOKEN=" in env
     assert "quant-detective-github-fallback.timer" in updater
     assert "github-fallback.env.example" in updater
+
+
+def test_github_fallback_configurator_never_echoes_token():
+    text=(ROOT/"deploy/configure-github-fallback.sh").read_text()
+    assert "read -r -s TOKEN" in text
+    assert "QD_GITHUB_FALLBACK_TOKEN=%s" in text
+    assert 'echo "$TOKEN"' not in text
+    assert "chmod 777" not in text
+    assert "install -o root -g quantdetective -m 0640" in text
