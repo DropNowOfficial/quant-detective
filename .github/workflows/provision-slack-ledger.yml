@@ -1,0 +1,49 @@
+name: provision-slack-ledger
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_provision:
+        description: 'Authorize provisioning the dedicated bot-owned ledger Issue (no Slack delivery)'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: hosted-core-watch-fallback
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'DropNowOfficial/quant-detective' && github.ref == 'refs/heads/main' && inputs.confirm_provision == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      ledger_issue: ${{ steps.ledger.outputs.ledger_issue }}
+      ledger_url: ${{ steps.ledger.outputs.ledger_url }}
+    steps:
+      - name: Checkout trusted main
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          enable-cache: false
+
+      - name: Sync locked environment
+        run: uv sync --frozen
+
+      - name: Provision or verify dedicated ledger Issue
+        id: ledger
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QD_SLACK_PROVISION_CONFIRMED: ${{ inputs.confirm_provision }}
+          QD_SLACK_LEDGER_ISSUE: ${{ vars.QD_SLACK_LEDGER_ISSUE }}
+        run: uv run python -m scripts.provision_slack_ledger
