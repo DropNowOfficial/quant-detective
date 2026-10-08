@@ -55,6 +55,39 @@ document.
    resolve provisioning. Do not add a human creator to `QD_SLACK_PRODUCER_IDS`
    merely to bypass validation: that would also authorize their event comments.
    The forwarding program never creates a missing ledger Issue.
+
+   After this provisioning workflow is reviewed and deployed, dispatch
+   `.github/workflows/provision-slack-ledger.yml` on this repository's `main`
+   with `confirm_provision=true`. Its default is false. The job uses only the
+   existing `GITHUB_TOKEN` with `contents: read` / `issues: write`, the same
+   `hosted-core-watch-fallback` serialization group, and fixed author
+   `github-actions[bot]` (`41898282`); it has no human-author fallback. That
+   numeric identity was checked against the API author of
+   [a hosted workflow comment](https://github.com/DropNowOfficial/quant-detective/issues/40#issuecomment-6045865536).
+   It checks every open/closed Issue page for the fixed title
+   `Quant Detective Slack delivery ledger`, label `qd-slack-ledger`, or ledger
+   body marker, and cross-checks `QD_SLACK_LEDGER_ISSUE` if already configured.
+   PRs are excluded. Duplicate, corrupt, foreign, or wrong-author candidates
+   block creation. It creates no labels or signal comments.
+
+   A unique verified existing Issue is reused, including a closed Issue or one
+   whose initialized manifest is valid. Existing bodies, shards, and baselines
+   are never changed. This manifest identity check does not validate all shards
+   or establish forwarding readiness. Otherwise one POST creates the exact
+   uninitialized body, followed by complete rediscovery and authoritative
+   readback. API requests have five-second timeouts within a 30-second activity
+   deadline. A failed/ambiguous write is never automatically repeated; workflow
+   reruns can only rediscover. If verification fails or the job is interrupted,
+   inspect all candidate Issues and the run before considering a new dispatch.
+   GitHub Issue creation has no idempotency key: do not blindly dispatch again
+   after an uncertain outcome or create independent/out-of-band ledger writers.
+
+   The only successful outputs are `ledger_issue` and `ledger_url`, also shown
+   in the run summary. Use the verified number for the separately authorized
+   `QD_SLACK_LEDGER_ISSUE` variable update. Provisioning neither changes
+   `QD_SLACK_ENABLED` nor receives a webhook secret; it never initializes the
+   ledger, runs a market scan, or calls Slack. Keep forwarding disabled until
+   the remaining production gates are satisfied.
 5. **Configure authorized repository variables and save the secret securely.**
    Use the repository's secure secret interface for the webhook URL; do not
    paste it into logs, Issue bodies, workflow inputs, artifacts, or source code.
