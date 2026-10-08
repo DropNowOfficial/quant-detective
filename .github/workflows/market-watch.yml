@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'market_data/github_alerts.py'
+      - 'market_data/slack_alerts.py'
       - '.github/workflows/market-watch.yml'
   schedule:
     # Redundant public-data fallback. The VPS watcher is a separate runtime.
@@ -14,6 +15,15 @@ on:
     - cron: '2 20 * * 1-5'
       timezone: 'America/New_York'
   workflow_dispatch:
+    inputs:
+      slack_operation:
+        description: 'Slack ledger operation (initialization requires separate authorization)'
+        type: choice
+        required: true
+        default: run
+        options:
+          - run
+          - initialize
 
 permissions:
   contents: read
@@ -40,12 +50,39 @@ jobs:
       - name: Sync locked environment
         run: uv sync --frozen
 
+      - name: Prepare Slack delivery ledger
+        id: slack_prepare
+        if: ${{ !cancelled() && github.repository == 'DropNowOfficial/quant-detective' && github.ref == 'refs/heads/main' && contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) && vars.QD_SLACK_ENABLED == 'true' }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QD_SLACK_ENABLED: ${{ vars.QD_SLACK_ENABLED }}
+          QD_SLACK_LEDGER_ISSUE: ${{ vars.QD_SLACK_LEDGER_ISSUE }}
+          QD_SLACK_PRODUCER_IDS: ${{ vars.QD_SLACK_PRODUCER_IDS }}
+        run: |
+          uv run python -m market_data.slack_alerts prepare ${{ github.event_name == 'workflow_dispatch' && inputs.slack_operation == 'initialize' && '--initialize' || '' }}
+
       - name: One-shot hosted fallback scan
+        id: scan
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           QD_WATCH_OUTPUT: market-watch.json
         run: |
           uv run python -m market_data.cli watch --once --github-alerts
+
+      - name: Forward persisted GitHub observations to Slack
+        id: slack_forward
+        if: ${{ !cancelled() && github.repository == 'DropNowOfficial/quant-detective' && github.ref == 'refs/heads/main' && contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) && vars.QD_SLACK_ENABLED == 'true' && steps.scan.outcome != 'skipped' && steps.scan.outcome != 'cancelled' && steps.slack_prepare.outputs.ledger_ready == 'true' }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QD_SLACK_ENABLED: ${{ vars.QD_SLACK_ENABLED }}
+          QD_SLACK_LEDGER_ISSUE: ${{ vars.QD_SLACK_LEDGER_ISSUE }}
+          QD_SLACK_PRODUCER_IDS: ${{ vars.QD_SLACK_PRODUCER_IDS }}
+          QD_SLACK_WEBHOOK_URL: ${{ secrets.QD_SLACK_WEBHOOK_URL }}
+          QD_SLACK_REMAINING_BUDGET: ${{ steps.slack_prepare.outputs.remaining_budget }}
+        run: |
+          uv run python -m market_data.slack_alerts forward --budget-seconds "$QD_SLACK_REMAINING_BUDGET"
 
       - name: Write compact run summary
         if: always()
@@ -74,3 +111,12 @@ jobs:
               f.write("\n".join(out)+"\n")
           PY
           fi
+
+      - name: Preserve full scan evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-watch-${{ github.run_id }}-${{ github.run_attempt }}
+          path: market-watch.json
+          if-no-files-found: warn
+          retention-days: 30

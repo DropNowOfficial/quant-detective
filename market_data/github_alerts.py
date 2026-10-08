@@ -5,14 +5,16 @@ Event markers make repeated five-minute workflow runs idempotent.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import os
 import sys
 from urllib.error import HTTPError
-from urllib.parse import urlencode
+from urllib.parse import parse_qsl, urlencode, urlsplit
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
+
+from .quote_validity import publication_event
 
 ET = ZoneInfo("America/New_York")
 API = "https://api.github.com"
@@ -34,6 +36,22 @@ def _api(method, path, *, token, body=None):
     except HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")[:500]
         raise RuntimeError(f"GitHub API {exc.code}: {detail}") from exc
+
+
+def _pages(path: str, *, token: str) -> list[dict]:
+    parsed = urlsplit(path)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    query["per_page"] = 100
+    items = []
+    page = 1
+    while True:
+        query["page"] = page
+        page_path = parsed._replace(query=urlencode(query)).geturl()
+        batch = _api("GET", page_path, token=token)
+        items.extend(batch)
+        if len(batch) < 100:
+            return items
+        page += 1
 
 
 def _fmt(value, digits=2):
@@ -78,9 +96,15 @@ def _heartbeat_markdown(report):
     return "\n".join(lines)
 
 
-def _event_markdown(event):
+def _event_markdown(event: dict, *, generated_at_et: str | None = None,
+                    run_id: str | None = None) -> str:
+    metadata = json.dumps(
+        {"schema": 1, "generated_at_et": generated_at_et, "run_id": run_id},
+        separators=(",", ":"),
+    )
     lines = [
         _event_mark(event["event_key"]),
+        f"<!-- qd-source:{metadata} -->",
         f"### {event['symbol']} — {event['state']}",
         "",
         f"- Price: **{_fmt(event.get('current_price'))}**",
@@ -93,6 +117,13 @@ def _event_markdown(event):
         f"- Relative change vs QQQ: **{_fmt(event.get('relative_change_vs_qqq_pp'))} pp**",
         f"- State reason: {event.get('reason')}",
     ]
+    evidence = event.get("quote_validity") or {}
+    lines += [
+        f"- Source bar: {evidence.get('source_bar_start_utc')} to {evidence.get('source_bar_end_utc')} ({evidence.get('source_session')})",
+        f"- HTTP receipt: {evidence.get('received_at_utc')}",
+        f"- Evaluated: {evidence.get('evaluated_at_utc')}",
+        f"- Source bar expires (exclusive): {evidence.get('bar_expires_at_utc')}; receipt valid through: {evidence.get('receipt_valid_until_utc')}",
+    ]
     if event.get("leader_reasons"):
         lines.append("- Leader trigger: " + "; ".join(event["leader_reasons"]))
     context = event.get("market_context") or {}
@@ -101,6 +132,9 @@ def _event_markdown(event):
         es = context.get("ES=F") or {}
         qqq = context.get("QQQ") or {}
         lines.append(f"- Regime: NQ={_fmt(nq.get('change_pct'))}% | ES={_fmt(es.get('change_pct'))}% | QQQ={_fmt(qqq.get('change_pct'))}%")
+        for symbol, proxy in context.items():
+            provenance = proxy.get("quote_validity") or {}
+            lines.append(f"- {symbol} source bar: {provenance.get('source_bar_start_utc')} to {provenance.get('source_bar_end_utc')}; HTTP receipt: {provenance.get('received_at_utc')}")
     news = event.get("news") or []
     if news:
         lines.append("- Recent news context:")
@@ -115,7 +149,7 @@ def _event_markdown(event):
 
 def _find_daily_issue(repo, token, title):
     query = urlencode({"state": "open", "per_page": 100, "sort": "created", "direction": "desc"})
-    items = _api("GET", f"/repos/{repo}/issues?{query}", token=token)
+    items = _pages(f"/repos/{repo}/issues?{query}", token=token)
     for item in items:
         if item.get("title") == title and "pull_request" not in item:
             return item
@@ -123,7 +157,7 @@ def _find_daily_issue(repo, token, title):
 
 
 def _comments(repo, token, issue):
-    return _api("GET", f"/repos/{repo}/issues/{issue['number']}/comments?per_page=100", token=token)
+    return _pages(f"/repos/{repo}/issues/{issue['number']}/comments?per_page=100", token=token)
 
 
 def _seen_markers(issue, comments):
@@ -132,12 +166,13 @@ def _seen_markers(issue, comments):
     return text
 
 
-def publish(report):
+def publish(report: dict, *, clock=None) -> dict:
+    clock = clock or (lambda: datetime.now(timezone.utc))
     alerts = report.get("alerts") or []
     repo = os.getenv("GITHUB_REPOSITORY")
     token = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
     if not repo or not token:
-        return {"published": 0, "reason": "GitHub runtime credentials unavailable"}
+        return {"published": 0, "reason": "GitHub runtime credentials unavailable", "source_comments": []}
 
     generated = datetime.fromisoformat(report["generated_at_et"])
     title = "Market Watch | " + generated.astimezone(ET).date().isoformat() + " ET"
@@ -179,12 +214,21 @@ def publish(report):
 
     seen = _seen_markers(issue, comments)
     published = 0
+    source_comments = []
+    run_id = os.getenv("GITHUB_RUN_ID") or None
+    rejections = report.setdefault("publication_rejections", [])
     for event in alerts:
         mark = _event_mark(event["event_key"])
         if mark in seen:
             continue
-        body = _event_markdown(event)
-        _api("POST", f"/repos/{repo}/issues/{issue['number']}/comments", token=token, body={"body": body})
+        evaluated = clock()
+        checked, reason = publication_event(event, now=evaluated)
+        if checked is None:
+            rejections.append({"event_key": event.get("event_key"), "evaluated_at_utc": evaluated.isoformat(), "reason": reason})
+            continue
+        body = _event_markdown(checked, generated_at_et=report["generated_at_et"], run_id=run_id)
+        created = _api("POST", f"/repos/{repo}/issues/{issue['number']}/comments", token=token, body={"body": body})
+        source_comments.append(created)
         seen += "\n" + mark
         published += 1
     return {
@@ -192,6 +236,7 @@ def publish(report):
         "heartbeat": heartbeat_action,
         "issue_number": issue["number"],
         "issue_url": issue.get("html_url"),
+        "source_comments": source_comments,
     }
 
 
