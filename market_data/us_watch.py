@@ -22,6 +22,8 @@ from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
 from .transport import fetch
+from .quote_validity import (confirmation_evidence, quote_evidence, session_name, utc_time,
+                             refresh_intraday, refresh_market_context, previous_session_date)
 
 ET = ZoneInfo("America/New_York")
 DEFAULT_SYMBOLS = (
@@ -109,15 +111,17 @@ def _chart(fetcher, symbol, *, range_value, interval, include_prepost, require_u
     return rows, meta, receipt
 
 
-def _market_proxy(fetcher, symbol, now):
+def _market_proxy(fetcher, symbol, now, clock=None):
     try:
         rows, meta, receipt = _chart(fetcher, symbol, range_value="5d", interval="5m",
                                      include_prepost=True, require_us_equity=False)
-        last = rows[-1]
+        last = max(rows, key=lambda row: row["t"])
+        now = clock() if clock else now
         prior = next((float(meta[k]) for k in ("regularMarketPreviousClose", "chartPreviousClose", "previousClose")
                       if _finite(meta.get(k))), None)
         return {
             "ok": True,
+            "quote_validity": quote_evidence(last["t"], receipt.get("received_at_utc"), now, equity=(symbol == "QQQ")),
             "symbol": symbol,
             "instrument_type": meta.get("instrumentType"),
             "price": last["close"],
@@ -132,10 +136,10 @@ def _market_proxy(fetcher, symbol, now):
                 "error": f"{type(exc).__name__}: {str(exc)[:200]}"}
 
 
-def _market_context(fetcher, now):
+def _market_context(fetcher, now, clock=None):
     symbols = ("NQ=F", "ES=F", "QQQ")
     with ThreadPoolExecutor(max_workers=3, thread_name_prefix="qd-regime") as pool:
-        futures = {pool.submit(_market_proxy, fetcher, symbol, now): symbol for symbol in symbols}
+        futures = {pool.submit(_market_proxy, fetcher, symbol, now, clock): symbol for symbol in symbols}
         return {symbol: future.result() for future, symbol in ((f, futures[f]) for f in as_completed(futures))}
 
 
@@ -212,27 +216,20 @@ def _daily_metrics(rows, now):
 
 
 def _session_name(stamp):
-    d = datetime.fromtimestamp(stamp, ET)
-    minute = d.hour * 60 + d.minute
-    if 240 <= minute < 570:
-        return "PRE"
-    if 570 <= minute < 960:
-        return "RTH"
-    if 960 <= minute < 1200:
-        return "POST"
-    return "OVERNIGHT"
+    return session_name(stamp)
 
 
-def _today_intraday(rows, now):
+def _today_intraday(rows, now, received_at=None):
     today = now.astimezone(ET).date()
+    receipt = utc_time(received_at)
     out = []
-    for r in rows:
+    for r in sorted(rows, key=lambda r: r["t"]):
         d = datetime.fromtimestamp(r["t"], ET)
         if d.date() != today:
             continue
         x = dict(r)
         x["session"] = _session_name(r["t"])
-        x["completed"] = now.timestamp() >= r["t"] + 300
+        x["completed"] = bool(receipt and receipt.timestamp() >= r["t"] + 300)
         out.append(x)
     return out
 
@@ -263,7 +260,7 @@ def _same_time_rvol(current_rows, history_rows, now):
     for r in history_rows:
         local = datetime.fromtimestamp(r["t"], ET)
         minute = local.hour * 60 + local.minute
-        if local.date() >= today or not 570 <= minute < 960 or minute > target_minute:
+        if local.date() >= today or _session_name(r["t"]) != "RTH" or minute > target_minute:
             continue
         by_date[local.date()] = by_date.get(local.date(), 0.0) + r["volume"]
     samples = [by_date[d] for d in sorted(by_date)[-20:] if by_date[d] > 0]
@@ -273,8 +270,8 @@ def _same_time_rvol(current_rows, history_rows, now):
     return (current_cumulative / baseline if baseline > 0 else None), len(samples)
 
 
-def _intraday_metrics(rows, daily, now, history_rows=None):
-    today = _today_intraday(rows, now)
+def _intraday_metrics(rows, daily, now, history_rows=None, received_at=None):
+    today = _today_intraday(rows, now, received_at)
     if not today:
         raise ValueError("no bars for current ET date")
     last = max(today, key=lambda r: r["t"])
@@ -285,7 +282,8 @@ def _intraday_metrics(rows, daily, now, history_rows=None):
     vpath = _vwap_path(rth)
     current_vwap = vpath[-1][1] if vpath else None
     two_above = False
-    if len(vpath) >= 2:
+    confirmation = confirmation_evidence(completed_rth, received_at, now, price_session=last["session"])
+    if len(vpath) >= 2 and [p[0]["t"] for p in vpath[-2:]] == [r["t"] for r in completed_rth[-2:]]:
         (a, av), (b, bv) = vpath[-2], vpath[-1]
         two_above = a["close"] > av and a["close"] > daily["ma5"] and b["close"] > bv and b["close"] > daily["ma5"]
     current = last["close"]
@@ -294,6 +292,8 @@ def _intraday_metrics(rows, daily, now, history_rows=None):
     rth_open = rth[0]["open"] if rth else None
     same_time_rvol, rvol_samples = _same_time_rvol(today, history_rows or [], now)
     result = {
+        "quote_validity": quote_evidence(last["t"], received_at, now, daily_date=daily.get("previous_session_date"), require_daily=True),
+        "confirmation_validity": confirmation,
         "current_price": current,
         "current_session": last["session"],
         "current_bar_time_utc": datetime.fromtimestamp(last["t"], timezone.utc).isoformat(),
@@ -324,6 +324,11 @@ def _intraday_metrics(rows, daily, now, history_rows=None):
 
 
 def classify(daily, intra, qqq_change=None):
+    if not (intra.get("quote_validity") or {}).get("eligible"):
+        return {"state": "DATA_INVALID", "reason": "; ".join((intra.get("quote_validity") or {}).get("rejection_reasons") or ["MISSING_QUOTE_VALIDITY"]),
+                "leader_detected": False, "leader_reasons": [], "daily_trend_gate": None,
+                "standard_entry_geometry": None, "observation_geometry": None,
+                "relative_change_vs_qqq_pp": None}
     trend_ok = daily["ma5_slope_1d"] > 0 and daily["ma5_3point_slope"] >= 0
     d5 = intra["d5_atr"]
     chg = intra.get("change_pct")
@@ -348,6 +353,7 @@ def classify(daily, intra, qqq_change=None):
     observation_geometry = -0.35 <= d5 <= 0.40
     rvol = intra.get("same_time_rvol")
     confirmed = (trend_ok and standard_geometry
+                 and (intra.get("confirmation_validity") or {}).get("eligible", False)
                  and intra.get("two_completed_5m_above_vwap_and_ma5", False)
                  and _finite(rvol) and rvol >= 0.8)
 
@@ -382,14 +388,19 @@ def classify(daily, intra, qqq_change=None):
     }
 
 
-def _scan_symbol(symbol, fetcher, now, qqq_change=None):
+def _scan_symbol(symbol, fetcher, now, qqq_change=None, clock=None):
     cache_key = (symbol, now.astimezone(ET).date().isoformat())
     cached = _DAILY_CACHE.get(cache_key)
+    expected_daily = previous_session_date(now)
+    if cached is not None and cached[0].get("previous_session_date") != expected_daily:
+        _DAILY_CACHE.pop(cache_key, None)
+        cached = None
     if cached is None:
         daily_rows, _, daily_receipt = _chart(fetcher, symbol, range_value="3mo", interval="1d", include_prepost=False)
         daily = _daily_metrics(daily_rows, now)
         cached = (daily, daily_receipt.get("received_at_utc"))
-        _DAILY_CACHE[cache_key] = cached
+        if daily["previous_session_date"] == expected_daily:
+            _DAILY_CACHE[cache_key] = cached
     daily, daily_known_at = cached
     volume_cached = _VOLUME_PROFILE_CACHE.get(cache_key)
     if volume_cached is None:
@@ -398,14 +409,16 @@ def _scan_symbol(symbol, fetcher, now, qqq_change=None):
         _VOLUME_PROFILE_CACHE[cache_key] = volume_cached
     volume_rows, volume_known_at = volume_cached
     intraday_rows, _, intra_receipt = _chart(fetcher, symbol, range_value="5d", interval="5m", include_prepost=True)
-    intra = _intraday_metrics(intraday_rows, daily, now, history_rows=volume_rows)
+    now = clock() if clock else now
+    intra = _intraday_metrics(intraday_rows, daily, now, history_rows=volume_rows,
+                              received_at=intra_receipt.get("received_at_utc"))
     state = classify(daily, intra, qqq_change=qqq_change)
     previous = datetime.fromisoformat(daily["previous_session_date"]).date()
     current = now.astimezone(ET).date()
     calendar_gap = (current - previous).days
     return {
         "symbol": symbol,
-        "status": "OK",
+        "status": "OK" if intra["quote_validity"]["eligible"] else "INVALID_DATA",
         "source": "Yahoo Finance public chart",
         "known_at": intra_receipt.get("received_at_utc"),
         "daily_known_at": daily_known_at,
@@ -418,14 +431,16 @@ def _scan_symbol(symbol, fetcher, now, qqq_change=None):
     }
 
 
-def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
-    now = now or datetime.now(timezone.utc)
+def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8, clock=None):
+    clock = clock or ((lambda: now) if now is not None else (lambda: datetime.now(timezone.utc)))
+    now = clock()
+    scan_started_at = now.isoformat()
     symbols = tuple(dict.fromkeys(s.upper() for s in symbols))
-    market_context = _market_context(fetcher, now)
+    market_context = refresh_market_context(_market_context(fetcher, now, clock), clock())
     qqq_change = (market_context.get("QQQ") or {}).get("change_pct")
     rows = []
     with ThreadPoolExecutor(max_workers=max(1, min(workers, 12)), thread_name_prefix="qd-us-watch") as pool:
-        futures = {pool.submit(_scan_symbol, s, fetcher, now, qqq_change): s for s in symbols}
+        futures = {pool.submit(_scan_symbol, s, fetcher, now, qqq_change, clock): s for s in symbols}
         for future in as_completed(futures):
             symbol = futures[future]
             try:
@@ -452,6 +467,18 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
         if row["symbol"] in news:
             row["news"] = news[row["symbol"]]
 
+    # News/network work can consume the receipt budget. Recheck the same
+    # source snapshots at use time without promoting previously unfinished bars.
+    now = clock()
+    market_context = refresh_market_context(market_context, now)
+    qqq_change = (market_context.get("QQQ") or {}).get("change_pct")
+    for row in rows:
+        if "intraday" not in row:
+            continue
+        row["intraday"] = refresh_intraday(row["intraday"], now)
+        row.update(classify(row["daily"], row["intraday"], qqq_change=qqq_change))
+        row["status"] = "OK" if row["intraday"]["quote_validity"]["eligible"] else "INVALID_DATA"
+
     et_date = now.astimezone(ET).date().isoformat()
     alert_states = {"ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH"}
     alerts = []
@@ -461,6 +488,9 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
         alerts.append({
             "event_key": f"{et_date}|{r['symbol']}|{r['state']}",
             "symbol": r["symbol"],
+            "quote_validity": r["intraday"]["quote_validity"],
+            "confirmation_validity": r["intraday"]["confirmation_validity"],
+            "classification_inputs": {"daily": r["daily"], "intraday": r["intraday"]},
             "state": r["state"],
             "reason": r["reason"],
             "leader_reasons": r.get("leader_reasons", []),
@@ -477,6 +507,7 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8):
             "news": (r.get("news") or {}).get("items", [])[:3],
         })
     return {
+        "scan_started_at_utc": scan_started_at,
         "generated_at_utc": now.isoformat(),
         "generated_at_et": now.astimezone(ET).isoformat(),
         "mode": "PUBLIC_HEADLESS_OBSERVATION",
@@ -527,7 +558,11 @@ def run(*, symbols=DEFAULT_SYMBOLS, poll_seconds=60, duration_minutes=0, github_
         print(json.dumps(compact, ensure_ascii=False, allow_nan=False), flush=True)
         if github_alerts:
             from .github_alerts import publish
-            publish(report)
+            try:
+                publish(report)
+            finally:
+                # Keep publication-time rejection evidence even on partial failure.
+                _write(report, output)
         if once:
             # Preserve partial observations and publication before failing the
             # hosted workflow. Process completion alone is not scan health.

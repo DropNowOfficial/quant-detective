@@ -21,6 +21,9 @@ def daily():
 
 def intra(**changes):
     out = {
+        # These tests isolate unchanged strategy formulas with valid input gates.
+        "quote_validity": {"eligible": True},
+        "confirmation_validity": {"eligible": True},
         "current_price": 101.0,
         "change_pct": 1.0,
         "premarket_change_pct": 0.4,
@@ -86,7 +89,7 @@ def test_intraday_uses_premarket_but_rth_vwap_only_uses_rth():
         return {"t":t,"open":price,"high":price+0.1,"low":price-0.1,"close":price,"volume":volume}
     # UTC 08:00 = 04:00 ET premarket. UTC 13:30 = 09:30 ET RTH.
     rows=[bar(8,0,102,100000), bar(13,30,100.5,100), bar(13,35,100.6,100)]
-    metrics=_intraday_metrics(rows,daily(),now)
+    metrics=_intraday_metrics(rows,daily(),now,received_at=now.isoformat())
     assert metrics["premarket_last"] == 102
     assert metrics["rth_vwap_approx"] < 101
 

@@ -5,6 +5,8 @@ on:
     paths:
       - 'market_data/**'
       - 'tests/test_us_watch.py'
+      - 'tests/test_quote_validity.py'
+      - 'tests/test_market_watch_smoke.py'
       - '.github/workflows/market-watch*.yml'
   workflow_dispatch:
 
@@ -23,32 +25,29 @@ jobs:
           enable-cache: false
       - run: uv sync --frozen
       - name: Scan NVDA TSM MSFT with current public data
-        run: |
-          uv run python -m market_data.cli watch --once \
-            --symbols "NVDA,TSM,MSFT" \
-            --output market-watch-smoke.json
-      - name: Validate and summarize
+        id: scan
+        continue-on-error: true
         shell: bash
         run: |
-          uv run python - <<'PY'
-          import json, os
-          data=json.load(open("market-watch-smoke.json", encoding="utf-8"))
-          rows=data.get("rows", [])
-          ok=[r for r in rows if r.get("status") == "OK"]
-          if not ok:
-              raise SystemExit("all public-data smoke symbols failed")
-          lines=["## Live smoke: NVDA / TSM / MSFT", "", f"Generated: {data.get('generated_at_et')}"]
-          for r in rows:
-              i=r.get("intraday", {})
-              lines.append(
-                  f"- **{r['symbol']}** {r.get('state', r.get('status'))} | "
-                  f"day={i.get('change_pct')}% | pre={i.get('premarket_change_pct')}% | "
-                  f"gap={i.get('open_gap_pct')}% | d5={i.get('d5_atr')} ATR | "
-                  f"RVOL={i.get('same_time_rvol')}"
-              )
-          lines.append("")
-          lines.append("Overnight proxies: " + json.dumps(data.get("market_context", {}), ensure_ascii=False))
-          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
-              f.write("\n".join(lines)+"\n")
-          print("\n".join(lines))
-          PY
+          if uv run python -m market_data.cli watch --once \
+            --symbols "NVDA,TSM,MSFT" \
+            --output market-watch-smoke.json; then
+            status=0
+          else
+            status=$?
+          fi
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
+      - name: Validate fresh data or expected closed-session rejection
+        if: always()
+        run: |
+          uv run python -m market_data.smoke_check market-watch-smoke.json \
+            --scan-exit-code "${{ steps.scan.outputs.exit_code }}"
+      - name: Preserve full smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-watch-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          path: market-watch-smoke.json
+          if-no-files-found: warn
+          retention-days: 30
