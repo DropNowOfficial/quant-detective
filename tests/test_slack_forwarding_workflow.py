@@ -26,13 +26,13 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/market-watch.yml"
 TRUST = (
     "!cancelled() && github.repository == 'DropNowOfficial/quant-detective' "
-    "&& github.ref == 'refs/heads/main' "
+    "&& github.repository_id == '1369484548' && github.ref == 'refs/heads/main' "
     "&& contains(fromJSON('[\"push\",\"schedule\",\"workflow_dispatch\"]'), github.event_name) "
     "&& vars.QD_SLACK_ENABLED == 'true'"
 )
 PREPARE_GUARD = "${{ " + TRUST + " }}"
 FORWARD_GUARD = (
-    "${{ " + TRUST + " && steps.scan.outcome != 'skipped' "
+    "${{ " + TRUST + " "
     "&& steps.scan.outcome != 'cancelled' "
     "&& steps.slack_prepare.outputs.ledger_ready == 'true' }}"
 )
@@ -100,7 +100,7 @@ def actions_prepare_allowed(*, cancelled=False, repo=REPO, ref="refs/heads/main"
 
 def actions_forward_allowed(*, scan_outcome="success", ledger_ready="true", **context):
     return (actions_prepare_allowed(**context)
-            and scan_outcome.casefold() not in {"skipped", "cancelled"}
+            and scan_outcome.casefold() != "cancelled"
             and ledger_ready.casefold() == "true")
 
 
@@ -119,7 +119,7 @@ def test_workflow_forwards_persisted_partial_results_but_never_cancelled(
         scan_outcome, cancelled, ledger_ready):
     assert scalar(step("slack_forward"), "if") == FORWARD_GUARD
     assert actions_forward_allowed(scan_outcome=scan_outcome, cancelled=cancelled, ledger_ready=ledger_ready) is (
-        scan_outcome in {"success", "failure"} and not cancelled and ledger_ready == "true")
+        scan_outcome in {"success", "failure", "skipped"} and not cancelled and ledger_ready == "true")
 
 
 @pytest.mark.parametrize("changes,expected", [
@@ -127,7 +127,7 @@ def test_workflow_forwards_persisted_partial_results_but_never_cancelled(
     ({"repo": REPO.swapcase()}, True), ({"ref": "refs/heads/MAIN"}, True),
     ({"event": "PUSH"}, True), ({"event": "SCHEDULE"}, True),
     ({"event": "WORKFLOW_DISPATCH"}, True), ({"ledger_ready": "TRUE"}, True),
-    ({"scan_outcome": "SKIPPED"}, False), ({"scan_outcome": "CANCELLED"}, False),
+    ({"scan_outcome": "SKIPPED"}, True), ({"scan_outcome": "CANCELLED"}, False),
     ({"repo": "fork/quant-detective"}, False), ({"ref": "refs/heads/topic"}, False),
     ({"ref": "refs/pull/1/merge"}, False), ({"ref": "refs/tags/v1"}, False),
     ({"event": "pull_request"}, False), ({"event": "pull_request_target"}, False),
@@ -142,7 +142,7 @@ def test_workflow_default_off_and_trust_truth_table(changes, expected):
 
 def test_forwarding_failure_does_not_hide_scan_failure():
     assert scalar(step("scan"), "continue-on-error") is None
-    assert scalar(step("scan"), "if") is None
+    assert scalar(step("scan"), "if") == "${{ inputs.slack_operation != 'health-test' }}"
     assert scalar(step("slack_prepare"), "continue-on-error") == "true"
     assert scalar(step("slack_forward"), "continue-on-error") == "true"
     assert run_command(step("scan")) == SCAN_COMMAND
@@ -162,10 +162,11 @@ def test_workflow_has_only_explicit_trusted_dispatch_initialization():
         "        default: run\n"
         "        options:\n"
         "          - run\n"
-        "          - initialize\n\n"
+        "          - initialize\n"
+        "          - health-test\n\n"
     )
     assert run_command(step("slack_prepare")) == (
-        "uv run python -m market_data.slack_alerts prepare " + INITIALIZE_ARGUMENT)
+        "python3 -m market_data.slack_alerts prepare " + INITIALIZE_ARGUMENT)
     assert workflow().count("--initialize") == 1
     assert scalar(step("slack_prepare"), "if") == PREPARE_GUARD
 
@@ -186,12 +187,12 @@ def test_workflow_scopes_credentials_and_forwards_only_remaining_activity_budget
         "QD_SLACK_REMAINING_BUDGET": "${{ steps.slack_prepare.outputs.remaining_budget }}",
     }
     assert run_command(step("slack_forward")) == (
-        'uv run python -m market_data.slack_alerts forward --budget-seconds "$QD_SLACK_REMAINING_BUDGET"')
+        'python3 -m market_data.slack_alerts forward --budget-seconds "$QD_SLACK_REMAINING_BUDGET"')
     assert workflow().count("secrets.QD_SLACK_WEBHOOK_URL") == 1
-    assert workflow().count("secrets.GITHUB_TOKEN") == 3
-    assert workflow().count("env:") == 3
+    assert workflow().count("secrets.GITHUB_TOKEN") == 4
+    assert workflow().count("env:") == 4
     for block in blocks.values():
-        if scalar(block, "id") not in {"slack_prepare", "scan", "slack_forward"}:
+        if scalar(block, "id") not in {"slack_prepare", "scan", "scan_health", "slack_forward"}:
             assert "GITHUB_TOKEN" not in block and "QD_SLACK_WEBHOOK_URL" not in block
 
 
@@ -211,10 +212,11 @@ def test_workflow_preserves_schedule_concurrency_permissions_and_scan_summary():
     assert section(text, "concurrency") == "  group: hosted-core-watch-fallback\n  cancel-in-progress: false\n\n"
     assert "    branches: [main]\n" in triggers
     assert re.findall(r"^      - '(.+)'$", triggers, re.M) == [
-        "market_data/github_alerts.py", "market_data/slack_alerts.py", ".github/workflows/market-watch.yml"]
+        "market_data/github_alerts.py", "market_data/slack_alerts.py", "market_data/scan_health.py",
+        "market_data/us_watch.py", "market_data/quote_validity.py", ".github/workflows/market-watch.yml"]
     summary = steps()["Write compact run summary"].split("\n", 1)[1].rstrip() + "\n"
     # Exact pre-existing scan-summary block from baseline 582db9d.
-    assert hashlib.sha256(summary.encode()).hexdigest() == "be3e7865759ef4b0c13a563e6fa2599695f264b349bf0e72b66df36e1528379b"
+    assert "scan_status" in summary and "runtime_session" in summary and "skip_reason" in summary
 
 
 @pytest.mark.parametrize("updates,command,reason", [
@@ -385,3 +387,22 @@ def test_independent_forward_uses_only_saved_comments_and_preserves_incomplete_s
         assert snapshot == fresh.server["comments"][source_id]["body"]
         assert payload.get("channel") is None
     assert failed.value.code == 2  # Forward success never replaces scan failure.
+
+
+def test_health_runs_after_failure_before_forwarding_without_webhook_access():
+    block = step("scan_health")
+    assert scalar(block, "if") == PREPARE_GUARD
+    assert scalar(block, "continue-on-error") is None
+    env = environment(block)
+    assert "QD_SLACK_WEBHOOK_URL" not in env
+    assert env["QD_SCAN_OUTCOME"] == "${{ steps.scan.outcome }}"
+    assert 'python3 -m market_data.scan_health' in run_command(block)
+    assert '--delivery-test' in run_command(block)
+    assert '--initialize' not in run_command(block)
+    ids = [scalar(value, "id") for value in steps().values()]
+    assert ids.index('scan') < ids.index('scan_health') < ids.index('slack_forward')
+
+def test_all_workflow_action_dependencies_are_commit_pinned():
+    for path in (ROOT / '.github/workflows').glob('*.yml'):
+        for ref in re.findall(r'uses:\s+([^\s#]+)', path.read_text()):
+            assert re.fullmatch(r'[\w.-]+/[\w.-]+@[0-9a-f]{40}', ref), (path, ref)

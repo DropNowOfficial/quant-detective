@@ -268,24 +268,33 @@ def test_scan_excludes_stale_proxy_values_without_killing_valid_stock(monkeypatc
 
 def test_each_github_publication_revalidates_without_false_event_markers(monkeypatch):
     from market_data import github_alerts
-    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "DropNowOfficial/quant-detective")
+    monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1369484548")
     monkeypatch.setenv("GITHUB_TOKEN", "synthetic-test-token")
     first = event_at()
     second = event_at() | {"symbol": "BBB", "event_key": "2026-10-05|BBB|ENTRY_CONFIRMED"}
     report = {"generated_at_et": "2026-10-05T09:42:00-04:00", "alerts": [first, second]}
     posts = []
+    current = [moment("2026-10-05T09:42:00-04:00")]
     def api(method, path, *, token, body=None):
         if "issues?" in path:
-            return [{"number": 7, "title": "Market Watch | 2026-10-05 ET"}]
+            return [{"number": 7, "title": "Market Watch | 2026-10-05 ET",
+                     "user": {"id": 41898282, "type": "Bot"},
+                     "url": "https://api.github.com/repos/DropNowOfficial/quant-detective/issues/7",
+                     "html_url": "https://github.com/DropNowOfficial/quant-detective/issues/7"}]
         if method == "GET":
             return []
         if method == "POST":
             posts.append(body["body"])
-            return {"id": len(posts), "body": body["body"]}
+            if "<!-- qd-event:" in body["body"]:
+                current[0] = moment("2026-10-05T09:44:01-04:00")
+            return {"id": len(posts), "body": body["body"], "user": {"id": 41898282, "type": "Bot"},
+                    "issue_url": "https://api.github.com/repos/DropNowOfficial/quant-detective/issues/7",
+                    "url": f"https://api.github.com/repos/DropNowOfficial/quant-detective/issues/comments/{len(posts)}",
+                    "html_url": f"https://github.com/DropNowOfficial/quant-detective/issues/7#issuecomment-{len(posts)}"}
         raise AssertionError(method)
     monkeypatch.setattr(github_alerts, "_api", api)
-    ticks = iter([moment("2026-10-05T09:42:00-04:00"), moment("2026-10-05T09:44:01-04:00")])
-    result = github_alerts.publish(report, clock=lambda: next(ticks))
+    result = github_alerts.publish(report, clock=lambda: current[0])
     assert result["published"] == 1
     material = [body for body in posts if "<!-- qd-event:" in body]
     assert len(material) == 1
@@ -313,10 +322,10 @@ def test_publisher_failure_still_persists_full_report_and_diagnostics(monkeypatc
 def test_workflow_always_retains_full_scan_artifact():
     from pathlib import Path
     text = Path(".github/workflows/market-watch.yml").read_text()
-    assert "uses: actions/upload-artifact@v4" in text
-    step = text.split("uses: actions/upload-artifact@v4")[0].split("- name:")[-1]
+    assert "uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02" in text
+    step = text.split("uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02")[0].split("- name:")[-1]
     assert "if: always()" in step
-    artifact = text.split("uses: actions/upload-artifact@v4", 1)[1]
+    artifact = text.split("uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02", 1)[1]
     assert "path: market-watch.json" in artifact
     assert "retention-days: 30" in artifact
 
@@ -376,7 +385,8 @@ def test_stale_daily_response_is_not_cached_against_later_recovery(monkeypatch):
 @pytest.mark.parametrize("proof", [{"bars": [None]}, {"bars": "bad"}, ["bad"]])
 def test_malformed_confirmation_is_rejected_without_aborting_later_publications(monkeypatch, proof):
     from market_data import github_alerts
-    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "DropNowOfficial/quant-detective")
+    monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1369484548")
     monkeypatch.setenv("GITHUB_TOKEN", "synthetic-test-token")
     invalid = event_at() | {"confirmation_validity": proof}
     valid = event_at() | {"symbol": "BBB", "event_key": "2026-10-05|BBB|ENTRY_CONFIRMED"}
@@ -384,11 +394,17 @@ def test_malformed_confirmation_is_rejected_without_aborting_later_publications(
     posts = []
     def api(method, path, *, token, body=None):
         if "issues?" in path:
-            return [{"number": 7, "title": "Market Watch | 2026-10-05 ET"}]
+            return [{"number": 7, "title": "Market Watch | 2026-10-05 ET",
+                     "user": {"id": 41898282, "type": "Bot"},
+                     "url": "https://api.github.com/repos/DropNowOfficial/quant-detective/issues/7",
+                     "html_url": "https://github.com/DropNowOfficial/quant-detective/issues/7"}]
         if method == "GET":
             return []
         posts.append(body["body"])
-        return {"id": len(posts), "body": body["body"]}
+        return {"id": len(posts), "body": body["body"], "user": {"id": 41898282, "type": "Bot"},
+                    "issue_url": "https://api.github.com/repos/DropNowOfficial/quant-detective/issues/7",
+                    "url": f"https://api.github.com/repos/DropNowOfficial/quant-detective/issues/comments/{len(posts)}",
+                    "html_url": f"https://github.com/DropNowOfficial/quant-detective/issues/7#issuecomment-{len(posts)}"}
     monkeypatch.setattr(github_alerts, "_api", api)
     result = github_alerts.publish(report, clock=lambda: moment("2026-10-05T09:42:00-04:00"))
     assert result["published"] == 1
@@ -425,3 +441,13 @@ def test_alert_displays_separate_proxy_source_and_receipt_times():
     assert "NQ=F source bar" in text
     assert "2026-10-05T13:45:00+00:00" in text
     assert "2026-10-05T09:41:53-04:00" in text
+
+
+def test_post_quote_cannot_publish_at_runtime_boundary():
+    from market_data.quote_validity import publication_event
+    event = event_at("2026-10-05T19:59:59-04:00", rows=[bar("2026-10-05T19:55:00-04:00")])
+    assert event["quote_validity"]["eligible"]
+    assert publication_event(event, now=moment("2026-10-05T19:59:59-04:00"))[0] is not None
+    checked, reason = publication_event(event, now=moment("2026-10-05T20:00:00-04:00"))
+    assert checked is None
+    assert reason == "OUTSIDE_SUPPORTED_RUNTIME_SESSION"

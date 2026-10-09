@@ -44,13 +44,14 @@ def report_at(now="2026-10-07T23:18:00-04:00", source="2026-10-07T19:59:41-04:00
             "generated_at_utc": now.isoformat(), "generated_at_et": now.astimezone(ET).isoformat(),
             "mode": "PUBLIC_HEADLESS_OBSERVATION", "trading_enabled": False,
             "symbols_requested": list(SYMBOLS), "rows": rows, "alerts": [], "market_context": context,
-            "scan_status": "INCOMPLETE" if incomplete else "COMPLETE", "incomplete_symbols": incomplete}
+            "scan_status": "UNAVAILABLE" if len(incomplete) == len(rows) else "INCOMPLETE" if incomplete else "COMPLETE",
+            "incomplete_symbols": incomplete}
 
 
 def check(report, exit_code=None, now=None):
     module = importlib.import_module("market_data.smoke_check")
     return module.validate_report(report, symbols=SYMBOLS,
-                                  scan_exit_code=(2 if report["scan_status"] == "INCOMPLETE" else 0)
+                                  scan_exit_code=(2 if report["scan_status"] in {"INCOMPLETE", "UNAVAILABLE"} else 0)
                                   if exit_code is None else exit_code,
                                   now=now or moment(report["generated_at_utc"]))
 
@@ -188,6 +189,7 @@ def test_partial_expiry_after_close_fails_explicitly():
     fresh = report_at("2026-10-05T20:07:00-04:00", "2026-10-05T19:59:41-04:00")
     report["rows"][0] = fresh["rows"][0]
     report["incomplete_symbols"].remove("NVDA")
+    report["scan_status"] = "INCOMPLETE"
     with pytest.raises(ValueError, match="mixed"):
         check(report)
 
@@ -248,15 +250,16 @@ def test_workflow_preserves_scan_status_runs_validation_and_always_uploads_evide
     assert "python -m market_data.smoke_check" in workflow
     assert '"${{ steps.scan.outputs.exit_code }}"' in workflow
     assert workflow.count("if: always()") >= 2
-    assert "actions/upload-artifact@v4" in workflow
+    assert "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02" in workflow
     assert "path: market-watch-smoke.json" in workflow
     assert "--github-alerts" not in workflow and "slack_alerts" not in workflow
 
 
 @pytest.mark.parametrize("now,source,label", [
-    ("2026-10-05T20:02:00-04:00", "2026-10-05T19:59:41-04:00", "FRESH_DATA_PASS"),
-    ("2026-10-05T20:06:00-04:00", "2026-10-05T19:55:00-04:00", "EXPECTED_CLOSED_SESSION_REJECTION"),
-    ("2026-10-05T23:18:00-04:00", "2026-10-05T19:59:41-04:00", "EXPECTED_CLOSED_SESSION_REJECTION"),
+    ("2026-10-05T09:42:00-04:00", "2026-10-05T09:40:00-04:00", "FRESH_DATA_PASS"),
+    ("2026-10-05T20:02:00-04:00", "2026-10-05T19:59:41-04:00", "EXPECTED_SESSION_SKIP"),
+    ("2026-10-05T20:06:00-04:00", "2026-10-05T19:55:00-04:00", "EXPECTED_SESSION_SKIP"),
+    ("2026-10-05T23:18:00-04:00", "2026-10-05T19:59:41-04:00", "EXPECTED_SESSION_SKIP"),
 ])
 def test_real_scanner_and_one_shot_output_contract(monkeypatch, tmp_path, now, source, label):
     from market_data import us_watch
@@ -273,14 +276,8 @@ def test_real_scanner_and_one_shot_output_contract(monkeypatch, tmp_path, now, s
         return rows, meta, receipt
 
     monkeypatch.setattr(us_watch, "_chart", chart)
-    original_scan = us_watch.scan_once
-    monkeypatch.setattr(us_watch, "scan_once", lambda **kwargs: original_scan(**kwargs, now=moment(now)))
     output = tmp_path / "scan.json"
-    if label == "EXPECTED_CLOSED_SESSION_REJECTION":
-        with pytest.raises(RuntimeError, match="one-shot scan incomplete"):
-            us_watch.run(symbols=SYMBOLS, once=True, output=output)
-    else:
-        us_watch.run(symbols=SYMBOLS, once=True, output=output)
+    us_watch.run(symbols=SYMBOLS, once=True, output=output, clock=lambda: moment(now))
     assert check(json.loads(output.read_text())) == label
 
 
@@ -329,3 +326,165 @@ def test_snapshot_receipt_fresh_at_scan_generation_and_report_age_bounded_separa
     assert check(report, now=generated + timedelta(seconds=120)) == "EXPECTED_CLOSED_SESSION_REJECTION"
     with pytest.raises(ValueError, match="report time"):
         check(report, now=generated + timedelta(seconds=121))
+
+
+def skipped_report(value="2026-10-05T20:02:00-04:00"):
+    from market_data.quote_validity import session_name
+    now = moment(value)
+    session = session_name(now.timestamp())
+    return {"scan_started_at_utc": now.isoformat(), "generated_at_utc": now.isoformat(),
+            "generated_at_et": now.astimezone(ET).isoformat(), "runtime_session": session,
+            "mode": "PUBLIC_HEADLESS_OBSERVATION", "trading_enabled": False,
+            "symbols_requested": list(SYMBOLS), "rows": [], "alerts": [], "market_context": {},
+            "sources": [], "scan_status": "SKIPPED", "incomplete_symbols": [],
+            "skip_reason": "NON_TRADING_DAY" if session == "CLOSED" else "OUTSIDE_SESSION_HOURS"}
+
+
+@pytest.mark.parametrize("value", [
+    "2026-10-05T03:59:59-04:00", "2026-10-05T20:00:00-04:00",
+    "2026-10-04T12:00:00-04:00", "2026-07-03T12:00:00-04:00",
+    "2026-11-27T20:00:00-05:00", "2026-03-09T07:59:59+00:00", "2026-11-02T08:59:59+00:00",
+])
+def test_smoke_validates_calendar_backed_empty_skip(value):
+    assert check(skipped_report(value)) == "EXPECTED_SESSION_SKIP"
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda p: p.update(runtime_session="CLOSED"),
+    lambda p: p.update(skip_reason="NON_TRADING_DAY"),
+    lambda p: p.update(scan_started_at_utc="2026-10-05T23:59:59+00:00"),
+    lambda p: p.update(rows=[{"symbol": "NVDA", "status": "OK"}]),
+    lambda p: p.update(alerts=[{"symbol": "NVDA"}]),
+    lambda p: p.update(market_context={"QQQ": {"price": 100}}),
+    lambda p: p.update(sources=["Yahoo Finance public chart"]),
+    lambda p: p.update(incomplete_symbols=["NVDA"]),
+    lambda p: p.update(publication_rejections=[{"reason": "stale"}]),
+    lambda p: p.update(error="provider unavailable"),
+    lambda p: p.update(symbols_requested=["AAPL"]),
+    lambda p: p.update(trading_enabled=True),
+    lambda p: p.pop("skip_reason"), lambda p: p.pop("runtime_session"),
+    lambda p: p.pop("rows"), lambda p: p.pop("alerts"),
+    lambda p: p.pop("market_context"), lambda p: p.pop("sources"), lambda p: p.pop("incomplete_symbols"),
+])
+def test_skip_cannot_hide_observations_or_spoof_session(mutate):
+    report = skipped_report()
+    mutate(report)
+    with pytest.raises(ValueError):
+        check(report)
+
+
+@pytest.mark.parametrize("value", [
+    "2026-10-05T04:00:00-04:00", "2026-10-05T10:00:00-04:00", "2026-10-05T19:59:59-04:00",
+    "2026-11-27T13:00:00-05:00", "2026-03-09T08:00:00+00:00", "2026-11-02T09:00:00+00:00",
+])
+def test_skip_is_rejected_in_active_window(value):
+    report = skipped_report(value)
+    report["runtime_session"] = "OVERNIGHT"
+    with pytest.raises(ValueError):
+        check(report)
+
+
+@pytest.mark.parametrize("exit_code", [1, 2, 124, 137])
+def test_skip_requires_successful_exit(exit_code):
+    with pytest.raises(ValueError, match="exit"):
+        check(skipped_report(), exit_code=exit_code)
+
+
+@pytest.mark.parametrize("seconds", [121, -6])
+def test_skip_report_must_be_current(seconds):
+    report = skipped_report()
+    with pytest.raises(ValueError, match="report time"):
+        check(report, now=moment(report["generated_at_utc"]) + timedelta(seconds=seconds))
+
+
+def test_skip_cli_labels_no_acquisition_distinctly(tmp_path, monkeypatch, capsys):
+    module = importlib.import_module("market_data.smoke_check")
+    report = skipped_report()
+    path = tmp_path / "report.json"
+    path.write_text(json.dumps(report))
+    monkeypatch.setattr(module, "current_time", lambda: moment(report["generated_at_utc"]))
+    assert module.main([str(path), "--scan-exit-code", "0"]) == 0
+    output = capsys.readouterr().out
+    assert "EXPECTED_SESSION_SKIP" in output
+    assert "no market data was fetched" in output
+
+
+def ended_report():
+    report = skipped_report("2026-10-05T20:00:01-04:00")
+    report.update(scan_status="SESSION_ENDED", scan_started_at_utc="2026-10-05T23:59:59+00:00",
+                  runtime_session="POST", ending_session="OVERNIGHT", skip_reason="SESSION_ENDED_DURING_SCAN",
+                  real_acquisition_failure=False, sources=["Yahoo Finance public chart"],
+                  incomplete_symbols=sorted(SYMBOLS),
+                  rows=[{"symbol": "NVDA", "status": "ERROR", "error": "RuntimeError: SESSION_ENDED_DURING_SCAN"}])
+    return report
+
+
+def test_smoke_validates_session_end_without_claiming_data_success():
+    assert check(ended_report()) == "EXPECTED_SESSION_END"
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda p: p.update(scan_started_at_utc="2026-10-05T23:00:00+00:00", runtime_session="RTH"),
+    lambda p: p.update(scan_started_at_utc="2026-10-06T00:00:00+00:00", runtime_session="OVERNIGHT"),
+    lambda p: p.update(generated_at_utc="2026-10-05T23:59:59+00:00", generated_at_et="2026-10-05T19:59:59-04:00"),
+    lambda p: p.update(ending_session="POST"),
+    lambda p: p.update(skip_reason="OUTSIDE_SESSION_HOURS"),
+    lambda p: p.update(alerts=[{"symbol": "NVDA"}]),
+    lambda p: p.update(publication_rejections=[{"reason": "bad quote"}]),
+    lambda p: p.update(source_comments=[{"id": 123}]),
+    lambda p: p.update(publication_result={"published": 1, "source_comments": [{"id": 123}]}),
+    lambda p: p.update(publication_result={"published": 0, "source_comments": [{"id": 123}]}),
+    lambda p: p.update(incomplete_symbols=[]),
+    lambda p: p["rows"][0].update(error="RuntimeError: provider failed"),
+    lambda p: p["rows"][0].update(symbol="UNREQUESTED"),
+    lambda p: p["rows"].append(deepcopy(p["rows"][0])),
+    lambda p: p.pop("market_context"), lambda p: p.pop("ending_session"),
+    lambda p: p.update(real_acquisition_failure=True),
+    lambda p: p.update(real_acquisition_failure="false"), lambda p: p.pop("real_acquisition_failure"),
+])
+def test_session_ended_report_cannot_hide_bad_boundaries_or_publication(mutate):
+    report = ended_report()
+    mutate(report)
+    with pytest.raises(ValueError):
+        check(report)
+
+
+@pytest.mark.parametrize("exit_code", [1, 2, 124, 137])
+def test_session_end_requires_successful_exit(exit_code):
+    with pytest.raises(ValueError, match="exit"):
+        check(ended_report(), exit_code=exit_code)
+
+
+def ended_report_with_publication():
+    report = ended_report()
+    report["publication_result"] = {"published": 1, "source_comments": [
+        {"id": 123, "body": "<!-- qd-event:2026-10-05|NVDA|ENTRY_ARMED -->\nObservation only."}],
+        "source_requests": [{"event_key": "2026-10-05|NVDA|ENTRY_ARMED", "comment_id": 123,
+                             "requested_at_utc": "2026-10-05T23:59:59+00:00"}]}
+    return report
+
+
+def test_boundary_smoke_labels_confirmed_preclose_publication_separately():
+    assert check(ended_report_with_publication()) == "EXPECTED_SESSION_END_WITH_PUBLICATION"
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda p: p["publication_result"].update(published=True),
+    lambda p: p["publication_result"].update(published=2),
+    lambda p: p["publication_result"].update(source_requests=[]),
+    lambda p: p["publication_result"]["source_requests"][0].update(requested_at_utc="2026-10-06T00:00:00+00:00"),
+    lambda p: p["publication_result"]["source_requests"][0].update(requested_at_utc="2026-10-05T23:59:58+00:00"),
+    lambda p: p["publication_result"]["source_requests"][0].update(comment_id=124),
+    lambda p: p["publication_result"]["source_requests"][0].update(event_key="2026-10-05|AAPL|ENTRY_ARMED"),
+    lambda p: p["publication_result"]["source_requests"][0].update(event_key="2026-10-04|NVDA|ENTRY_ARMED"),
+    lambda p: p["publication_result"]["source_comments"][0].update(body="Unrelated comment"),
+    lambda p: p["publication_result"]["source_comments"][0].update(body=""),
+    lambda p: (p["publication_result"].update(published=2),
+               p["publication_result"]["source_comments"].append(deepcopy(p["publication_result"]["source_comments"][0])),
+               p["publication_result"]["source_requests"].append(deepcopy(p["publication_result"]["source_requests"][0]))),
+])
+def test_boundary_publication_needs_coherent_preclose_request_evidence(mutate):
+    report = ended_report_with_publication()
+    mutate(report)
+    with pytest.raises(ValueError):
+        check(report)

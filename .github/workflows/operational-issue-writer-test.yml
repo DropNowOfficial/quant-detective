@@ -1,0 +1,38 @@
+name: operational-issue-writer-test
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'Inert bot writer probe; optionally lock only the three verified operational Issues after all pre-lock probes pass'
+        type: choice
+        required: true
+        default: probe
+        options:
+          - probe
+          - lock-and-probe
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: hosted-core-watch-fallback
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'DropNowOfficial/quant-detective' && github.repository_id == '1369484548' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout trusted main
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Verify inert writer comments and optional locks
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QD_ISSUE_WRITER_OPERATION: ${{ inputs.operation }}
+        run: python3 -m market_data.issue_writer_probe

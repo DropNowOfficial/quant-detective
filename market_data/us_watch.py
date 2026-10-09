@@ -431,11 +431,81 @@ def _scan_symbol(symbol, fetcher, now, qqq_change=None, clock=None):
     }
 
 
+def _scan_health(report, symbols):
+    """Distinguish no usable coverage from partial coverage, without hiding either."""
+    if report.get("scan_status") in {"SKIPPED", "SESSION_ENDED"} or report.get("ending_session"):
+        return report
+    requested = set(symbols)
+    usable = {r.get("symbol") for r in report.get("rows", []) if r.get("status") == "OK"} & requested
+    report["incomplete_symbols"] = sorted(requested - usable)
+    report["scan_status"] = ("UNAVAILABLE" if not usable else
+                             "INCOMPLETE" if report["incomplete_symbols"] else "COMPLETE")
+    return report
+
+
+def _acquisition_failed(value):
+    if isinstance(value, dict):
+        if value.get("status") == "INVALID_DATA":
+            return True
+        return any((key in {"error", "errors"} and bool(item)
+                    and item != "RuntimeError: SESSION_ENDED_DURING_SCAN")
+                   or _acquisition_failed(item) for key, item in value.items())
+    if isinstance(value, list):
+        return any(_acquisition_failed(item) for item in value)
+    return False
+
+
+def _end_session(report, now):
+    """Retain evidence while suppressing alerts; genuine failures remain failures."""
+    ending_session = session_name(now.timestamp())
+    if (report.get("runtime_session") in {"PRE", "RTH", "POST"}
+            and ending_session not in {"PRE", "RTH", "POST"}):
+        real_failure = _acquisition_failed(report)
+        status = report.get("scan_status")
+        if real_failure:
+            status = status if status in {"INCOMPLETE", "UNAVAILABLE"} else "INCOMPLETE"
+        else:
+            status = "SESSION_ENDED"
+        report.update(scan_status=status, ending_session=ending_session, real_acquisition_failure=real_failure,
+                      skip_reason="SESSION_ENDED_DURING_SCAN", alerts=[],
+                      generated_at_utc=now.isoformat(), generated_at_et=now.astimezone(ET).isoformat())
+    return report
+
+
+def _session_fetcher(fetcher, clock):
+    def guarded(*args, **kwargs):
+        if session_name(clock().timestamp()) not in {"PRE", "RTH", "POST"}:
+            raise RuntimeError("SESSION_ENDED_DURING_SCAN")
+        return fetcher(*args, **kwargs)
+    return guarded
+
+
 def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8, clock=None):
     clock = clock or ((lambda: now) if now is not None else (lambda: datetime.now(timezone.utc)))
     now = clock()
     scan_started_at = now.isoformat()
     symbols = tuple(dict.fromkeys(s.upper() for s in symbols))
+    runtime_session = session_name(now.timestamp())
+    report = {
+        "scan_started_at_utc": scan_started_at,
+        "generated_at_utc": now.isoformat(),
+        "generated_at_et": now.astimezone(ET).isoformat(),
+        "runtime_session": runtime_session,
+        "mode": "PUBLIC_HEADLESS_OBSERVATION",
+        "trading_enabled": False,
+        "sources": [],
+        "market_context": {},
+        "symbols_requested": list(symbols),
+        "rows": [],
+        "alerts": [],
+    }
+    # Shared XNYS calendar owns trading dates, DST, and early-close boundaries.
+    if runtime_session not in {"PRE", "RTH", "POST"}:
+        report.update(scan_status="SKIPPED", incomplete_symbols=[],
+                      skip_reason="NON_TRADING_DAY" if runtime_session == "CLOSED" else "OUTSIDE_SESSION_HOURS")
+        return report
+    # Queued or delayed requests can cross the boundary. Guard each actual call.
+    fetcher = _session_fetcher(fetcher, clock)
     market_context = refresh_market_context(_market_context(fetcher, now, clock), clock())
     qqq_change = (market_context.get("QQQ") or {}).get("change_pct")
     rows = []
@@ -483,7 +553,7 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8, clock
     alert_states = {"ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH"}
     alerts = []
     for r in rows:
-        if r.get("state") not in alert_states:
+        if session_name(now.timestamp()) not in {"PRE", "RTH", "POST"} or r.get("state") not in alert_states:
             continue
         alerts.append({
             "event_key": f"{et_date}|{r['symbol']}|{r['state']}",
@@ -506,18 +576,15 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8, clock
             "market_context": market_context,
             "news": (r.get("news") or {}).get("items", [])[:3],
         })
-    return {
-        "scan_started_at_utc": scan_started_at,
+    report.update({
         "generated_at_utc": now.isoformat(),
         "generated_at_et": now.astimezone(ET).isoformat(),
-        "mode": "PUBLIC_HEADLESS_OBSERVATION",
-        "trading_enabled": False,
         "sources": ["Yahoo Finance public chart", "Yahoo Finance public search/news"],
         "market_context": market_context,
-        "symbols_requested": list(symbols),
         "rows": rows,
         "alerts": alerts,
-    }
+    })
+    return _end_session(_scan_health(report, symbols), now)
 
 
 def _write(report, output=None):
@@ -529,7 +596,7 @@ def _write(report, output=None):
 
 
 def run(*, symbols=DEFAULT_SYMBOLS, poll_seconds=60, duration_minutes=0, github_alerts=False,
-        once=False, output=None, fetcher=fetch):
+        once=False, output=None, fetcher=fetch, clock=None):
     if isinstance(poll_seconds, bool) or not 15 <= int(poll_seconds) <= 3600:
         raise ValueError("poll_seconds must be 15..3600")
     if duration_minutes < 0 or duration_minutes > 360:
@@ -537,14 +604,13 @@ def run(*, symbols=DEFAULT_SYMBOLS, poll_seconds=60, duration_minutes=0, github_
     symbols = tuple(dict.fromkeys(s.upper() for s in symbols))
     started = time.monotonic()
     while True:
-        report = scan_once(symbols=symbols, fetcher=fetcher)
-        if once:
-            ok_symbols = {r.get("symbol") for r in report.get("rows", []) if r.get("status") == "OK"}
-            report["incomplete_symbols"] = sorted(set(symbols) - ok_symbols)
-            report["scan_status"] = "INCOMPLETE" if not symbols or report["incomplete_symbols"] else "COMPLETE"
+        report = _scan_health(scan_once(symbols=symbols, fetcher=fetcher, clock=clock), symbols)
         _write(report, output)
         compact = {
             "generated_at_et": report.get("generated_at_et"),
+            "scan_status": report.get("scan_status"),
+            "runtime_session": report.get("runtime_session"),
+            "skip_reason": report.get("skip_reason"),
             "alerts": [
                 {"symbol": a.get("symbol"), "state": a.get("state"), "change_pct": a.get("change_pct"),
                  "d5_atr": a.get("d5_atr")}
@@ -556,17 +622,20 @@ def run(*, symbols=DEFAULT_SYMBOLS, poll_seconds=60, duration_minutes=0, github_
             ],
         }
         print(json.dumps(compact, ensure_ascii=False, allow_nan=False), flush=True)
-        if github_alerts:
+        if github_alerts and report["scan_status"] not in {"SKIPPED", "SESSION_ENDED"} and not report.get("ending_session"):
             from .github_alerts import publish
             try:
-                publish(report)
+                # Writing/logging can cross the boundary after acquisition.
+                _end_session(report, clock() if clock else datetime.now(timezone.utc))
+                if not report.get("ending_session"):
+                    publish(report, **({"clock": clock} if clock else {}))
             finally:
                 # Keep publication-time rejection evidence even on partial failure.
                 _write(report, output)
         if once:
             # Preserve partial observations and publication before failing the
             # hosted workflow. Process completion alone is not scan health.
-            if report["scan_status"] != "COMPLETE":
+            if report["scan_status"] not in {"COMPLETE", "SKIPPED", "SESSION_ENDED"}:
                 detail = ", ".join(report["incomplete_symbols"]) or "no requested symbols"
                 raise RuntimeError(f"one-shot scan incomplete: {detail}")
             return report

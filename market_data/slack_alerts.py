@@ -40,6 +40,7 @@ BLOCK_TEXT_CHARS = 3000
 # Unicode escaping and comment envelopes, while bounding any untrusted response.
 MAX_RESPONSE_BYTES = 32 * 1024 * 1024
 REPO = "DropNowOfficial/quant-detective"
+PRODUCER_ID = 41898282
 CHANNEL_ID = "C0C7HLTGQ0N"
 API = "https://api.github.com"
 MANIFEST_MARKER = "<!-- qd-slack-ledger:v1 -->"
@@ -234,7 +235,7 @@ def _document(body: str, marker: str) -> dict:
         return result
     try:
         result = json.loads(body[len(marker) + 1:], object_pairs_hook=unique)
-    except (ValueError, TypeError):
+    except (ValueError, TypeError, RecursionError):
         raise LedgerUnavailable("Malformed ledger JSON") from None
     if not isinstance(result, dict):
         raise LedgerUnavailable("Invalid ledger document")
@@ -321,6 +322,8 @@ def source_metadata_text(source: SourceEvent, *, historical: bool = False) -> st
     retry. Snapshot text is excluded; formatters must reuse this framing.
     """
     lines = [HISTORY_PREFIX] if historical else []
+    if source.state in HEALTH_STATES:
+        lines.append("系统健康通知／非交易信号")
     lines += [f"{source.state} | {source.symbol}",
               f"原扫描时间：{source.generated_at_et if _scan_time(source) is not None else '原扫描时间未知'}",
               f"GitHub 发布时间：{source.created_at.isoformat()}",
@@ -367,6 +370,30 @@ def _server_date(response):
         return _utc(value)
     except (ValueError, TypeError, IndexError):
         raise LedgerUnavailable("Missing trusted GitHub response Date") from None
+
+
+def _trusted_author(item, config: Config) -> bool:
+    user = item.get("user") if isinstance(item, dict) else None
+    author = user.get("id") if isinstance(user, dict) else None
+    return (type(author) is int and author > 0 and author in config.producer_ids
+            and user.get("type") == "Bot")
+
+
+def _trusted_issue(item, config: Config, number: int) -> bool:
+    return (_trusted_author(item, config) and "pull_request" not in item
+            and type(item.get("number")) is int and item["number"] == number
+            and item.get("url") == f"{API}/repos/{config.repo}/issues/{number}"
+            and item.get("html_url") == f"https://github.com/{config.repo}/issues/{number}")
+
+
+def _trusted_comment(item, config: Config, number: int) -> bool:
+    if not _trusted_author(item, config):
+        return False
+    comment_id = item.get("id")
+    return (type(comment_id) is int and comment_id > 0
+            and item.get("url") == f"{API}/repos/{config.repo}/issues/comments/{comment_id}"
+            and item.get("issue_url") == f"{API}/repos/{config.repo}/issues/{number}"
+            and item.get("html_url") == f"https://github.com/{config.repo}/issues/{number}#issuecomment-{comment_id}")
 
 
 class GitHubClient:
@@ -463,10 +490,10 @@ class GitHubClient:
         return self._pages(f"/repos/{self.config.repo}/issues/comments",
                            {"since": _utc(since).isoformat(), "sort": "created", "direction": "asc"}, repo_comments=True)
 
-    def _trusted(self, item):
-        author = item.get("user", {}).get("id") if isinstance(item.get("user"), dict) else None
-        if type(author) is not int or author not in self.config.producer_ids:
-            raise LedgerUnavailable("Untrusted ledger writer")
+    def _trusted(self, item, *, comment=False):
+        predicate = _trusted_comment if comment else _trusted_issue
+        if not predicate(item, self.config, self.config.ledger_issue):
+            raise LedgerUnavailable("Untrusted ledger writer or repository scope")
 
     def write_verified(self, method: str, path: str, document: dict, *, operation_id: str) -> dict:
         """Attempt once, then read complete authoritative content before success."""
@@ -495,6 +522,8 @@ class GitHubClient:
             if method == "POST":
                 matches = []
                 for item in self.list_issue_comments(self.config.ledger_issue):
+                    if not _trusted_comment(item, self.config, self.config.ledger_issue):
+                        continue
                     raw = item.get("body", "")
                     if not isinstance(raw, str) or not raw.startswith("<!-- qd-slack-shard:"):
                         continue
@@ -511,7 +540,7 @@ class GitHubClient:
                 result, _ = self.get_issue(self.config.ledger_issue)
             else:
                 result = self.get_comment(int(comment_match[1]))
-            self._trusted(result)
+            self._trusted(result, comment=path != issue_path)
             if path != issue_path and result.get("issue_url") != API + issue_path:
                 raise LedgerUnavailable("Write readback is in the wrong issue")
             if result.get("body") != document["body"]:
@@ -570,7 +599,7 @@ class LedgerStore:
     def _guard_shard(self, number):
         if self._run_active:
             comment = self.github.get_comment(self._shards[number][0])
-            self.github._trusted(comment)
+            self.github._trusted(comment, comment=True)
             if (comment.get("issue_url") != f"{API}/repos/{self.config.repo}/issues/{self.config.ledger_issue}"
                     or comment.get("body") != self._shard_bodies[number]):
                 raise LedgerUnavailable("Ledger shard changed during serialized run")
@@ -606,16 +635,19 @@ class LedgerStore:
         manifest = _manifest(document["manifest"], self.config)
         shards, entries, bodies = {}, {}, {}
         for comment in self.github.list_issue_comments(self.config.ledger_issue):
+            # External bodies cannot claim ledger authority or halt forwarding.
+            if not _trusted_comment(comment, self.config, self.config.ledger_issue):
+                continue
             body = comment.get("body")
             if not isinstance(body, str) or "qd-slack-shard:" not in body:
                 continue
-            self.github._trusted(comment)
-            if comment.get("issue_url") != f"{API}/repos/{self.config.repo}/issues/{self.config.ledger_issue}":
-                raise LedgerUnavailable("Shard is in the wrong issue")
             match = re.match(r"<!-- qd-slack-shard:v1:(0|[1-9][0-9]*) -->\n", body)
-            if not match or len(body.encode()) > SHARD_BYTES:
+            try:
+                if not match or len(body.encode()) > SHARD_BYTES:
+                    raise ValueError
+                number = int(match[1])
+            except ValueError:
                 raise LedgerUnavailable("Invalid shard marker or byte limit")
-            number = int(match[1])
             if number in shards:
                 raise LedgerUnavailable("Duplicate shard sequence")
             shard = _document(body, match[0].rstrip("\n"))
@@ -664,7 +696,8 @@ class LedgerStore:
         baseline = frozenset(c["id"] for c in comments if _time(c.get("created_at")).replace(microsecond=0) == cut)
         # Existing marked shards cannot be silently adopted as a new baseline.
         existing = self.github.list_issue_comments(self.config.ledger_issue)
-        if any("qd-slack-shard:" in str(c.get("body", "")) for c in existing):
+        if any(_trusted_comment(c, self.config, self.config.ledger_issue)
+               and "qd-slack-shard:" in str(c.get("body", "")) for c in existing):
             raise LedgerUnavailable("Uninitialized ledger already contains shards")
         manifest = Manifest(SCHEMA_VERSION, self.config.repo, self.config.channel_id,
                             cut, baseline, cut, 0, None)
@@ -751,7 +784,9 @@ class LedgerStore:
             self._write_manifest(replace(ledger.manifest, shard_count=ledger.manifest.shard_count + 1))
 
 
-SOURCE_STATES = frozenset({"ENTRY_ARMED", "ENTRY_CONFIRMED", "LEADER_WATCH", "LEADER_HOT_NO_CHASE"})
+MARKET_STATES = frozenset({"ENTRY_ARMED", "ENTRY_CONFIRMED", "LEADER_WATCH", "LEADER_HOT_NO_CHASE"})
+HEALTH_STATES = frozenset({"SCAN_DEGRADED", "SCAN_UNAVAILABLE", "SCAN_FAILED", "SCAN_RECOVERED", "SCAN_DELIVERY_TEST"})
+SOURCE_STATES = MARKET_STATES | HEALTH_STATES
 # Bound extracted optional fields, never the original body. Excessive values
 # stay unknown so even a body-less oversized rejection fits a durable shard.
 SOURCE_RUN_ID_BYTES = 256
@@ -763,19 +798,20 @@ def _source_issue_number(comment: dict, config: Config) -> int | None:
     """Cheap trusted-source gate before fetching an Issue, never a URL to follow."""
     if not isinstance(comment, dict):
         return None
-    user, body = comment.get("user"), comment.get("body")
-    author = user.get("id") if isinstance(user, dict) else None
-    if (type(author) is not int or author not in config.producer_ids
-            or not isinstance(body, str) or not body.startswith("<!-- qd-event:")):
+    if not _trusted_author(comment, config):
         return None
     issue_url = comment.get("issue_url")
     if not isinstance(issue_url, str):
         return None
     match = re.fullmatch(re.escape(f"{API}/repos/{config.repo}/issues/") + r"([1-9][0-9]*)", issue_url)
     try:
-        return int(match[1]) if match else None
+        number = int(match[1]) if match else None
     except ValueError:
         return None
+    if number is None or not _trusted_comment(comment, config, number):
+        return None
+    body = comment.get("body")
+    return number if isinstance(body, str) and body.startswith("<!-- qd-event:") else None
 
 
 def _source_digest(body) -> str | None:
@@ -790,10 +826,7 @@ def _source_digest(body) -> str | None:
 def parse_source(comment: dict, issue: dict, config: Config) -> SourceEvent | None:
     """Accept only exact persisted producer identities; all body content is data."""
     number = _source_issue_number(comment, config)
-    if number is None or not isinstance(issue, dict) or "pull_request" in issue:
-        return None
-    if (type(issue.get("number")) is not int or issue["number"] != number
-            or issue.get("html_url") != f"https://github.com/{config.repo}/issues/{number}"):
+    if number is None or not _trusted_issue(issue, config, number):
         return None
     comment_id, body = comment.get("id"), comment["body"]
     if (type(comment_id) is not int or comment_id <= 0
@@ -807,9 +840,13 @@ def parse_source(comment: dict, issue: dict, config: Config) -> SourceEvent | No
     if len(parts) != 3:
         return None
     day, symbol, state = parts
+    health = state in HEALTH_STATES
+    symbol_pattern = r"SCANNER\.(TEST\.)?[0-9]{1,20}" if health else r"[A-Z][A-Z0-9.^=-]{0,31}"
     if (not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", day)
-            or not re.fullmatch(r"[A-Z][A-Z0-9.^=-]{0,31}", symbol)
-            or state not in SOURCE_STATES or issue.get("title") != f"Market Watch | {day} ET"):
+            or not re.fullmatch(symbol_pattern, symbol) or state not in SOURCE_STATES
+            or (health and number != config.ledger_issue)
+            or (not health and (number == config.ledger_issue
+                                or issue.get("title") != f"Market Watch | {day} ET"))):
         return None
     try:
         datetime.fromisoformat(day)
@@ -973,8 +1010,10 @@ def format_payload(entry: Entry, now: datetime) -> dict:
     try:
         day, symbol, state = source.event_key.split("|")
         digest = _source_digest(source.body)
+        health = state in HEALTH_STATES
+        symbol_pattern = r"SCANNER\.(TEST\.)?[0-9]{1,20}" if health else r"[A-Z][A-Z0-9.^=-]{0,31}"
         valid = (source.repo == REPO and symbol == source.symbol and state == source.state
-                 and re.fullmatch(r"[A-Z][A-Z0-9.^=-]{0,31}", symbol)
+                 and re.fullmatch(symbol_pattern, symbol)
                  and state in SOURCE_STATES and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", day)
                  and type(source.comment_id) is int and source.comment_id > 0
                  and type(source.issue_number) is int and source.issue_number > 0
@@ -994,7 +1033,10 @@ def format_payload(entry: Entry, now: datetime) -> dict:
     if _presentation_too_large(initial):
         raise PayloadTooLarge("Complete source exceeds admission limits")
     scanned = _scan_time(source)
-    historical = (entry.attempts >= 1 or event_day < now.astimezone(ET).date()
+    eastern_now = now.astimezone(ET)
+    closed_session = eastern_now.weekday() >= 5 or not 4 <= eastern_now.hour < 20
+    historical = (entry.attempts >= 1 or event_day < eastern_now.date()
+                  or (not health and closed_session)
                   or (scanned is not None and (now - scanned).total_seconds() > 600))
     metadata = source_metadata_text(source, historical=historical)
     texts = [metadata] + [source.body[i:i + BLOCK_TEXT_CHARS]
@@ -1461,6 +1503,7 @@ def main(argv: list[str] | None = None) -> int:
         if os.environ.get("QD_SLACK_ENABLED") != "true":
             data["paused_reason"] = "disabled"
         elif (os.environ.get("GITHUB_REPOSITORY") != REPO
+              or os.environ.get("GITHUB_REPOSITORY_ID") != "1369484548"
               or os.environ.get("GITHUB_REF") != "refs/heads/main"
               or os.environ.get("GITHUB_EVENT_NAME") not in {"push", "schedule", "workflow_dispatch"}):
             data["paused_reason"] = "untrusted_context"
@@ -1471,7 +1514,7 @@ def main(argv: list[str] | None = None) -> int:
             budget = MonotonicBudget(clock, BUDGET_SECONDS if preparing else args.budget_seconds)
             issue = os.environ.get("QD_SLACK_LEDGER_ISSUE", "")
             producers = os.environ.get("QD_SLACK_PRODUCER_IDS", "")
-            if not re.fullmatch(r"[1-9][0-9]*", issue) or not re.fullmatch(r"[1-9][0-9]*(?:,[1-9][0-9]*)*", producers):
+            if not re.fullmatch(r"[1-9][0-9]*", issue) or producers != str(PRODUCER_ID):
                 raise ValueError("Invalid ledger configuration")
             config = Config(REPO, int(issue), frozenset(int(i) for i in producers.split(",")), CHANNEL_ID)
             token = os.environ.get("GITHUB_TOKEN")

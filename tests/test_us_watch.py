@@ -109,13 +109,13 @@ def test_one_percent_day_move_is_not_silenced():
     assert result["state"] == "LEADER_HOT_NO_CHASE"
 
 
-@pytest.mark.parametrize("rows,incomplete", [
-    ([], ["AAA", "BBB"]),
-    ([{"symbol": "AAA", "status": "ERROR"}, {"symbol": "BBB", "status": "ERROR"}], ["AAA", "BBB"]),
-    ([{"symbol": "AAA", "status": "OK"}, {"symbol": "BBB", "status": "ERROR"}], ["BBB"]),
-    ([{"symbol": "AAA", "status": "OK"}], ["BBB"]),
+@pytest.mark.parametrize("rows,incomplete,status", [
+    ([], ["AAA", "BBB"], "UNAVAILABLE"),
+    ([{"symbol": "AAA", "status": "ERROR"}, {"symbol": "BBB", "status": "ERROR"}], ["AAA", "BBB"], "UNAVAILABLE"),
+    ([{"symbol": "AAA", "status": "OK"}, {"symbol": "BBB", "status": "ERROR"}], ["BBB"], "INCOMPLETE"),
+    ([{"symbol": "AAA", "status": "OK"}], ["BBB"], "INCOMPLETE"),
 ])
-def test_incomplete_one_shot_preserves_report_and_publication_before_failing(monkeypatch, tmp_path, rows, incomplete):
+def test_incomplete_one_shot_preserves_report_and_publication_before_failing(monkeypatch, tmp_path, rows, incomplete, status):
     output = tmp_path / "report.json"
     report = {"generated_at_et": "2026-10-05T16:05:00-04:00", "rows": rows,
               "alerts": [{"symbol": "AAA", "state": "LEADER_WATCH"}]}
@@ -132,7 +132,7 @@ def test_incomplete_one_shot_preserves_report_and_publication_before_failing(mon
     saved = json.loads(output.read_text())
     assert saved["rows"] == rows
     assert saved["alerts"] == report["alerts"]
-    assert saved["scan_status"] == "INCOMPLETE"
+    assert saved["scan_status"] == status
     assert saved["incomplete_symbols"] == incomplete
     assert published == [saved]
 
@@ -154,6 +154,8 @@ def test_continuous_scan_retries_after_incomplete_results(monkeypatch):
     monkeypatch.setattr(us_watch.time, "monotonic", lambda: next(ticks))
     monkeypatch.setattr(us_watch.time, "sleep", lambda seconds: None)
     assert us_watch.run(symbols=("AAA",), duration_minutes=1) is healthy
+    assert failed["scan_status"] == "UNAVAILABLE"
+    assert healthy["scan_status"] == "COMPLETE"
 
 
 def test_watch_cli_reports_incomplete_one_shot_as_failure(monkeypatch, capsys):
