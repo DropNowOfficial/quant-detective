@@ -17,7 +17,7 @@ NOW = datetime(2026, 10, 7, 18, 0, tzinfo=UTC)
 REPO = "DropNowOfficial/quant-detective"
 BASE = f"/repos/{REPO}"
 LEDGER_ISSUE = 9
-AUTHOR = 42
+AUTHOR = 41898282
 UNINITIALIZED = "<!-- qd-slack-ledger:uninitialized:v1 -->"
 
 
@@ -69,12 +69,14 @@ class FakeHTTP:
 
     @staticmethod
     def issue(number, body, author=AUTHOR):
-        return {"number": number, "body": body, "user": {"id": author},
+        return {"number": number, "body": body, "user": {"id": author, "type": "Bot"},
+                "url": f"https://api.github.com{BASE}/issues/{number}",
                 "html_url": f"https://github.com/{REPO}/issues/{number}"}
 
     def add_comment(self, comment_id, body, issue_number=LEDGER_ISSUE, author=AUTHOR,
                     created_at=NOW, updated_at=None):
-        value = {"id": comment_id, "body": body, "user": {"id": author},
+        value = {"id": comment_id, "body": body, "user": {"id": author, "type": "Bot"},
+                 "url": f"https://api.github.com{BASE}/issues/comments/{comment_id}",
                  "issue_url": f"https://api.github.com{BASE}/issues/{issue_number}",
                  "html_url": f"https://github.com/{REPO}/issues/{issue_number}#issuecomment-{comment_id}",
                  "created_at": created_at.isoformat(),
@@ -1439,7 +1441,9 @@ def test_history_earlier_eastern_day_applies_even_under_ten_minutes_or_unknown_t
 
 
 def test_history_uses_eastern_day_instead_of_utc_day():
-    source = payload_source(generated_at_et="2026-10-07T19:59:00-04:00")
+    source = payload_source(symbol="SCANNER.1", state="SCAN_FAILED",
+                            event_key="2026-10-07|SCANNER.1|SCAN_FAILED",
+                            generated_at_et="2026-10-07T19:59:00-04:00")
     payload = sa.format_payload(make_entry(source), datetime(2026, 10, 8, 0, 1, tzinfo=UTC))
     assert not payload["text"].startswith("历史结果")
 
@@ -1895,7 +1899,8 @@ def test_payload_exact_record_byte_boundary_survives_durable_attempt_metadata():
     (datetime(2026, 3, 8, 7, 5, 1, tzinfo=UTC), "2026-03-08T01:55:00-05:00", True),
 ])
 def test_history_age_uses_elapsed_instants_across_eastern_dst(now, generated, expected):
-    source = payload_source(event_key=generated[:10] + "|NVDA|ENTRY_ARMED", generated_at_et=generated)
+    source = payload_source(symbol="SCANNER.1", state="SCAN_FAILED",
+                            event_key=generated[:10] + "|SCANNER.1|SCAN_FAILED", generated_at_et=generated)
     payload = sa.format_payload(make_entry(source), now)
     assert payload["text"].startswith("历史结果／延迟补发，仅供回顾\n") is expected
 
@@ -2417,8 +2422,9 @@ def test_forward_run_snapshot_is_discarded_after_interrupt_and_regular_load_is_f
 
 def cli_env(monkeypatch, tmp_path, **updates):
     values = {"QD_SLACK_ENABLED": "true", "GITHUB_REPOSITORY": REPO,
+              "GITHUB_REPOSITORY_ID": "1369484548",
               "GITHUB_REF": "refs/heads/main", "GITHUB_EVENT_NAME": "workflow_dispatch",
-              "QD_SLACK_LEDGER_ISSUE": "9", "QD_SLACK_PRODUCER_IDS": "42,43",
+              "QD_SLACK_LEDGER_ISSUE": "9", "QD_SLACK_PRODUCER_IDS": "41898282",
               "GITHUB_TOKEN": "github-private-secret", "QD_SLACK_WEBHOOK_URL": WEBHOOK,
               "GITHUB_OUTPUT": str(tmp_path / "outputs"),
               "GITHUB_STEP_SUMMARY": str(tmp_path / "summary")}
@@ -2528,7 +2534,7 @@ def test_cli_linux_hard_budget_interrupts_blocking_http(monkeypatch, tmp_path, c
 
 def test_cli_hard_budget_in_send_window_recovers_unknown_without_replay(monkeypatch, tmp_path, capsys):
     import time
-    cli_env(monkeypatch, tmp_path, QD_SLACK_PRODUCER_IDS="42")
+    cli_env(monkeypatch, tmp_path)
     prior = delivery_fixture()
     class BlockSlack(DeliveryHTTP):
         def request(self, method, url, **kwargs):
@@ -2812,3 +2818,226 @@ def test_forward_actual_post_spacing_retains_429_completion_hold(monkeypatch, re
     run()
     assert len(writes) == 3
     assert all((b - a).total_seconds() >= 1 for a, b in zip(writes, writes[1:]))
+
+
+# Production provenance gates: public comments never become ledger authority.
+@pytest.mark.parametrize("identity", [
+    {"id": AUTHOR, "type": "User", "login": "github-actions[bot]"},
+    {"id": AUTHOR, "login": "github-actions[bot]"},
+    {"id": 375565057, "type": "Bot", "login": "github-actions[bot]"},
+    {"id": str(AUTHOR), "type": "Bot", "login": "github-actions[bot]"},
+    {"id": True, "type": "Bot", "login": "github-actions[bot]"},
+])
+@pytest.mark.parametrize("target", ["issue", "comment"])
+def test_source_requires_numeric_bot_identity_on_issue_and_comment(identity, target):
+    http = FakeHTTP()
+    issue = daily_issue(http)
+    comment = source_comment(http)
+    {"issue": issue, "comment": comment}[target]["user"] = identity
+    assert sa.parse_source(comment, issue, make_config()) is None
+
+
+@pytest.mark.parametrize("target,field", [
+    ("issue", "url"), ("issue", "html_url"),
+    ("comment", "url"), ("comment", "html_url"), ("comment", "issue_url"),
+])
+@pytest.mark.parametrize("spoof", [None, "https://api.github.com/repos/attacker/repo/issues/7"])
+def test_source_requires_exact_api_and_html_scope(target, field, spoof):
+    http = FakeHTTP()
+    issue = daily_issue(http)
+    comment = source_comment(http)
+    {"issue": issue, "comment": comment}[target][field] = spoof
+    assert sa.parse_source(comment, issue, make_config()) is None
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda c: c.update(user={"id": 999, "type": "Bot", "login": "github-actions[bot]"}),
+    lambda c: c.update(user={"id": AUTHOR, "type": "User", "login": "github-actions[bot]"}),
+    lambda c: c.update(url="https://api.github.com/repos/other/repo/issues/comments/5000"),
+    lambda c: c.update(html_url="https://github.com/other/repo/issues/9#issuecomment-5000"),
+])
+@pytest.mark.parametrize("body", ["<!-- qd-slack-shard:malformed -->\n{", "forged_duplicate"])
+def test_untrusted_shard_like_comments_are_ignored_before_parsing(mutation, body):
+    http, store = initialized()
+    store.put(make_entry())
+    expected = store.load()
+    body = shard_comments(http)[0]["body"] if body == "forged_duplicate" else body
+    forged = http.add_comment(5000, body)
+    mutation(forged)
+    fresh = FakeHTTP(http.server)
+    assert make_store(fresh).load() == expected
+    assert not [r for r in fresh.requests if r["method"] != "GET"]
+    assert forged["body"] == body
+
+
+@pytest.mark.parametrize("field,value", [
+    ("user", {"id": AUTHOR, "type": "User"}),
+    ("url", "https://api.github.com/repos/other/repo/issues/9"),
+    ("html_url", "https://github.com/other/repo/issues/9"),
+])
+def test_ledger_manifest_requires_bot_and_exact_repository_scope(field, value):
+    http, _ = initialized()
+    http.server["issues"][LEDGER_ISSUE][field] = value
+    with pytest.raises(sa.LedgerUnavailable):
+        make_store(FakeHTTP(http.server)).load()
+
+
+def test_initialize_ignores_untrusted_shard_like_comment_without_reset_or_deletion():
+    http = FakeHTTP()
+    forged = http.add_comment(5000, "<!-- qd-slack-shard:v1:0 -->\n{", author=999)
+    ledger = make_store(http).initialize()
+    assert ledger.manifest.shard_count == 0
+    assert http.server["comments"][5000] == forged
+    assert not [r for r in http.requests if r["method"] == "DELETE"]
+
+
+@pytest.mark.parametrize("trusted_collision", [False, True])
+def test_shard_post_readback_filters_trust_before_operation_id_match(trusted_collision):
+    http, store = initialized()
+    def forge(request):
+        if request["method"] == "POST":
+            http.add_comment(5000, request["document"]["body"],
+                             author=AUTHOR if trusted_collision else 999)
+    http.on_request = forge
+    if trusted_collision:
+        with pytest.raises(sa.LedgerUncertain):
+            store.put(make_entry())
+        assert decode_document(http.server["issues"][LEDGER_ISSUE]["body"])["manifest"]["shard_count"] == 0
+    else:
+        store.put(make_entry())
+        assert store.load().entries[101] == make_entry()
+    assert len([r for r in http.requests if r["method"] == "POST"]) == 1
+
+
+def test_config_keeps_positive_producer_ids_configurable_for_unit_use():
+    assert make_config(producer_ids=frozenset({42})).producer_ids == frozenset({42})
+
+
+@pytest.mark.parametrize("producers", ["42", "375565057", "41898282,42", "41898282,41898282"])
+def test_cli_rejects_any_noncanonical_producer_setting_before_credentials(monkeypatch, tmp_path, capsys, producers):
+    import os
+    cli_env(monkeypatch, tmp_path, QD_SLACK_PRODUCER_IDS=producers)
+    original = os.environ.get
+    def guarded_get(key, default=None):
+        assert key not in {"GITHUB_TOKEN", "GH_TOKEN", "QD_SLACK_WEBHOOK_URL"}
+        return original(key, default)
+    monkeypatch.setattr(os.environ, "get", guarded_get)
+    assert sa.main(["prepare"]) == 0
+    assert json.loads(capsys.readouterr().out)["paused_reason"] == "invalid_configuration"
+
+
+HEALTH_STATES = ("SCAN_DEGRADED", "SCAN_UNAVAILABLE", "SCAN_FAILED", "SCAN_RECOVERED", "SCAN_DELIVERY_TEST")
+
+
+@pytest.mark.parametrize("state", HEALTH_STATES)
+@pytest.mark.parametrize("symbol", ["SCANNER.1", "SCANNER.TEST.12345678901234567890"])
+def test_health_sources_use_only_configured_ledger_issue_and_health_framing(state, symbol):
+    http = FakeHTTP()
+    issue = http.server["issues"][LEDGER_ISSUE]
+    comment = source_comment(http, symbol=symbol, state=state, issue_number=LEDGER_ISSUE)
+    source = sa.parse_source(comment, issue, make_config())
+    assert source is not None
+    assert source.state == state and source.symbol == symbol
+    payload = sa.format_payload(make_entry(source), NOW)
+    assert "系统健康通知／非交易信号" in payload["text"]
+    assert payload_snapshot(payload) == comment["body"]
+    assert sa.parse_source(comment, issue, make_config(ledger_issue=10)) is None
+
+
+@pytest.mark.parametrize("symbol", ["NVDA", "SCANNER", "SCANNER.foo", "SCANNER.-1", "SCANNER.1x", "SCANNER.１２", "SCANNER.123456789012345678901", "SCANNER.TEST."])
+def test_health_rejects_symbols_outside_exact_scanner_run_id_contract(symbol):
+    http = FakeHTTP()
+    comment = source_comment(http, symbol=symbol, state="SCAN_FAILED", issue_number=LEDGER_ISSUE)
+    assert sa.parse_source(comment, http.server["issues"][LEDGER_ISSUE], make_config()) is None
+    source = payload_source(symbol=symbol, state="SCAN_FAILED", event_key=f"2026-10-07|{symbol}|SCAN_FAILED")
+    with pytest.raises(ValueError, match="Invalid Slack source"):
+        sa.format_payload(make_entry(source), NOW)
+
+
+def test_health_on_market_daily_issue_and_market_on_ledger_are_rejected():
+    http = FakeHTTP()
+    issue = daily_issue(http)
+    assert sa.parse_source(source_comment(http, symbol="SCANNER.1", state="SCAN_FAILED"), issue, make_config()) is None
+    ledger = http.server["issues"][LEDGER_ISSUE]
+    ledger["title"] = issue["title"]
+    assert sa.parse_source(source_comment(http, issue_number=LEDGER_ISSUE), ledger, make_config()) is None
+
+
+@pytest.mark.parametrize("now,historical", [
+    ("2026-10-07T03:59:59-04:00", True),
+    ("2026-10-07T04:00:00-04:00", False),
+    ("2026-10-07T19:59:59-04:00", False),
+    ("2026-10-07T20:00:00-04:00", True),
+    ("2026-10-10T12:00:00-04:00", True),
+    ("2026-10-11T12:00:00-04:00", True),
+])
+def test_fresh_market_payload_is_historical_outside_weekday_scan_window(now, historical):
+    now = datetime.fromisoformat(now)
+    source = payload_source(event_key=f"{now.date()}|NVDA|ENTRY_ARMED", generated_at_et=now.isoformat())
+    payload = sa.format_payload(make_entry(source), now.astimezone(UTC))
+    assert payload["text"].startswith(sa.HISTORY_PREFIX + "\n") is historical
+
+
+@pytest.mark.parametrize("seconds,attempts,historical", [(0, 0, False), (600, 0, False), (601, 0, True), (0, 1, True)])
+def test_health_payload_keeps_age_retry_rules_outside_market_hours(seconds, attempts, historical):
+    generated = "2026-10-11T02:00:00-04:00"
+    source = payload_source(symbol="SCANNER.1", state="SCAN_FAILED", issue_number=LEDGER_ISSUE,
+                            html_url=f"https://github.com/{REPO}/issues/{LEDGER_ISSUE}#issuecomment-101",
+                            event_key="2026-10-11|SCANNER.1|SCAN_FAILED", generated_at_et=generated)
+    now = datetime.fromisoformat(generated).astimezone(UTC) + timedelta(seconds=seconds)
+    payload = sa.format_payload(make_entry(source, attempts=attempts), now)
+    assert payload["text"].startswith(sa.HISTORY_PREFIX + "\n") is historical
+    assert "系统健康通知／非交易信号" in payload["text"]
+
+
+def test_source_uses_configured_numeric_identity_without_login_authority():
+    http = FakeHTTP()
+    issue = daily_issue(http, user={"id": 42, "type": "Bot", "login": "display-name-changed"})
+    comment = source_comment(http, author=42)
+    comment["user"]["login"] = "different-display-name"
+    assert sa.parse_source(comment, issue, make_config(producer_ids=frozenset({42}))) is not None
+
+
+@pytest.mark.parametrize("body", [
+    "<!-- qd-slack-shard:v1:0 -->\n{",
+    "<!-- qd-slack-shard:v1:0 -->\n" + "[" * 10000 + "]" * 10000,
+    "<!-- qd-slack-shard:v1:0 -->\n\ud800",
+    "<!-- qd-slack-shard:v1:" + "9" * 5000 + " -->\n{}",
+], ids=["invalid-json", "excessive-nesting", "invalid-utf8", "excessive-shard-number"])
+def test_trusted_malformed_shard_pauses_without_reset_or_deletion(body):
+    http, store = initialized()
+    store.put(make_entry())
+    shard_comments(http)[0]["body"] = body
+    before = deepcopy(http.server)
+    fresh = FakeHTTP(http.server)
+    with pytest.raises(sa.LedgerUnavailable):
+        make_store(fresh).load()
+    assert http.server == before
+    assert not [r for r in fresh.requests if r["method"] != "GET"]
+
+
+def test_slack_forwarder_imports_without_site_packages():
+    import subprocess
+    import sys
+    from pathlib import Path
+    result = subprocess.run([sys.executable, "-S", "-c", "from market_data import slack_alerts"],
+                            cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize("repository_id", [None, "1369484549", "true", "false", "01369484548", "1369484548 "])
+@pytest.mark.parametrize("command", ["prepare", "forward"])
+def test_cli_requires_exact_repository_id_before_credentials_or_network(
+        monkeypatch, tmp_path, capsys, repository_id, command):
+    cli_env(monkeypatch, tmp_path, GITHUB_REPOSITORY_ID=repository_id)
+    original = sa.os.environ.get
+    def guarded_get(key, default=None):
+        assert key not in {"GITHUB_TOKEN", "GH_TOKEN", "QD_SLACK_WEBHOOK_URL"}
+        return original(key, default)
+    def network_forbidden():
+        pytest.fail("Untrusted repository must not construct an HTTP client")
+    monkeypatch.setattr(sa.os.environ, "get", guarded_get)
+    monkeypatch.setattr(sa, "StdlibHttpClient", network_forbidden)
+    assert sa.main([command]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["paused_reason"] == "untrusted_context"

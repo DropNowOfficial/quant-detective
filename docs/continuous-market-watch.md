@@ -96,3 +96,27 @@ uv run python -m market_data.cli watch --poll-seconds 30 --duration-minutes 350 
 ```
 
 The CLI lower bound is 15 seconds, but public-source rate limits and data update cadence still apply. Faster polling does not manufacture fresher upstream data.
+
+## Runtime guard and diagnostic health
+
+The public watcher supports XNYS trading dates, New York time 04:00 inclusive to
+20:00 exclusive. The pinned exchange calendar covers weekends, holidays, DST,
+and early RTH closes; supported POST observations still end at 20:00. This does
+not add an overnight equity feed.
+
+The scanner checks actual time before every provider request and publication
+write. A delayed schedule or manual run outside the window returns `SKIPPED`
+without fetching or publishing. A scan crossing the boundary retains its
+already-acquired evidence as `SESSION_ENDED`, clears remaining alerts, and stops
+new requests. Genuine acquisition failures remain incomplete/unavailable and
+exit nonzero. Existing quote provenance, freshness, and confirmation gates stay
+in force. Confirmed publication responses and request times survive a cutoff
+or later error; smoke checks distinguish safe partial publication from no
+publication. A skip or boundary stop never proves fresh data or VPS health.
+
+Active coverage is `COMPLETE`, `INCOMPLETE` (some requested symbols usable), or
+`UNAVAILABLE` (none usable). Separate nontrade diagnostics use the existing
+Slack ledger and webhook. Unchanged incidents remain quiet across runs and
+calendar dates. Severity escalation is immediate; recovery/downgrade waits at
+least 30 minutes after the last diagnostic to limit flapping. Expected session
+stops never announce a failure or recovery. See the delivery guide below.

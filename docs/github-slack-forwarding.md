@@ -263,3 +263,64 @@ tests do not establish GitHub-hosted-runner execution, actual installed Slack
 channel binding, real delivery, production latency/clock behavior, or remote
 reproducibility. Real end-to-end testing has not been run as part of this change;
 the production gates above remain outstanding.
+
+## Runtime diagnostics and trusted operational state
+
+Scanner diagnostics are explicitly nontrade `SCAN_DEGRADED`, `SCAN_UNAVAILABLE`,
+`SCAN_FAILED`, `SCAN_RECOVERED`, and `SCAN_DELIVERY_TEST` sources. They are written
+to the existing configured ledger issue and forwarded through the same durable
+queue, conservative retry policy, and webhook. Raw provider errors, credentials,
+and account data are not included. A same-state incident generates no new
+notification; the immutable accepted snapshot takes precedence over a later
+source edit. A 30-minute notification cooldown limits recovery/downgrade
+flapping; this is not a claim of 30 continuous healthy minutes.
+
+The health and Slack CLIs use only Python's standard library, so they can report
+a dependency-sync failure. They run even after scan exit 2. Health persistence
+failure remains a failed workflow; forwarding still gets its independent chance
+to run. If GitHub/ledger access itself fails, a job never starts, checkout fails,
+or the runner is cancelled, an in-job notification cannot be guaranteed.
+
+A manual `hosted-core-watch-fallback` dispatch on main with
+`slack_operation=health-test` skips market scanning and emits one clearly labeled
+transport diagnostic per run ID. It does not alter the current incident state.
+Verify the actual source comment, durable delivery status, and Slack receipt;
+green CI alone is not production delivery proof. Market observations forwarded
+outside 04:00–20:00 ET retain their source timestamps and are explicitly marked
+historical even when under ten minutes old. Current health diagnostics use the
+normal age/retry history policy, without pretending to be market observations.
+
+### Identity checks
+
+Daily observation issues and comments require the exact repository and canonical
+URLs, positive numeric identities, and the designated GitHub Actions bot ID
+41898282 with type `Bot`. Titles, display names, and workflow IDs are not author
+identity. Untrusted comments are ignored before parsing ledger-like text, event
+markers, or heartbeat state. Corrupted or ambiguous trusted state still fails
+closed; it is not repaired by resetting the ledger. Accepted immutable source
+snapshots remain authoritative when a live comment later changes.
+
+These checks do not make public code private or prove that another repository
+writer cannot edit bot-authored content. Locking conversations still allows
+repository writers. Preserve all existing delivery entries, especially unknown
+attempts: unknown means unconfirmed, never permission to resend. There is no
+phase-two private outbox or new persistence architecture in this change.
+
+### Manual writer/lock acceptance
+
+`operational-issue-writer-test` is manual-only on the fixed main branch. Its
+`probe` operation verifies inert diagnostic comment creation, modification, and
+exact readback on the three fixed operational Issues. `lock-and-probe` first
+finishes every pre-lock writer check, then locks and verifies each target and
+repeats the writer test while locked. The shared workflow concurrency group
+prevents normal ledger writes during the diagnostic snapshot comparison.
+
+The probe verifies exact Issue and bot identities, checks existing state for
+poison markers, and uses a read-only ledger loader so a diagnostic cannot repair
+an orphan or mutate authoritative state. Existing delivery records, hashes, and
+unknown attempts must survive unchanged relative to the fresh run baseline.
+Retry reconciliation cannot blindly repeat an uncertain POST or claim write
+access from an unchanged old comment. On failure it stops additional locks and
+reports the verified result; it never deletes comments, resets the ledger,
+replays unknown deliveries, or automatically unlocks a target. Current runner
+results, not this document, establish locked-writer compatibility.

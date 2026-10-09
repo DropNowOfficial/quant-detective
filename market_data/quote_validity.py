@@ -210,6 +210,8 @@ def publication_event(event, now=None):
     from .us_watch import classify
 
     now = now or datetime.now(timezone.utc)
+    if session_name(now.timestamp()) not in {"PRE", "RTH", "POST"}:
+        return None, "OUTSIDE_SUPPORTED_RUNTIME_SESSION"
     inputs = event.get("classification_inputs") or {}
     if not isinstance(inputs, dict):
         return None, "MISSING_CLASSIFICATION_INPUTS"

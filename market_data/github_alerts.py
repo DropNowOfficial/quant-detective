@@ -8,16 +8,20 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import json
 import os
+import re
 import sys
 from urllib.error import HTTPError
 from urllib.parse import parse_qsl, urlencode, urlsplit
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
-from .quote_validity import publication_event
+from .quote_validity import publication_event, session_name
 
 ET = ZoneInfo("America/New_York")
 API = "https://api.github.com"
+REPO = "DropNowOfficial/quant-detective"
+REPOSITORY_ID = "1369484548"
+PRODUCER_ID = 41898282
 
 
 def _api(method, path, *, token, body=None):
@@ -147,13 +151,41 @@ def _event_markdown(event: dict, *, generated_at_et: str | None = None,
     return "\n".join(lines)
 
 
+def _trusted_author(item):
+    user = item.get("user") if isinstance(item, dict) else None
+    return (isinstance(user, dict) and type(user.get("id")) is int
+            and user["id"] == PRODUCER_ID and user.get("type") == "Bot")
+
+
+def _trusted_issue(item, repo):
+    if repo != REPO or not _trusted_author(item) or "pull_request" in item:
+        return False
+    number = item.get("number")
+    root = f"{API}/repos/{repo}"
+    return (type(number) is int and number > 0
+            and item.get("url") == f"{root}/issues/{number}"
+            and item.get("html_url") == f"https://github.com/{repo}/issues/{number}"
+            and item.get("repository_url", root) == root)
+
+
+def _trusted_comment(item, repo, issue):
+    if repo != REPO or not _trusted_author(item):
+        return False
+    comment_id = item.get("id")
+    number = issue["number"]
+    return (type(comment_id) is int and comment_id > 0
+            and item.get("url") == f"{API}/repos/{repo}/issues/comments/{comment_id}"
+            and item.get("issue_url") == f"{API}/repos/{repo}/issues/{number}"
+            and item.get("html_url") == f"https://github.com/{repo}/issues/{number}#issuecomment-{comment_id}")
+
+
 def _find_daily_issue(repo, token, title):
     query = urlencode({"state": "open", "per_page": 100, "sort": "created", "direction": "desc"})
     items = _pages(f"/repos/{repo}/issues?{query}", token=token)
-    for item in items:
-        if item.get("title") == title and "pull_request" not in item:
-            return item
-    return None
+    matches = [item for item in items if _trusted_issue(item, repo) and item.get("title") == title]
+    if len(matches) > 1:
+        raise RuntimeError("Ambiguous trusted daily issues")
+    return matches[0] if matches else None
 
 
 def _comments(repo, token, issue):
@@ -161,20 +193,75 @@ def _comments(repo, token, issue):
 
 
 def _seen_markers(issue, comments):
-    text = issue.get("body") or ""
-    text += "\n" + "\n".join(str(c.get("body") or "") for c in comments)
-    return text
+    # An issue body is mutable descriptive text, never event-delivery evidence.
+    # Only the leading producer marker in a correctly scoped comment counts.
+    seen = set()
+    for comment in comments:
+        if not _trusted_comment(comment, REPO, issue):
+            continue
+        body = comment.get("body")
+        first = body.split("\n", 1)[0] if isinstance(body, str) else ""
+        if re.fullmatch(r"<!-- qd-event:[^\r\n]+ -->", first):
+            seen.add(first)
+    return seen
+
+
+def _heartbeat(comments, repo, issue):
+    matches = []
+    for comment in comments:
+        if not _trusted_comment(comment, repo, issue):
+            continue
+        body = comment.get("body")
+        first = body.split("\n", 1)[0] if isinstance(body, str) else ""
+        if first.startswith("<!-- qd-heartbeat"):
+            if first != HEARTBEAT_MARK:
+                raise RuntimeError("Corrupt trusted heartbeat marker")
+            matches.append(comment)
+    if len(matches) > 1:
+        raise RuntimeError("Ambiguous trusted heartbeat comments")
+    return matches[0] if matches else None
+
+
+
+def _market_context_semantics(event):
+    # Re-evaluation timestamps may advance without changing the rendered facts.
+    # Values or eligibility changing after rendering requires a fresh scan.
+    return {symbol: (proxy.get("ok"), proxy.get("price"), proxy.get("change_pct"),
+                     (proxy.get("quote_validity") or {}).get("eligible"))
+            for symbol, proxy in (event.get("market_context") or {}).items()}
 
 
 def publish(report: dict, *, clock=None) -> dict:
     clock = clock or (lambda: datetime.now(timezone.utc))
+    # Keep confirmed responses and uncertain request evidence through cutoff or
+    # later exceptions; the caller persists this same report in its finally.
+    result = {"published": 0, "source_comments": [], "source_requests": []}
+    report["publication_result"] = result
+    if report.get("scan_status") in {"SKIPPED", "SESSION_ENDED"}:
+        result.update(stopped=True, reason="scan status does not permit publication")
+        return result
     alerts = report.get("alerts") or []
     repo = os.getenv("GITHUB_REPOSITORY")
     token = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
     if not repo or not token:
-        return {"published": 0, "reason": "GitHub runtime credentials unavailable", "source_comments": []}
-
+        result["reason"] = "GitHub runtime credentials unavailable"
+        return result
+    if repo != REPO or os.getenv("GITHUB_REPOSITORY_ID") != REPOSITORY_ID:
+        raise RuntimeError("Untrusted GitHub repository")
     generated = datetime.fromisoformat(report["generated_at_et"])
+    report.setdefault("runtime_session", session_name(generated.timestamp()))
+
+    def active_now():
+        now = clock()
+        if session_name(now.timestamp()) in {"PRE", "RTH", "POST"}:
+            return now
+        from .us_watch import _end_session
+        _end_session(report, now)
+        result.update(stopped=True, reason="session ended before publication completed")
+        return None
+
+    if active_now() is None:
+        return result
     title = "Market Watch | " + generated.astimezone(ET).date().isoformat() + " ET"
     issue = _find_daily_issue(repo, token, title)
     if issue is None:
@@ -186,58 +273,99 @@ def publish(report: dict, *, clock=None) -> dict:
             "A mutable heartbeat comment records scan execution separately from material alerts. "
             "GitHub fallback health and VPS health are independent.\n"
         )
+        if active_now() is None:
+            return result
         owner = repo.split("/", 1)[0]
         issue = _api("POST", f"/repos/{repo}/issues", token=token,
                      body={"title": title, "body": body, "assignees": [owner]})
+        if not _trusted_issue(issue, repo) or issue.get("title") != title:
+            raise RuntimeError("Untrusted daily issue creation response")
+        result.update(issue_number=issue["number"], issue_url=issue["html_url"])
+        if active_now() is None:
+            return result
+    result.update(issue_number=issue["number"], issue_url=issue["html_url"])
 
     comments = _comments(repo, token, issue)
     heartbeat_body = _heartbeat_markdown(report)
-    heartbeat = next((c for c in comments if HEARTBEAT_MARK in str(c.get("body") or "")), None)
+    heartbeat = _heartbeat(comments, repo, issue)
+    if active_now() is None:
+        return result
     if heartbeat is None:
         created = _api(
-            "POST",
-            f"/repos/{repo}/issues/{issue['number']}/comments",
-            token=token,
-            body={"body": heartbeat_body},
+            "POST", f"/repos/{repo}/issues/{issue['number']}/comments",
+            token=token, body={"body": heartbeat_body},
         )
+        if not _trusted_comment(created, repo, issue):
+            raise RuntimeError("Untrusted heartbeat creation response")
         comments.append(created)
-        heartbeat_action = "created"
+        result["heartbeat"] = "created"
     else:
-        _api(
-            "PATCH",
-            f"/repos/{repo}/issues/comments/{heartbeat['id']}",
-            token=token,
-            body={"body": heartbeat_body},
+        updated = _api(
+            "PATCH", f"/repos/{repo}/issues/comments/{heartbeat['id']}",
+            token=token, body={"body": heartbeat_body},
         )
-        heartbeat["body"] = heartbeat_body
-        heartbeat_action = "updated"
+        if not _trusted_comment(updated, repo, issue) or updated["id"] != heartbeat["id"]:
+            raise RuntimeError("Untrusted heartbeat update response")
+        result["heartbeat"] = "updated"
+    if active_now() is None:
+        return result
 
     seen = _seen_markers(issue, comments)
-    published = 0
-    source_comments = []
     run_id = os.getenv("GITHUB_RUN_ID") or None
     rejections = report.setdefault("publication_rejections", [])
     for event in alerts:
         mark = _event_mark(event["event_key"])
         if mark in seen:
             continue
-        evaluated = clock()
+        evaluated = active_now()
+        if evaluated is None:
+            return result
         checked, reason = publication_event(event, now=evaluated)
         if checked is None:
             rejections.append({"event_key": event.get("event_key"), "evaluated_at_utc": evaluated.isoformat(), "reason": reason})
             continue
         body = _event_markdown(checked, generated_at_et=report["generated_at_et"], run_id=run_id)
+        requested = active_now()
+        if requested is None:
+            return result
+        # Classification/formatting may themselves consume time. Recheck source
+        # validity at the actual guarded request boundary, not only loop entry.
+        if requested != evaluated:
+            checked, reason = publication_event(event, now=requested)
+            if checked is None:
+                rejections.append({"event_key": event.get("event_key"), "evaluated_at_utc": requested.isoformat(), "reason": reason})
+                continue
+            body = _event_markdown(checked, generated_at_et=report["generated_at_et"], run_id=run_id)
+        requested = active_now()
+        if requested is None:
+            return result
+        # No rendering follows this last check: receipt/bar expiry and state
+        # support must still hold at the final request timestamp.
+        final_checked, reason = publication_event(event, now=requested)
+        if final_checked is None:
+            rejections.append({"event_key": event.get("event_key"), "evaluated_at_utc": requested.isoformat(), "reason": reason})
+            continue
+        if _market_context_semantics(checked) != _market_context_semantics(final_checked):
+            rejections.append({"event_key": event.get("event_key"), "evaluated_at_utc": requested.isoformat(),
+                               "reason": "MARKET_CONTEXT_CHANGED_DURING_RENDER"})
+            continue
+        request = {"event_key": event["event_key"], "comment_id": None,
+                   "requested_at_utc": requested.astimezone(timezone.utc).isoformat()}
+        result["source_requests"].append(request)
         created = _api("POST", f"/repos/{repo}/issues/{issue['number']}/comments", token=token, body={"body": body})
-        source_comments.append(created)
-        seen += "\n" + mark
-        published += 1
-    return {
-        "published": published,
-        "heartbeat": heartbeat_action,
-        "issue_number": issue["number"],
-        "issue_url": issue.get("html_url"),
-        "source_comments": source_comments,
-    }
+        if (not _trusted_comment(created, repo, issue)
+                or not isinstance(created.get("body"), str)
+                or created["body"].split("\n", 1)[0] != mark):
+            raise RuntimeError("Untrusted event creation response")
+        request["comment_id"] = created["id"]
+        result["source_comments"].append(created)
+        result["published"] += 1
+        seen.add(mark)
+        if active_now() is None:
+            return result
+    # A no-alert or all-deduplicated run can also cross the closing boundary.
+    active_now()
+    return result
 
 
 def main():
