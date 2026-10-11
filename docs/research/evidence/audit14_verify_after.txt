@@ -1,0 +1,28 @@
+# Verify recipe run by hand (make not installed) on head c24ee5d + uncommitted audit docs; validation_kernel reports reverted afterwards.
+Checked 26 packages in 0.62ms
+OK EvidencePack time_machine/fixtures/dev_syn001/predict_pack.json
+OK EvidencePack time_machine/fixtures/dev_syn001/reveal_pack.json
+OK Forecast time_machine/fixtures/dev_syn001/locked_forecast.json
+OK Score time_machine/fixtures/dev_syn001/score.json
+OK JSON failure_museum/exhibits/001_pe_cancellation.json
+OK JSON failure_museum/exhibits/002_ashare_dividend_double_count.json
+OK JSON failure_museum/exhibits/003_residual_momentum_omit_intercept.json
+OK JSON failure_museum/exhibits/004_growth_reinvestment_roic.json
+OK JSON Schema 2020-12 contracts/factors/candidates_20261011.json
+OK no raw market data tracked
+SCHEMA_GATE_OK
+  ]
+}
+PASS -> /workspace/qd-factors-mainonly/validation_kernel/v0_report.json
+........................................................................ [ 93%]
+........................................................................ [ 98%]
+..............................                                           [100%]
+1614 passed in 38.59s
+----------------------------------------------------------------------
+Ran 84 tests in 4.928s
+
+OK
+  }
+}
+TM_FIXTURE_HASH=b963d8765143cfda454243c03cb2d0509f24cde81f02f8efd88afe0bcb4ce5f8
+VERIFY_STEPS_DONE

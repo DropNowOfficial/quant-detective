@@ -11,6 +11,7 @@ Branch `research/new-factors-20261011-main-only`, draft PR #49. All SHAs are on 
 | `061bac3` | Code fixes: MAX explicit `calendar_tz`, Sloan cash + short-term investments, JSON-Schema contract gate. | `6ea006a98602cf0c026b562679eb95afa6798fc8` |
 | `4c688c5` | Sample v2 (acceptance times, ST investments, AAPL tax note source, `fetch_all.py`/`verify_inputs.py`/`run_all.sh`). | `6ea006a…` |
 | `556f20b` | MAX baseline regenerated from the ORIGINAL raw price files with the fixed code. **Code commit used for the end-to-end reproduction run** (`reproduce_run_20261011/run.log` records `git_head=556f20b…`, `factor_candidates_tree=6ea006a…`). | `6ea006a…` |
+| `7cbfd4b`, `5ad9691`, `1787c82`, `c24ee5d` | Audit-14: pre-fix snapshot; tests-first; fixes to the sample scripts, `scripts/validate_schemas.py`, `scripts/check_no_raw_market_data.py` (NOT `factor_candidates/`); counts test refinement. `factor_candidates` tree unchanged: `6ea006a98602cf0c026b562679eb95afa6798fc8` at `e259a4e` and at `c24ee5d`. The end-to-end run (`reproduce_run_20261011/run.log`) was re-run at `c24ee5d` (supersedes the `556f20b` run; the old log is in `pre_fix_snapshot_20261011/`). | `6ea006a…` |
 | later commits | Evidence/docs/PR only; they do not touch `factor_candidates/` (verified at the final head, see the PR description and the final report: `git diff 556f20b..HEAD -- factor_candidates` is empty). | `6ea006a…` |
 
 ## Result → producing version
