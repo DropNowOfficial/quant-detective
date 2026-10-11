@@ -41,7 +41,7 @@ Ties 2/3 broken by implementation simplicity. Top 3 are implemented as `NOT_VALI
 
 ## 2. Sloan balance-sheet accruals
 * **Mechanism**: accrual component of earnings is less persistent than cash flow; investors fixate on earnings (Sloan).
-* **Formula** (verified against Sloan 1996 full text, p.~296-297 of the JSTOR scan; see `evidence/pr48_sources.md`): `((ΔCA − ΔCash) − (ΔCL − ΔSTD − ΔTP) − Dep) / avg(TA_t, TA_{t−1})`, where Dep is depreciation **and amortization** expense (Compustat item 14), subtracted, and the denominator is the average of beginning- and end-of-year total assets. Hypothesis: higher → lower returns. Mapping of Compustat items 34/71 to XBRL/IFRS tags is UNVERIFIED.
+* **Formula** (verified against Sloan 1996 full text, pp. ~293-294 of the JSTOR scan, page numbers approximate; see `evidence/pr48_sources.md`): `((ΔCA − ΔCash) − (ΔCL − ΔSTD − ΔTP) − Dep) / avg(TA_t, TA_{t−1})`, where Dep is depreciation **and amortization** expense (Compustat item 14), subtracted, and the denominator is the average of beginning- and end-of-year total assets. Hypothesis: higher → lower returns. Mapping of Compustat items 34/71 to XBRL/IFRS tags is UNVERIFIED.
 * **Inputs**: seven balance-sheet/IS items, two consecutive fiscal years, same source + `known_at` rules as #1.
 * **Crowding/publication**: published 1996; very well known; evidence of decay after publication in many studies (not re-verified here beyond the McLean-Pontiff aggregate).
 * **Failure modes**: M&A and divestitures distort balance-sheet accruals (cash-flow-statement version preferable if data allows); strict missing rule drops many names; fiscal-year-end seasonality; CN earnings-management regimes differ; announced restatements.
