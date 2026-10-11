@@ -1,0 +1,63 @@
+{
+  "contract_version": "candidates-v0-20261011",
+  "status_note": "Candidate contracts, NOT part of locked Factor Contract v1. No alpha claims. Every entry is NOT_VALIDATED. VALIDATION_STATUS here adds the value NOT_VALIDATED to lifecycle_fields.json (that file is unchanged); promotion requires validation_kernel evidence per docs/research/NEW_FACTOR_CANDIDATES_20261011.md, and Vector cannot self-certify.",
+  "lifecycle_extension": {"validation_status": ["NOT_VALIDATED"]},
+  "candidates": [
+    {
+      "id": "gross_profitability",
+      "rank": 1,
+      "name": "Gross Profitability (GP/A)",
+      "CONTRACT_STATUS": "READY",
+      "DATA_STATUS": "PARTIAL",
+      "VALIDATION_STATUS": "NOT_VALIDATED",
+      "formula": "(Revenue - COGS) / TotalAssets, latest statement with known_at <= as_of, same period_end",
+      "inputs": [
+        {"field": "revenue", "source": "SEC EDGAR XBRL (US) / exchange filings via CNINFO (CN)", "known_at": "filing acceptance datetime (US) / announcement date (CN)"},
+        {"field": "cogs", "source": "same", "known_at": "same"},
+        {"field": "total_assets", "source": "same", "known_at": "same"}
+      ],
+      "pit_rule": "restated values are new facts with their own known_at; max staleness 548 days else MISSING",
+      "missing_rule": "any missing input, non-positive assets, or NaN => None; never 0. Financials/banks without COGS stay MISSING",
+      "direction_hypothesis": "higher => higher expected return (hypothesis only)",
+      "implementation": "factor_candidates/gross_profitability.py",
+      "tests": "tests/test_factor_candidates.py",
+      "data_gaps": "No vendor-grade PIT fundamentals ingested in repo yet; CN COGS definition varies (营业成本)"
+    },
+    {
+      "id": "sloan_accruals",
+      "rank": 2,
+      "name": "Balance-sheet Accruals (Sloan)",
+      "CONTRACT_STATUS": "READY",
+      "DATA_STATUS": "PARTIAL",
+      "VALIDATION_STATUS": "NOT_VALIDATED",
+      "formula": "((dCA - dCash) - (dCL - dSTD - dTaxPayable) - Depreciation) / avg(TA_t, TA_t-1)",
+      "inputs": [
+        {"field": "current_assets, cash, current_liabilities, short_term_debt, tax_payable, depreciation, total_assets (current and prior fiscal year)", "source": "SEC EDGAR XBRL (US) / CNINFO exchange filings (CN)", "known_at": "filing acceptance datetime (US) / announcement date (CN); both years must be visible at as_of"}
+      ],
+      "pit_rule": "both statements must have known_at <= as_of; prior-year period must be 300-430 days before current",
+      "missing_rule": "any component missing in either year => None; tax_payable / short_term_debt are NOT zero-filled",
+      "direction_hypothesis": "higher accruals => lower expected return (hypothesis only)",
+      "implementation": "factor_candidates/accruals.py",
+      "tests": "tests/test_factor_candidates.py",
+      "data_gaps": "Strict missing rule will drop many names where XBRL tags are absent; CN balance sheets lack a clean tax-payable/STD split in some vendors"
+    },
+    {
+      "id": "max_lottery",
+      "rank": 3,
+      "name": "MAX lottery demand",
+      "CONTRACT_STATUS": "READY",
+      "DATA_STATUS": "PARTIAL",
+      "VALIDATION_STATUS": "NOT_VALIDATED",
+      "formula": "max(daily_return) over trailing 21 trading days ending at last trading day <= as_of; >= 15 valid days",
+      "inputs": [
+        {"field": "daily_return (split/dividend adjusted)", "source": "licensed daily price vendor (US) / exchange-derived adjusted prices (CN)", "known_at": "end of trading day t (as published); adjustment revisions carry their own known_at"}
+      ],
+      "pit_rule": "rows with known_at > as_of ignored; trading calendar supplied explicitly",
+      "missing_rule": "absent rows, None, NaN are skipped, never 0; < min_obs => None. CN: suspended days are missing, limit-up (+10%/+20%) days kept but flagged as censored in validation",
+      "direction_hypothesis": "higher MAX => lower expected return (hypothesis only)",
+      "implementation": "factor_candidates/max_lottery.py",
+      "tests": "tests/test_factor_candidates.py",
+      "data_gaps": "Needs corporate-action-adjusted PIT price history; not ingested in repo"
+    }
+  ]
+}
