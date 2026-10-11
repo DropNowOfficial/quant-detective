@@ -8,6 +8,8 @@ from test_slack_forwarding_workflow import steps, scalar
 def test_missing_source_provenance_never_becomes_persisted_forwardable_event(monkeypatch):
     monkeypatch.setenv("GITHUB_REPOSITORY", "DropNowOfficial/quant-detective")
     monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1369484548")
+    monkeypatch.setenv("GITHUB_REF", "refs/heads/main")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
     monkeypatch.setenv("GITHUB_TOKEN", "synthetic-test-token")
     event = {"event_key": "2026-10-07|NVDA|ENTRY_ARMED", "symbol": "NVDA",
              "state": "ENTRY_ARMED", "reason": "synthetic missing evidence"}
@@ -36,7 +38,7 @@ def test_scan_evidence_upload_runs_after_forwarding_and_summary_even_on_failure(
     artifact = blocks["Preserve full scan evidence"]
     assert scalar(artifact, "if") == "always()"
     assert scalar(artifact, "uses") == "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2"
-    assert "path: market-watch.json" in artifact
+    assert "market-watch.json" in artifact and "notification-delivery.json" in artifact
     assert "retention-days: 30" in artifact
     assert "if-no-files-found: warn" in artifact
     names = list(blocks)

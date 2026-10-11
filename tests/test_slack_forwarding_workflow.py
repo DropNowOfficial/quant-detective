@@ -190,7 +190,7 @@ def test_workflow_scopes_credentials_and_forwards_only_remaining_activity_budget
         'python3 -m market_data.slack_alerts forward --budget-seconds "$QD_SLACK_REMAINING_BUDGET"')
     assert workflow().count("secrets.QD_SLACK_WEBHOOK_URL") == 1
     assert workflow().count("secrets.GITHUB_TOKEN") == 4
-    assert workflow().count("env:") == 4
+    assert workflow().count("env:") == 5
     for block in blocks.values():
         if scalar(block, "id") not in {"slack_prepare", "scan", "scan_health", "slack_forward"}:
             assert "GITHUB_TOKEN" not in block and "QD_SLACK_WEBHOOK_URL" not in block
@@ -213,6 +213,7 @@ def test_workflow_preserves_schedule_concurrency_permissions_and_scan_summary():
     assert "    branches: [main]\n" in triggers
     assert re.findall(r"^      - '(.+)'$", triggers, re.M) == [
         "market_data/github_alerts.py", "market_data/slack_alerts.py", "market_data/scan_health.py",
+        "market_data/scan_status.py", "market_data/cli.py",
         "market_data/us_watch.py", "market_data/quote_validity.py", ".github/workflows/market-watch.yml"]
     summary = steps()["Write compact run summary"].split("\n", 1)[1].rstrip() + "\n"
     # Exact pre-existing scan-summary block from baseline 582db9d.
@@ -231,7 +232,7 @@ def test_missing_credentials_or_disabled_cli_never_contact_service(monkeypatch, 
     cli_env(monkeypatch, tmp_path, **updates)
     http = DeliveryHTTP()
     monkeypatch.setattr(sa, "StdlibHttpClient", lambda: http)
-    assert sa.main(command) == 0
+    assert sa.main(command) == (1 if command[0] == 'forward' else 0)
     assert json.loads(capsys.readouterr().out)["paused_reason"] == reason
     assert http.requests == [] and http.server["slack_posts"] == []
 
@@ -347,11 +348,14 @@ def test_independent_forward_uses_only_saved_comments_and_preserves_incomplete_s
     scan_file = tmp_path / "market-watch.json"
     monkeypatch.setenv("QD_WATCH_OUTPUT", str(scan_file))
     monkeypatch.setattr("sys.argv", command[4:] + ["--symbols", "NVDA,TSM"])
-    with pytest.raises(SystemExit) as failed:
+    if publisher_fails:
+        with pytest.raises(SystemExit) as failed:
+            cli.main()
+        assert failed.value.code == 2
+    else:
         cli.main()
-    assert failed.value.code == 2
     output = capsys.readouterr()
-    assert ("second event publication failed" if publisher_fails else "one-shot scan incomplete: TSM") in output.err
+    assert ('RUNTIME_ERROR' in output.err) if publisher_fails else not output.err
     saved_report = json.loads(scan_file.read_text())
     assert saved_report["scan_status"] == "INCOMPLETE"
     assert saved_report["alerts"] == report["alerts"]
@@ -386,7 +390,8 @@ def test_independent_forward_uses_only_saved_comments_and_preserves_incomplete_s
         snapshot = "".join(block["text"]["text"] for block in payload["blocks"][1:])
         assert snapshot == fresh.server["comments"][source_id]["body"]
         assert payload.get("channel") is None
-    assert failed.value.code == 2  # Forward success never replaces scan failure.
+    if publisher_fails:
+        assert failed.value.code == 2  # Forward success never replaces publication failure.
 
 
 def test_health_runs_after_failure_before_forwarding_without_webhook_access():

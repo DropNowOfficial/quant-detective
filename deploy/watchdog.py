@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+from runtime_health import state_health
 
 STATE=Path("/var/lib/quant-detective/state.json")
 STATUS=Path("/var/lib/quant-detective/watchdog.json")
@@ -23,8 +24,7 @@ def read_state():
         return None, None
     try:
         data=json.loads(STATE.read_text(encoding="utf-8"))
-        stamp=datetime.fromisoformat(data["generated_at_utc"]).astimezone(timezone.utc)
-        age=(datetime.now(timezone.utc)-stamp).total_seconds()
+        age=state_health(data, MAX_AGE)
         return data, age
     except Exception:
         return None, None

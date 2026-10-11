@@ -837,10 +837,13 @@ def parse_source(comment: dict, issue: dict, config: Config) -> SourceEvent | No
     if not marker or len(re.findall(r"<!--\s*qd-event\b", body)) != 1:
         return None
     parts = marker[1].split("|")
-    if len(parts) != 3:
+    if len(parts) not in {3, 4}:
         return None
-    day, symbol, state = parts
+    day, symbol, state = parts[:3]
     health = state in HEALTH_STATES
+    if len(parts) == 4 and (health or not re.fullmatch(r'[1-9][0-9]{0,19}', parts[3])
+                            or int(parts[3]) >= comment_id):
+        return None
     symbol_pattern = r"SCANNER\.(TEST\.)?[0-9]{1,20}" if health else r"[A-Z][A-Z0-9.^=-]{0,31}"
     if (not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", day)
             or not re.fullmatch(symbol_pattern, symbol) or state not in SOURCE_STATES
@@ -1008,9 +1011,15 @@ def format_payload(entry: Entry, now: datetime) -> dict:
     if source.body is None:
         raise PayloadTooLarge("Complete source snapshot unavailable")
     try:
-        day, symbol, state = source.event_key.split("|")
+        parts = source.event_key.split('|')
+        if len(parts) not in {3, 4}:
+            raise ValueError
+        day, symbol, state = parts[:3]
         digest = _source_digest(source.body)
         health = state in HEALTH_STATES
+        if len(parts) == 4 and (health or not re.fullmatch(r'[1-9][0-9]{0,19}', parts[3])
+                                or int(parts[3]) >= source.comment_id):
+            raise ValueError
         symbol_pattern = r"SCANNER\.(TEST\.)?[0-9]{1,20}" if health else r"[A-Z][A-Z0-9.^=-]{0,31}"
         valid = (source.repo == REPO and symbol == source.symbol and state == source.state
                  and re.fullmatch(symbol_pattern, symbol)
@@ -1434,6 +1443,8 @@ def _hard_deadline(budget: Budget):
     budget.require()
     if not sys.platform.startswith("linux"):
         # Non-production platforms retain cooperative request deadlines.
+        if budget.remaining() <= 0:
+            raise BudgetExpired()
         yield
         return
     old_handler = signal.getsignal(signal.SIGALRM)
@@ -1463,11 +1474,14 @@ def _cli_report(data: dict, *, preparing: bool) -> None:
     """Only fixed labels/codes and counts, never credentials or raw failures."""
     print(_json(data))
     output = os.environ.get("GITHUB_OUTPUT")
-    if preparing and output:
-        exported_budget = math.floor(data["remaining_budget"] * 1_000_000) / 1_000_000
+    if output:
         with open(output, "a", encoding="utf-8") as file:
-            file.write(f"ledger_ready={str(data['ledger_ready']).lower()}\n"
-                       f"remaining_budget={exported_budget:.6f}\n")
+            if preparing:
+                exported_budget = math.floor(data["remaining_budget"] * 1_000_000) / 1_000_000
+                file.write(f"ledger_ready={str(data['ledger_ready']).lower()}\n"
+                           f"remaining_budget={exported_budget:.6f}\n")
+            else:
+                file.write(f"delivery_healthy={str(data['delivery_healthy']).lower()}\n")
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
         lines = ["## GitHub → Slack forwarding", f"Paused: {data.get('paused_reason') or 'no'}"]
@@ -1475,7 +1489,8 @@ def _cli_report(data: dict, *, preparing: bool) -> None:
             lines += [f"Ledger ready: {data['ledger_ready']}",
                       f"Remaining Slack activity budget: {data['remaining_budget']:.6f} seconds"]
         else:
-            lines += [f"Newly confirmed delivered this run: {data['delivered']}",
+            lines += [f"Delivery healthy: {data['delivery_healthy']}",
+                      f"Newly confirmed delivered this run: {data['delivered']}",
                       "Current durable queue (last verified snapshot): " + ", ".join(
                           f"{key}={data[key]}" for key in
                           ("pending", "retry_wait", "unknown", "needs_attention", "duplicate_source")),
@@ -1545,6 +1560,10 @@ def main(argv: list[str] | None = None) -> int:
         data = {"ledger_ready": ready, "remaining_budget": remaining,
                 "paused_reason": data["paused_reason"]}
     else:
+        data['delivery_healthy'] = (data['paused_reason'] is None
+                                    and not any(data[key] for key in ('pending', 'retry_wait', 'unknown', 'needs_attention')))
+        if not data['delivery_healthy'] and data['paused_reason'] not in {'disabled', 'untrusted_context'}:
+            code = 1
         data["count_scope"] = {"delivered": "newly_confirmed_this_run",
                                "queue": "last_verified_durable_snapshot",
                                "rejected": "current_subset_of_needs_attention"}

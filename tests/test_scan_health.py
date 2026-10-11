@@ -44,7 +44,8 @@ def publish(data, clock, http, store, outcome='success', test=False):
 
 def test_coverage_and_missing_evidence_are_distinct_without_raw_errors():
     partial = report('INCOMPLETE', ('NVDA',), ('TSM',))
-    assert health.assess(partial, 'failure')['state'] == 'SCAN_DEGRADED'
+    assert health.assess(partial, 'success')['state'] == 'SCAN_DEGRADED'
+    assert health.assess(partial, 'failure')['state'] == 'SCAN_FAILED'
     assert health.assess(report('UNAVAILABLE', (), ('NVDA', 'TSM')), 'failure')['state'] == 'SCAN_UNAVAILABLE'
     assert health.assess(None, 'failure')['state'] == 'SCAN_FAILED'
     assert health.assess(report(), 'failure')['state'] == 'SCAN_FAILED'
@@ -86,7 +87,6 @@ def test_restart_date_rollover_dedup_and_recovery_cooldown():
     fresh_http = HealthHTTP(http.server, clock=clock)
     fresh = make_store(fresh_http)
     assert publish(partial, clock, fresh_http, fresh, 'failure')['reason'] == 'unchanged'
-    assert publish(report(), clock, fresh_http, fresh)['reason'] == 'cooldown'
     clock.sleep(86400)
     assert publish(partial, clock, fresh_http, fresh, 'failure')['reason'] == 'unchanged'
     assert publish(report(), clock, fresh_http, fresh)['state'] == 'SCAN_RECOVERED'
@@ -96,11 +96,11 @@ def test_restart_date_rollover_dedup_and_recovery_cooldown():
 
 def test_severity_escalation_is_immediate_symbol_churn_is_not_spam():
     clock, http, store = runtime()
-    publish(report('INCOMPLETE', ('NVDA',), ('TSM',)), clock, http, store, 'failure')
+    publish(report('INCOMPLETE', ('NVDA',), ('TSM',)), clock, http, store)
     clock.sleep(60)
-    assert publish(report('INCOMPLETE', ('TSM',), ('NVDA',)), clock, http, store, 'failure')['reason'] == 'unchanged'
+    assert publish(report('INCOMPLETE', ('TSM',), ('NVDA',)), clock, http, store)['reason'] == 'cooldown'
     assert publish(report('UNAVAILABLE', (), ('NVDA', 'TSM')), clock, http, store, 'failure')['state'] == 'SCAN_UNAVAILABLE'
-    assert publish(report(), clock, http, store)['reason'] == 'cooldown'
+    assert publish(report(), clock, http, store)['state'] == 'SCAN_RECOVERED'
 
 
 def test_post_response_loss_readback_and_next_process_do_not_duplicate():
@@ -195,5 +195,7 @@ def test_cli_failed_persistence_does_not_expose_exception_or_secret(monkeypatch,
 
 def test_stdlib_only_health_can_run_after_dependency_failure():
     result = subprocess.run([sys.executable, '-S', '-m', 'market_data.scan_health', '--outcome', 'failure'],
-                            env={'PATH': os.environ.get('PATH', '')}, capture_output=True, text=True)
+                            env={'PATH': os.environ.get('PATH', ''),
+                                 **({'PYTHONTZPATH': os.environ['PYTHONTZPATH']}
+                                    if os.environ.get('PYTHONTZPATH') else {})}, capture_output=True, text=True)
     assert result.returncode == 0 and json.loads(result.stdout)['reason'] == 'disabled'

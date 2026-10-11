@@ -59,7 +59,7 @@ def test_active_runtime_uses_calendar_and_fetches(value, session):
 
     def provider(url, **kwargs):
         calls.append(url)
-        raise RuntimeError("synthetic provider unavailable")
+        raise OSError("synthetic provider unavailable")
 
     report = us_watch.scan_once(symbols=("GUARD_TEST",), fetcher=provider, now=moment(value))
     assert calls
@@ -100,7 +100,7 @@ def test_continuous_run_rechecks_window_open(monkeypatch, tmp_path):
 
     def provider(url, **kwargs):
         calls.append(current[0])
-        raise RuntimeError("synthetic provider unavailable")
+        raise OSError("synthetic provider unavailable")
 
     def sleep(seconds):
         current[0] = moment("2026-10-05T04:00:00-04:00")
@@ -233,7 +233,7 @@ def test_real_provider_failure_cannot_be_hidden_by_later_session_end(monkeypatch
 
     def provider(*args, **kwargs):
         current[0] = moment("2026-10-05T20:00:01-04:00")
-        raise RuntimeError("synthetic provider unavailable")
+        raise OSError("synthetic provider unavailable")
 
     monkeypatch.setattr(us_watch, "_market_context", lambda *args: {})
     monkeypatch.setattr(github_alerts, "publish", lambda *a, **k: pytest.fail("Off-session publication"))
@@ -245,5 +245,5 @@ def test_real_provider_failure_cannot_be_hidden_by_later_session_end(monkeypatch
     assert report["scan_status"] == "UNAVAILABLE"
     assert report["ending_session"] == "OVERNIGHT"
     assert report["real_acquisition_failure"] is True
-    assert any("synthetic provider unavailable" in row.get("error", "") for row in report["rows"])
+    assert any(row.get("error") == "ACQUISITION_ERROR" for row in report["rows"])
     assert report["alerts"] == []

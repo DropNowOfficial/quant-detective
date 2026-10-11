@@ -1,5 +1,6 @@
 from pathlib import Path
 import subprocess
+import runpy
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,6 +12,7 @@ def test_deploy_shell_scripts_parse():
         "deploy/install-systemd.sh",
         "deploy/install-autoupdate.sh",
         "deploy/update-production.sh",
+        "deploy/repair-current.sh",
         "deploy/configure-github-fallback.sh",
     ]:
         subprocess.run(["bash", "-n", str(ROOT / rel)], check=True)
@@ -31,8 +33,18 @@ def test_auto_update_service_runs_fixed_local_script():
 def test_production_updater_requires_new_run_id():
     text=(ROOT/"deploy/update-production.sh").read_text()
     assert "old_run_id=" in text
-    assert '"$run_id" != "$old_run_id"' in text
-    assert "BOOTSTRAPPING" in text
+    assert 'wait_for_ready "$release" "$old_run_id"' in text
+    assert 'wait_for_ready "$previous" "$old_run_id" "$failed_run_id"' in text
+    readiness = text[text.index('wait_for_ready() {'):text.index('rollback() {')]
+    assert '"$run_id" != "$excluded"' in readiness
+    assert '"$run_id" != "$other_excluded"' in readiness
+    # Both transitions must run the newly verified checker, including rollback
+    # to a legacy release whose own health script has weaker timestamp checks.
+    assert '"$release/deploy/healthcheck.py"' in readiness
+    assert '"$source/deploy/healthcheck.py"' not in readiness
+    checker = (ROOT / "deploy/healthcheck.py").read_text()
+    assert "state_health(data, max_age)" in checker
+    assert "BOOTSTRAPPING" not in runpy.run_path(str(ROOT / "deploy/runtime_health.py"))["MODES"]
 
 
 def test_watchdog_assets_and_updater_install_path_exist():
@@ -48,7 +60,7 @@ def test_watchdog_assets_and_updater_install_path_exist():
 
 def test_new_release_operational_units_reconcile_after_health_passes():
     text=(ROOT/"deploy/update-production.sh").read_text()
-    health_pos=text.index('if [ "$ready" -ne 1 ]')
+    health_pos=text.index('if ! wait_for_ready "$release" "$old_run_id"; then')
     reconcile_pos=text.rindex('reconcile_operational_units "$release"')
     assert reconcile_pos > health_pos
 
@@ -56,8 +68,13 @@ def test_new_release_operational_units_reconcile_after_health_passes():
 def test_already_current_release_reconciles_operational_units():
     text=(ROOT/"deploy/update-production.sh").read_text()
     assert "reconcile_operational_units()" in text
-    current_block=text[text.index('if [ "$current_sha" = "$remote_sha" ]'):text.index('release="$RELEASES/$remote_sha"')]
-    assert 'reconcile_operational_units "$current_target"' in current_block
+    current_block=text[text.index('if [ "$repair" -eq 0 ] && [ "$current_sha" = "$remote_sha" ]'):text.index('# Never reuse an abandoned candidate')]
+    validation_pos = current_block.index('validate_release "$current_target"')
+    health_pos = current_block.index('"$current_target/deploy/healthcheck.py"')
+    reconcile_pos = current_block.index('reconcile_operational_units "$trusted/source"')
+    assert validation_pos < health_pos < reconcile_pos
+    # Root reconciliation reads only the newly verified protected snapshot.
+    assert 'reconcile_operational_units "$current_target"' not in current_block
 
 
 def test_github_fallback_dispatch_timer_is_wired_safely():
