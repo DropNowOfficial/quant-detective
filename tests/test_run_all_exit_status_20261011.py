@@ -42,8 +42,10 @@ def build(tmp_path, failing=None):
     return here / "run_all.sh", tmp_path / "log", bindir
 
 
-def run(tmp_path, failing=None):
+def run(tmp_path, failing=None, logfile_is_dir=False):
     script, log, bindir = build(tmp_path, failing)
+    if logfile_is_dir:
+        (log / "run.log").mkdir(parents=True)  # tee cannot open it for writing -> log write fails
     env = dict(os.environ, PATH=f"{bindir}:{os.environ['PATH']}")
     p = subprocess.run(["bash", str(script), str(log)], capture_output=True, text=True, env=env, timeout=120)
     return p, log
@@ -70,3 +72,34 @@ def test_first_step_fails_overall_nonzero_and_later_steps_still_logged(tmp_path)
     p, log = run(tmp_path, failing="fetch_all.py")
     assert p.returncode != 0
     assert "verify_inputs" in (log / "run.log").read_text()
+
+
+# --- audit 15: BOTH ends of the `main | tee run.log` pipeline must be checked (not only PIPESTATUS[0]) ---
+def test_log_write_fails_while_all_steps_succeed_overall_nonzero(tmp_path):
+    """run.log pre-created as a DIRECTORY: tee fails, every verification step succeeds -> must be non-zero."""
+    p, log = run(tmp_path, logfile_is_dir=True)
+    assert (log / "run.log").is_dir()
+    assert p.returncode != 0, "FALSE SUCCESS: log write failed (tee) but run_all.sh exited 0\n" + p.stdout + p.stderr
+    assert "tee" in (p.stdout + p.stderr).lower() and "log" in (p.stdout + p.stderr).lower()
+
+
+def test_producer_ok_tee_fails_names_tee_side(tmp_path):
+    p, _ = run(tmp_path, logfile_is_dir=True)
+    out = p.stdout + p.stderr
+    assert p.returncode != 0
+    assert "RUN_ALL_FAILED" in out and "tee_rc=1" in out and "producer_rc=0" in out, out
+
+
+def test_producer_fails_tee_ok_names_producer_side(tmp_path):
+    p, log = run(tmp_path, failing="verify_inputs.py")
+    out = p.stdout + p.stderr
+    assert p.returncode != 0
+    assert "RUN_ALL_FAILED" in out and "producer_rc=1" in out and "tee_rc=0" in out, out
+    assert (log / "run.log").is_file()
+
+
+def test_both_succeed_exit_zero_and_no_failure_banner(tmp_path):
+    p, log = run(tmp_path)
+    assert p.returncode == 0, p.stdout + p.stderr
+    assert "RUN_ALL_FAILED" not in p.stdout + p.stderr
+    assert (log / "run.log").is_file() and "exit_code=0" in (log / "run.log").read_text()
