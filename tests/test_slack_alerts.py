@@ -671,9 +671,12 @@ def source_comment(http, comment_id=101, *, symbol="NVDA", state="ENTRY_ARMED",
                    day="2026-10-07", issue_number=7, generated="2026-10-07T14:00:00-04:00",
                    run_id="12345", metadata=True, **changes):
     from market_data.github_alerts import _event_markdown
-    body = _event_markdown({"event_key": f"{day}|{symbol}|{state}", "symbol": symbol,
+    # Build a neutral producer body, then insert the requested (possibly hostile)
+    # identity independently of the production producer's input validator.
+    body = _event_markdown({"event_key": f"{day}|NVDA|{state}", "symbol": 'NVDA',
                            "state": state, "reason": "Fixture observation"},
                           generated_at_et=generated, run_id=run_id)
+    body = body.replace('|NVDA|', f'|{symbol}|').replace('### NVDA ', f'### {symbol} ')
     if not metadata:
         body = "\n".join(line for line in body.split("\n") if not line.startswith("<!-- qd-source:"))
     return http.add_comment(comment_id, body, issue_number=issue_number, **changes)
@@ -2035,7 +2038,7 @@ def test_http_adapter_rejects_bad_headers_before_consuming_body(monkeypatch, hea
     b"2\r\nok\r\n0\r\nX-Trailer: " + b"x" * 65536 + b"\r\n\r\n",
     b"2\r\nok\r\n0\r\n" + b"X-Trailer: safe\r\n" * 101 + b"\r\n",
     b"2\r\nok\r\n0\r\nX-Trailer: value\n\r\n",
-])
+], ids=['oversized-extension', 'oversized-trailer', 'many-trailers', 'invalid-crlf'])
 def test_http_adapter_chunk_framing_metadata_is_bounded_and_crlf_terminated(monkeypatch, body):
     connection = AdapterConnection(wire_http_response(b"Transfer-Encoding: chunked\r\n", body))
     install_adapter_connection(monkeypatch, connection)
@@ -2466,7 +2469,7 @@ def test_cli_disabled_or_untrusted_guards_precede_any_credential_read(monkeypatc
 ])
 def test_cli_invalid_configuration_is_safe_pause(monkeypatch, tmp_path, capsys, updates, argv):
     cli_env(monkeypatch, tmp_path, **updates)
-    assert sa.main(argv) == 0
+    assert sa.main(argv) == (1 if argv[0] == 'forward' else 0)
     output = capsys.readouterr()
     assert json.loads(output.out)["paused_reason"] == "invalid_configuration"
     assert not output.err
@@ -2525,7 +2528,7 @@ def test_cli_linux_hard_budget_interrupts_blocking_http(monkeypatch, tmp_path, c
     monkeypatch.setattr(sa, "StdlibHttpClient", BlockingHTTP)
     old_handler = signal.getsignal(signal.SIGALRM)
     start = time.monotonic()
-    assert sa.main(["forward", "--budget-seconds", "0.05"]) == 0
+    assert sa.main(["forward", "--budget-seconds", "0.05"]) == 1
     assert time.monotonic() - start < 0.7
     assert json.loads(capsys.readouterr().out)["paused_reason"] == "budget_exhausted"
     assert signal.getsignal(signal.SIGALRM) == old_handler
@@ -2543,7 +2546,7 @@ def test_cli_hard_budget_in_send_window_recovers_unknown_without_replay(monkeypa
                 time.sleep(4)
             return response
     monkeypatch.setattr(sa, "StdlibHttpClient", lambda: BlockSlack(prior.server))
-    assert sa.main(["forward", "--budget-seconds", "1.1"]) == 0
+    assert sa.main(["forward", "--budget-seconds", "1.1"]) == 1
     assert json.loads(capsys.readouterr().out)["paused_reason"] == "budget_exhausted"
     assert restored(prior).entries[101].status == "attempting"
     _, fresh = forward_run(prior, now=NOW + timedelta(days=1))

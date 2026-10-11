@@ -83,7 +83,7 @@ def main():
                 events_path=args.events_path,
             ).run(once=args.once)
         except (ValueError, TypeError, OSError, RuntimeError) as exc:
-            parser.exit(2, f'ibkr-watch failed: {exc}\n')
+            parser.exit(2, 'ibkr-watch failed: RUNTIME_ERROR (inspect saved state)\n')
         return
 
     if args.command == 'watch':
@@ -100,7 +100,7 @@ def main():
                 output=args.output,
             )
         except (ValueError, TypeError, OSError, RuntimeError) as exc:
-            parser.exit(2, f'watch failed: {exc}\n')
+            parser.exit(2, 'watch failed: RUNTIME_ERROR (inspect saved scan evidence)\n')
         return
 
     if args.command == 'serve':

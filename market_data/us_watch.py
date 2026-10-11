@@ -11,7 +11,7 @@ account access, or trading actions exist here.
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from statistics import fmean, median
 import json
 import math
@@ -21,9 +21,11 @@ import time
 from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
-from .transport import fetch
+from .transport import fetch, FetchError
+from .scan_status import coverage_details
 from .quote_validity import (confirmation_evidence, quote_evidence, session_name, utc_time,
-                             refresh_intraday, refresh_market_context, previous_session_date)
+                             refresh_intraday, refresh_market_context, previous_session_date,
+                             BAR_SECONDS, GRACE_SECONDS)
 
 ET = ZoneInfo("America/New_York")
 DEFAULT_SYMBOLS = (
@@ -38,8 +40,42 @@ _NEWS_CACHE = {}
 _VOLUME_PROFILE_CACHE = {}
 
 
+def _safe_error(exc):
+    # External exceptions can contain credentials, proxy URLs and response prose.
+    return ('RuntimeError: SESSION_ENDED_DURING_SCAN' if isinstance(exc, RuntimeError)
+            and exc.args == ('SESSION_ENDED_DURING_SCAN',) else 'ACQUISITION_ERROR')
+
+
+def _expected_acquisition_error(exc):
+    return (isinstance(exc, (FetchError, ValueError, OSError))
+            or isinstance(exc, RuntimeError) and exc.args == ('SESSION_ENDED_DURING_SCAN',))
+
+
 def _finite(v):
-    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+    try:
+        return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+    except OverflowError:
+        return False
+
+
+def _provider_payload(wrapped):
+    if (not isinstance(wrapped, dict) or not isinstance(wrapped.get("data"), dict)
+            or not isinstance(wrapped.get("receipt"), dict)):
+        raise ValueError("INVALID_PROVIDER_ENVELOPE")
+    return wrapped["data"], wrapped["receipt"]
+
+
+def _provider_timestamp(value):
+    """Validate external seconds before date/calendar or integer conversion."""
+    if not _finite(value) or not float(value).is_integer():
+        raise ValueError("INVALID_PROVIDER_TIMESTAMP")
+    try:
+        stamp = datetime.fromtimestamp(value, timezone.utc)
+        stamp.astimezone(ET)  # Local-date consumers must also be representable.
+        stamp + timedelta(seconds=2 * BAR_SECONDS + GRACE_SECONDS)
+    except (ValueError, OverflowError, OSError):
+        raise ValueError("INVALID_PROVIDER_TIMESTAMP") from None
+    return stamp
 
 
 def _pct(a, b):
@@ -69,26 +105,33 @@ def _news_url(symbol):
 def _chart(fetcher, symbol, *, range_value, interval, include_prepost, require_us_equity=True):
     wrapped = fetcher(_yahoo_url(symbol, range_value=range_value, interval=interval,
                                  include_prepost=include_prepost), kind="json")
-    data, receipt = wrapped["data"], wrapped["receipt"]
-    chart = data.get("chart", {}) if isinstance(data, dict) else {}
+    data, receipt = _provider_payload(wrapped)
+    chart = data.get("chart")
+    if not isinstance(chart, dict):
+        raise ValueError("INVALID_PROVIDER_CHART")
     if chart.get("error"):
-        raise ValueError("Yahoo chart application error: " + str(chart["error"]))
+        raise ValueError("PROVIDER_CHART_ERROR")
     results = chart.get("result")
     if not isinstance(results, list) or not results or not isinstance(results[0], dict):
         raise ValueError("Yahoo chart result missing")
     item = results[0]
     meta = item.get("meta", {})
+    if not isinstance(meta, dict):
+        raise ValueError("INVALID_PROVIDER_METADATA")
     expected = symbol.replace(".", "-").upper()
     if str(meta.get("symbol", "")).upper() != expected:
         raise ValueError("Yahoo returned a different symbol")
     if require_us_equity:
-        if meta.get("instrumentType") not in {"EQUITY", "ETF"}:
+        if meta.get("instrumentType") not in ("EQUITY", "ETF"):
             raise ValueError("Yahoo asset is not an equity/ETF")
         if meta.get("exchangeTimezoneName") != "America/New_York" or meta.get("currency") != "USD":
             raise ValueError("Yahoo market identity does not match U.S. USD equity")
-    times = item.get("timestamp") or []
-    quote_rows = ((item.get("indicators") or {}).get("quote") or [])
-    if not quote_rows or not isinstance(quote_rows[0], dict):
+    times = item.get("timestamp")
+    indicators = item.get("indicators")
+    if not isinstance(times, list) or not isinstance(indicators, dict):
+        raise ValueError("INVALID_PROVIDER_SERIES")
+    quote_rows = indicators.get("quote")
+    if not isinstance(quote_rows, list) or not quote_rows or not isinstance(quote_rows[0], dict):
         raise ValueError("Yahoo OHLCV missing")
     q = quote_rows[0]
     fields = [q.get(k) for k in ("open", "high", "low", "close", "volume")]
@@ -98,8 +141,11 @@ def _chart(fetcher, symbol, *, range_value, interval, include_prepost, require_u
     for i, t in enumerate(times):
         values = [v[i] for v in fields]
         try:
+            _provider_timestamp(t)
+            if any(isinstance(x, bool) for x in values):
+                continue
             o, h, l, c, volume = [float(x) for x in values]
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             continue
         if not all(math.isfinite(x) for x in (o, h, l, c, volume)) or volume < 0:
             continue
@@ -132,8 +178,10 @@ def _market_proxy(fetcher, symbol, now, clock=None):
             "role": "OVERNIGHT_REGIME_PROXY",
         }
     except Exception as exc:
+        if not _expected_acquisition_error(exc):
+            raise
         return {"ok": False, "symbol": symbol, "role": "OVERNIGHT_REGIME_PROXY",
-                "error": f"{type(exc).__name__}: {str(exc)[:200]}"}
+                "error": _safe_error(exc)}
 
 
 def _market_context(fetcher, now, clock=None):
@@ -149,18 +197,21 @@ def _news(fetcher, symbol, now):
         return cached[1]
     try:
         wrapped = fetcher(_news_url(symbol), kind="json")
-        data, receipt = wrapped["data"], wrapped["receipt"]
-        items = data.get("news", []) if isinstance(data, dict) else []
+        data, receipt = _provider_payload(wrapped)
+        items = data.get("news", [])
+        if not isinstance(items, list):
+            raise ValueError("INVALID_PROVIDER_NEWS")
         out = []
         for item in items[:6]:
             if not isinstance(item, dict) or not item.get("title"):
                 continue
             stamp = item.get("providerPublishTime")
-            age_h = (now.timestamp() - float(stamp)) / 3600 if _finite(stamp) else None
+            published = _provider_timestamp(stamp) if stamp is not None else None
+            age_h = (now - published).total_seconds() / 3600 if published is not None else None
             out.append({
                 "title": str(item["title"])[:240],
                 "publisher": item.get("publisher"),
-                "published_at_utc": datetime.fromtimestamp(float(stamp), timezone.utc).isoformat() if _finite(stamp) else None,
+                "published_at_utc": published.isoformat() if published is not None else None,
                 "age_hours": round(age_h, 2) if _finite(age_h) else None,
                 "link": item.get("link"),
             })
@@ -169,7 +220,9 @@ def _news(fetcher, symbol, now):
         _NEWS_CACHE[symbol] = (now.timestamp(), result)
         return result
     except Exception as exc:
-        result = {"ok": False, "error": f"{type(exc).__name__}: {str(exc)[:200]}", "items": [], "fresh_36h_count": 0}
+        if not _expected_acquisition_error(exc):
+            raise
+        result = {"ok": False, "error": _safe_error(exc), "items": [], "fresh_36h_count": 0}
         _NEWS_CACHE[symbol] = (now.timestamp(), result)
         return result
 
@@ -435,10 +488,14 @@ def _scan_health(report, symbols):
     """Distinguish no usable coverage from partial coverage, without hiding either."""
     if report.get("scan_status") in {"SKIPPED", "SESSION_ENDED"} or report.get("ending_session"):
         return report
-    requested = set(symbols)
-    usable = {r.get("symbol") for r in report.get("rows", []) if r.get("status") == "OK"} & requested
-    report["incomplete_symbols"] = sorted(requested - usable)
-    report["scan_status"] = ("UNAVAILABLE" if not usable else
+    report.setdefault("symbols_requested", list(symbols))
+    details = coverage_details(report, symbols)
+    if details is None:
+        report.update(scan_status="FAILED", incomplete_symbols=sorted(symbols), execution_error="INVALID_SCAN_EVIDENCE")
+        return report
+    report["coverage"] = details
+    report["incomplete_symbols"] = details["missing"]
+    report["scan_status"] = ("UNAVAILABLE" if not details["usable"] else
                              "INCOMPLETE" if report["incomplete_symbols"] else "COMPLETE")
     return report
 
@@ -516,7 +573,9 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8, clock
             try:
                 rows.append(future.result())
             except Exception as exc:
-                rows.append({"symbol": symbol, "status": "ERROR", "error": f"{type(exc).__name__}: {str(exc)[:240]}"})
+                if not _expected_acquisition_error(exc):
+                    raise
+                rows.append({"symbol": symbol, "status": "ERROR", "error": _safe_error(exc)})
     rows.sort(key=lambda r: (
         {"ENTRY_CONFIRMED": 0, "ENTRY_ARMED": 1, "LEADER_HOT_NO_CHASE": 2, "LEADER_WATCH": 3,
          "EXTENDED": 4, "WATCH": 5}.get(r.get("state"), 9),
@@ -604,20 +663,27 @@ def run(*, symbols=DEFAULT_SYMBOLS, poll_seconds=60, duration_minutes=0, github_
     symbols = tuple(dict.fromkeys(s.upper() for s in symbols))
     started = time.monotonic()
     while True:
-        report = _scan_health(scan_once(symbols=symbols, fetcher=fetcher, clock=clock), symbols)
+        try:
+            report = _scan_health(scan_once(symbols=symbols, fetcher=fetcher, clock=clock), symbols)
+        except Exception:
+            report = {'scan_status': 'FAILED', 'execution_error': 'SCAN_EXECUTION_FAILED',
+                      'symbols_requested': list(symbols), 'rows': [], 'alerts': []}
+            _write(report, output)
+            raise RuntimeError('SCAN_EXECUTION_FAILED') from None
         _write(report, output)
         compact = {
             "generated_at_et": report.get("generated_at_et"),
             "scan_status": report.get("scan_status"),
             "runtime_session": report.get("runtime_session"),
             "skip_reason": report.get("skip_reason"),
+            "coverage": report.get("coverage"),
             "alerts": [
                 {"symbol": a.get("symbol"), "state": a.get("state"), "change_pct": a.get("change_pct"),
                  "d5_atr": a.get("d5_atr")}
                 for a in report.get("alerts", [])
             ],
             "errors": [
-                {"symbol": r.get("symbol"), "error": r.get("error")}
+                {"symbol": r.get("symbol"), "error": "ACQUISITION_ERROR"}
                 for r in report.get("rows", []) if r.get("status") == "ERROR"
             ],
         }
@@ -629,13 +695,16 @@ def run(*, symbols=DEFAULT_SYMBOLS, poll_seconds=60, duration_minutes=0, github_
                 _end_session(report, clock() if clock else datetime.now(timezone.utc))
                 if not report.get("ending_session"):
                     publish(report, **({"clock": clock} if clock else {}))
+            except Exception:
+                report["execution_error"] = "PUBLICATION_FAILED"
+                raise RuntimeError("PUBLICATION_FAILED") from None
             finally:
                 # Keep publication-time rejection evidence even on partial failure.
                 _write(report, output)
         if once:
-            # Preserve partial observations and publication before failing the
-            # hosted workflow. Process completion alone is not scan health.
-            if report["scan_status"] not in {"COMPLETE", "SKIPPED", "SESSION_ENDED"}:
+            # Partial coverage is a successful degraded scan. Zero coverage and
+            # execution/publication errors still fail the process.
+            if report["scan_status"] not in {"COMPLETE", "INCOMPLETE", "SKIPPED", "SESSION_ENDED"}:
                 detail = ", ".join(report["incomplete_symbols"]) or "no requested symbols"
                 raise RuntimeError(f"one-shot scan incomplete: {detail}")
             return report

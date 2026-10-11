@@ -12,10 +12,13 @@ concurrency:
 
 jobs:
   deploy:
+    if: ${{ github.repository == 'DropNowOfficial/quant-detective' && github.repository_id == '1369484548' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' }}
     runs-on: [self-hosted, linux, x64, quant-detective]
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
         with:
@@ -24,26 +27,16 @@ jobs:
 
       - name: Verify before deploy
         run: |
-          uv sync --frozen
-          uv run --extra research pytest -q tests/test_ibkr_cpg.py tests/test_ibkr_live.py tests/test_us_watch.py
+          make verify
 
-      - name: Install immutable release
+      - name: Deploy through reviewed rollback-capable updater
         shell: bash
         run: |
-          release="/opt/quant-detective/releases/${GITHUB_SHA}"
-          sudo install -d -o quantdetective -g quantdetective -m 0755 "$release"
-          sudo rsync -a --delete             --exclude '.git' --exclude '.venv' --exclude 'runtime'             "$GITHUB_WORKSPACE/" "$release/"
-          sudo chown -R quantdetective:quantdetective "$release"
-          sudo -u quantdetective uv sync --project "$release" --frozen
-          sudo ln -sfn "$release" /opt/quant-detective/current
-
-      - name: Restart persistent watcher
-        run: |
-          sudo systemctl daemon-reload
-          sudo systemctl restart quant-detective-live.service
-          sleep 8
-          sudo systemctl --no-pager --full status quant-detective-live.service
-
-      - name: Health check
-        run: |
-          /opt/quant-detective/current/.venv/bin/python             /opt/quant-detective/current/deploy/healthcheck.py             /var/lib/quant-detective/state.json 20
+          set -euo pipefail
+          expected="$(sha256sum deploy/update-production.sh | awk '{print $1}')"
+          installed="$(sha256sum /usr/local/sbin/quant-detective-update | awk '{print $1}')"
+          if [ "$expected" != "$installed" ]; then
+            echo "Reviewed updater must be installed separately before deployment." >&2
+            exit 2
+          fi
+          sudo /usr/local/sbin/quant-detective-update "$GITHUB_SHA"

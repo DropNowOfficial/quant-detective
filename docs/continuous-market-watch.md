@@ -115,8 +115,26 @@ or later error; smoke checks distinguish safe partial publication from no
 publication. A skip or boundary stop never proves fresh data or VPS health.
 
 Active coverage is `COMPLETE`, `INCOMPLETE` (some requested symbols usable), or
-`UNAVAILABLE` (none usable). Separate nontrade diagnostics use the existing
-Slack ledger and webhook. Unchanged incidents remain quiet across runs and
-calendar dates. Severity escalation is immediate; recovery/downgrade waits at
-least 30 minutes after the last diagnostic to limit flapping. Expected session
-stops never announce a failure or recovery. See the delivery guide below.
+`UNAVAILABLE` (none usable). `INCOMPLETE` completes successfully with explicit
+usable/requested counts, rejected symbols and fixed rejection codes. Sparse POST
+bars retain the same freshness gate; no stale quote becomes usable to improve
+workflow status. `UNAVAILABLE`, malformed evidence (`FAILED`) and execution or
+publication exceptions still exit nonzero. A failed publication records a fixed
+`execution_error` without saving remote exception text.
+
+Separate nontrade diagnostics use the existing Slack ledger and webhook.
+Unchanged state and coverage/reason fingerprints remain quiet across restarts
+and calendar dates. Severity escalation and full recovery are immediate;
+changed missing symbols or reasons and severity downgrades are limited to one
+notice per 30 minutes. Expected session stops never announce failure/recovery.
+The first encounter with a legacy notice lacking a coverage fingerprint can
+produce one migration notice after cooldown.
+
+The Slack command exports `delivery_healthy` and fails if its verified queue has
+pending, retry-wait, unknown or needs-attention records, or forwarding pauses.
+Unknown delivery remains blocked from automatic resend. The workflow separately
+checks ledger readiness, health persistence, forwarding outcome and actual
+delivery evidence; its `notification-delivery.json` artifact distinguishes
+transport health from market coverage. Healthy scan data alone cannot establish
+successful Slack delivery. A duplicate-source record does not imply a failed
+delivery of its canonical event.

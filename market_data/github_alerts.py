@@ -6,13 +6,14 @@ Event markers make repeated five-minute workflow runs idempotent.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import html
 import json
 import os
 import re
 import sys
 from urllib.error import HTTPError
 from urllib.parse import parse_qsl, urlencode, urlsplit
-from urllib.request import Request, urlopen
+from urllib.request import Request, HTTPRedirectHandler, build_opener
 from zoneinfo import ZoneInfo
 
 from .quote_validity import publication_event, session_name
@@ -24,7 +25,20 @@ REPOSITORY_ID = "1369484548"
 PRODUCER_ID = 41898282
 
 
+class _NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, request, response, code, message, headers, new_url):
+        return None
+
+
+urlopen = build_opener(_NoRedirect()).open
+MAX_API_BYTES = 8 * 1024 * 1024
+
+
 def _api(method, path, *, token, body=None):
+    parsed = urlsplit(path)
+    if (method not in {'GET', 'POST', 'PATCH'} or parsed.scheme or parsed.netloc or parsed.fragment
+            or not re.fullmatch(re.escape('/repos/' + REPO) + r'/issues(?:/[1-9][0-9]*(?:/comments)?|/comments/[1-9][0-9]*)?', parsed.path)):
+        raise ValueError('Untrusted GitHub API path')
     data = None if body is None else json.dumps(body).encode()
     request = Request(API + path, data=data, method=method)
     request.add_header("Accept", "application/vnd.github+json")
@@ -35,11 +49,15 @@ def _api(method, path, *, token, body=None):
         request.add_header("Content-Type", "application/json")
     try:
         with urlopen(request, timeout=15) as response:
-            raw = response.read()
+            raw = response.read(MAX_API_BYTES + 1)
+            if len(raw) > MAX_API_BYTES:
+                raise RuntimeError('GitHub response exceeds limit')
             return json.loads(raw) if raw else {}
     except HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")[:500]
-        raise RuntimeError(f"GitHub API {exc.code}: {detail}") from exc
+        exc.close()
+        raise RuntimeError(f"GitHub API HTTP {exc.code}") from None
+    except (OSError, ValueError):
+        raise RuntimeError('GitHub transport or response invalid') from None
 
 
 def _pages(path: str, *, token: str) -> list[dict]:
@@ -48,14 +66,25 @@ def _pages(path: str, *, token: str) -> list[dict]:
     query["per_page"] = 100
     items = []
     page = 1
-    while True:
+    while page <= 100:
         query["page"] = page
         page_path = parsed._replace(query=urlencode(query)).geturl()
         batch = _api("GET", page_path, token=token)
+        if not isinstance(batch, list) or len(batch) > 100 or any(not isinstance(item, dict) for item in batch):
+            raise RuntimeError('Malformed GitHub page')
         items.extend(batch)
         if len(batch) < 100:
             return items
         page += 1
+    raise RuntimeError('GitHub pagination exceeds limit')
+
+
+def _plain_markdown(value, limit=240):
+    # Provider prose is data: single line, no HTML, mentions, links or markers.
+    text = ' '.join(str(value or '').split())[:limit]
+    text = ''.join(c for c in text if c.isprintable() and c not in '\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069')
+    text = html.escape(text, quote=True).replace('@', '＠')
+    return re.sub(r'([\\`*_{}\[\]()#!|])', r'\\\1', text)
 
 
 def _fmt(value, digits=2):
@@ -63,6 +92,8 @@ def _fmt(value, digits=2):
 
 
 def _event_mark(key):
+    if not isinstance(key, str) or not re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}\|[A-Z0-9][A-Z0-9._-]{0,15}\|[A-Z_]{1,32}(?:\|[1-9][0-9]{0,19})?', key):
+        raise ValueError('Invalid observation event identity')
     return f"<!-- qd-event:{key} -->"
 
 
@@ -88,6 +119,9 @@ def _heartbeat_markdown(report):
         f"- Commit: **{sha[:12] if sha else 'n/a'}**",
         "- Scope: **configured core watchlist / public observation fallback**",
         f"- Symbols OK / error: **{ok_rows} / {error_rows}**",
+        f"- Coverage status: **{report.get('scan_status')}** | usable / requested: **{ok_rows} / {len(report.get('symbols_requested') or rows)}**",
+        '- Rejected symbols and reasons: ' + '; '.join(
+            f'{symbol}={",".join(codes)}' for symbol, codes in (report.get('coverage') or {}).get('reasons', {}).items()),
         f"- Material alerts in this scan: **{len(report.get('alerts') or [])}**",
     ]
     if run_url:
@@ -143,8 +177,8 @@ def _event_markdown(event: dict, *, generated_at_et: str | None = None,
     if news:
         lines.append("- Recent news context:")
         for item in news[:3]:
-            title = str(item.get("title") or "")[:180]
-            publisher = item.get("publisher") or "unknown publisher"
+            title = _plain_markdown(item.get("title"), 180)
+            publisher = _plain_markdown(item.get("publisher") or "unknown publisher", 80)
             age = _fmt(item.get("age_hours"), 1)
             lines.append(f"  - {title} — {publisher}, {age}h ago")
     lines += ["", "_Observation only. No order was created or drafted._"]
@@ -206,6 +240,31 @@ def _seen_markers(issue, comments):
     return seen
 
 
+def _latest_transitions(issue, comments):
+    """Use only persisted producer comments, never mutable issue text."""
+    latest = {}
+    for comment in comments:
+        if not _trusted_comment(comment, REPO, issue):
+            continue
+        body = comment.get('body')
+        first = body.split('\n', 1)[0] if isinstance(body, str) else ''
+        match = re.fullmatch(r'<!-- qd-event:([^\r\n]+) -->', first)
+        if not match:
+            continue
+        try:
+            _event_mark(match[1])
+        except ValueError:
+            continue
+        parts = match[1].split('|')
+        if len(parts) == 4 and int(parts[3]) >= comment['id']:
+            continue
+        day, symbol, state = parts[:3]
+        key = (day, symbol)
+        if key not in latest or comment['id'] > latest[key][1]:
+            latest[key] = (state, comment['id'])
+    return latest
+
+
 def _heartbeat(comments, repo, issue):
     matches = []
     for comment in comments:
@@ -248,6 +307,9 @@ def publish(report: dict, *, clock=None) -> dict:
         return result
     if repo != REPO or os.getenv("GITHUB_REPOSITORY_ID") != REPOSITORY_ID:
         raise RuntimeError("Untrusted GitHub repository")
+    if (os.getenv("GITHUB_REF") != "refs/heads/main"
+            or os.getenv("GITHUB_EVENT_NAME") not in {"push", "schedule", "workflow_dispatch"}):
+        raise RuntimeError("Untrusted GitHub publication context")
     generated = datetime.fromisoformat(report["generated_at_et"])
     report.setdefault("runtime_session", session_name(generated.timestamp()))
 
@@ -311,9 +373,18 @@ def publish(report: dict, *, clock=None) -> dict:
         return result
 
     seen = _seen_markers(issue, comments)
+    latest = _latest_transitions(issue, comments)
     run_id = os.getenv("GITHUB_RUN_ID") or None
     rejections = report.setdefault("publication_rejections", [])
     for event in alerts:
+        day, symbol, state = event['event_key'].split('|')[:3]
+        predecessor = latest.get((day, symbol))
+        if predecessor and predecessor[0] == state:
+            continue
+        if predecessor:
+            # The predecessor is durable, so A -> B -> A is a new transition
+            # while retries of the same latest state remain idempotent.
+            event = dict(event, event_key=f'{day}|{symbol}|{state}|{predecessor[1]}')
         mark = _event_mark(event["event_key"])
         if mark in seen:
             continue
@@ -361,6 +432,7 @@ def publish(report: dict, *, clock=None) -> dict:
         result["source_comments"].append(created)
         result["published"] += 1
         seen.add(mark)
+        latest[(day, symbol)] = (state, created['id'])
         if active_now() is None:
             return result
     # A no-alert or all-deduplicated run can also cross the closing boundary.

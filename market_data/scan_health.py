@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 
 from . import slack_alerts as sa
+from .scan_status import coverage_details
 
 COOLDOWN_SECONDS = 1800
 SEVERITY = {'SCAN_RECOVERED': 0, 'SCAN_DEGRADED': 1, 'SCAN_UNAVAILABLE': 2, 'SCAN_FAILED': 3}
@@ -28,20 +29,16 @@ def assess(report, outcome):
     status = report.get('scan_status')
     if isinstance(status, str) and status in {'SKIPPED', 'SESSION_ENDED'} and outcome == 'success' and not report.get('real_acquisition_failure'):
         return None
-    requested, rows = report.get('symbols_requested'), report.get('rows')
-    if (not isinstance(requested, list) or not requested or len(requested) > 60
-            or any(not isinstance(s, str) or not re.fullmatch(r'[A-Z0-9][A-Z0-9._-]{0,15}', s) for s in requested)
-            or len(set(requested)) != len(requested) or not isinstance(rows, list)):
-        return _failed()
-    if (len(rows) != len(requested)
-            or any(not isinstance(r, dict) or not isinstance(r.get('symbol'), str)
-                   or r['symbol'] not in requested or not isinstance(r.get('status'), str)
-                   or r['status'] not in {'OK', 'ERROR', 'INVALID_DATA'} for r in rows)
-            or len({r['symbol'] for r in rows}) != len(requested)):
+    details = coverage_details(report)
+    if details is None:
         return _failed('Inspect the linked workflow: scan row evidence is malformed or incomplete.')
-    usable = {r['symbol'] for r in rows if r['status'] == 'OK'}
-    missing = sorted(set(requested) - usable)
-    if not missing and status == 'COMPLETE' and outcome == 'success':
+    usable, missing = details['usable'], details['missing']
+    expected_status = ('UNAVAILABLE' if not usable else 'INCOMPLETE' if missing else 'COMPLETE')
+    if (report.get('execution_error') or status == 'FAILED'
+            or status != expected_status
+            or (outcome != 'success' and status != 'UNAVAILABLE')):
+        state, action = 'SCAN_FAILED', 'Inspect the linked workflow for execution or publication failure.'
+    elif not missing and status == 'COMPLETE' and outcome == 'success':
         state, action = 'SCAN_RECOVERED', 'Full requested-symbol coverage is restored.'
     elif missing:
         state = 'SCAN_DEGRADED' if usable else 'SCAN_UNAVAILABLE'
@@ -51,7 +48,12 @@ def assess(report, outcome):
         state, action = 'SCAN_FAILED', 'Inspect the linked workflow for scan or GitHub publication failure.'
     if report.get('ending_session') and report.get('real_acquisition_failure'):
         action += ' The session ended during this scan; this notice concerns actual acquisition errors, not the expected close.'
-    return {'state': state, 'usable': len(usable), 'requested': len(requested), 'missing': missing, 'action': action}
+    return {'state': state, **details, 'action': action}
+
+
+def _coverage_line(assessment):
+    details = {key: assessment.get(key) for key in ('usable', 'requested', 'missing', 'reasons')}
+    return '<!-- qd-coverage:' + json.dumps(details, sort_keys=True, separators=(',', ':')) + ' -->'
 
 
 def _event_body(assessment, *, symbol, now, run_id):
@@ -66,10 +68,12 @@ def _event_body(assessment, *, symbol, now, run_id):
         lines += ['- HEALTH / DELIVERY TEST: authorized transport verification.',
                   '- No market data or signal is being asserted; incident state is unchanged.']
     else:
+        lines.append(_coverage_line(assessment))
         total, usable = assessment['requested'], assessment['usable']
         lines += [f'- Usable / requested symbols: {usable} / {total}' if total is not None
                   else '- Usable / requested symbols: unknown (no trusted scan artifact).',
                   '- Missing / rejected symbols: ' + (', '.join(assessment['missing']) or 'none / see workflow'),
+                  '- Rejection reasons: ' + ('; '.join(f'{symbol}={",".join(codes)}' for symbol, codes in assessment.get('reasons', {}).items()) or 'none / see workflow'),
                   '- Next step: ' + assessment['action']]
     if run_id:
         lines.append(f'- Workflow evidence: https://github.com/{sa.REPO}/actions/runs/{run_id}')
@@ -113,9 +117,10 @@ def publish_health(report, *, outcome, github, store, clock, delivery_test=False
         previous = incidents[-1] if incidents else None
         if previous is None and state == 'SCAN_RECOVERED':
             return {'published': 0, 'reason': 'healthy_no_incident'}
-        if previous and state == previous.state:
+        if (previous and state == previous.state and previous.body
+                and _coverage_line(assessment) in previous.body.splitlines()):
             return {'published': 0, 'reason': 'unchanged'}
-        if (previous and (now - previous.created_at).total_seconds() < COOLDOWN_SECONDS
+        if (previous and state != 'SCAN_RECOVERED' and (now - previous.created_at).total_seconds() < COOLDOWN_SECONDS
                 and SEVERITY[state] <= SEVERITY[previous.state]):
             return {'published': 0, 'reason': 'cooldown'}
         symbol = 'SCANNER.' + str(previous.comment_id if previous else 0)

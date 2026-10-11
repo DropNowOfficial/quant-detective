@@ -2,18 +2,23 @@
 
 This is a secondary scheduler. It never treats dispatch acceptance, a queued
 workflow, or process liveness as proof that a market scan succeeded.
+Success requires the hosted scan step to complete successfully. That proves
+process execution, not complete market coverage, heartbeat, or delivery.
 """
 from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
 import os
+import re
 from pathlib import Path
 import tempfile
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.parse import urlencode, urlsplit
+from urllib.request import Request, HTTPRedirectHandler, build_opener
 from zoneinfo import ZoneInfo
+
+from .quote_validity import session_name
 
 
 API = "https://api.github.com"
@@ -37,6 +42,16 @@ class DispatchError(RuntimeError):
     pass
 
 
+class _NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, request, response, code, message, headers, new_url):
+        return None
+
+
+urlopen = build_opener(_NoRedirect()).open
+MAX_API_BYTES = 8 * 1024 * 1024
+SCAN_STEP_NAME = "One-shot hosted fallback scan"
+
+
 def _parse_time(value):
     if not value:
         return None
@@ -51,6 +66,14 @@ def _iso(value):
 
 
 def _request(method, path, *, token=None, body=None, opener=urlopen, timeout=12):
+    parsed = urlsplit(path)
+    workflow_path = re.fullmatch(r'/repos/[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+/actions/workflows/[A-Za-z0-9_.-]+/(runs|dispatches)', parsed.path)
+    jobs_path = method == 'GET' and re.fullmatch(r'/repos/[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+/actions/runs/[1-9][0-9]*/attempts/[1-9][0-9]*/jobs', parsed.path)
+    if (method not in {'GET', 'POST'} or parsed.scheme or parsed.netloc or parsed.fragment
+            or re.search(r'[\x00-\x20\x7f]', path)
+            or not (workflow_path or jobs_path)
+            or any(part in {'.', '..'} for part in parsed.path.split('/'))):
+        raise DispatchError('Invalid GitHub dispatch path')
     headers = {
         "Accept": "application/vnd.github+json",
         "User-Agent": "quant-detective-fallback-dispatch/0.2",
@@ -65,13 +88,15 @@ def _request(method, path, *, token=None, body=None, opener=urlopen, timeout=12)
     req = Request(API + path, data=data, method=method, headers=headers)
     try:
         with opener(req, timeout=timeout) as response:
-            raw = response.read()
+            raw = response.read(MAX_API_BYTES + 1)
+            if len(raw) > MAX_API_BYTES:
+                raise DispatchError('GitHub response exceeds limit')
             status = getattr(response, "status", 200)
     except HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")[:300]
-        raise DispatchError(f"GitHub HTTP {exc.code}: {detail}") from exc
-    except (URLError, OSError, TimeoutError) as exc:
-        raise DispatchError(f"GitHub unavailable: {type(exc).__name__}: {exc}") from exc
+        exc.close()
+        raise DispatchError(f"GitHub HTTP {exc.code}") from None
+    except (URLError, OSError, TimeoutError):
+        raise DispatchError('GitHub transport unavailable') from None
     if status not in {200, 201, 202, 204}:
         raise DispatchError(f"GitHub HTTP {status}")
     if not raw:
@@ -86,13 +111,15 @@ def _load_state(path):
     if not path:
         return {}
     target = Path(path)
-    if not target.exists():
-        return {}
     try:
         data = json.loads(target.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    except FileNotFoundError:
         return {}
-    return data if isinstance(data, dict) else {}
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        raise DispatchError("Dispatch state unreadable") from None
+    if not isinstance(data, dict):
+        raise DispatchError("Dispatch state invalid")
+    return data
 
 
 def _write_state(path, value):
@@ -103,8 +130,15 @@ def _write_state(path, value):
     payload = json.dumps(value, ensure_ascii=False, indent=2) + "\n"
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=target.parent, delete=False) as handle:
         handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
         temp = Path(handle.name)
     os.replace(temp, target)
+    directory = os.open(target.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
 
 
 def _persistent(previous):
@@ -115,6 +149,7 @@ def _persistent(previous):
         "last_dispatch_accepted_at_utc": previous.get("last_dispatch_accepted_at_utc"),
         "last_dispatch_run_id": previous.get("last_dispatch_run_id"),
         "last_dispatch_url": previous.get("last_dispatch_url"),
+        "dispatch_attempt": previous.get("dispatch_attempt"),
     }
 
 
@@ -125,6 +160,7 @@ def _validation():
         "fallback_run_created": False,
         "fallback_scan_succeeded": False,
         # Not checked by this component. These remain separate acceptance stages.
+        "market_coverage_complete": None,
         "heartbeat_fresh": None,
         "notification_delivered": None,
     }
@@ -161,6 +197,7 @@ def _run_summary(row):
         return None
     return {
         "id": row.get("id"),
+        "run_attempt": row.get("run_attempt"),
         "head_branch": row.get("head_branch"),
         "event": row.get("event"),
         "created_at": row.get("created_at"),
@@ -218,6 +255,46 @@ def _recent_success(run, now, max_age_seconds):
     return age is not None and -60 <= age <= max_age_seconds
 
 
+def _recent_scan_success(run, now, max_age_seconds, *, repo, token, opener):
+    """Verify execution, never infer scan success from a green workflow alone."""
+    if not _recent_success(run, now, max_age_seconds):
+        return False
+    run_id = run.get("id")
+    attempt = run.get("run_attempt")
+    if not token or type(run_id) is not int or run_id <= 0:
+        raise DispatchError("Scan evidence requires authentication and a valid run ID")
+    if type(attempt) is not int or attempt <= 0:
+        raise DispatchError("Scan evidence requires a valid run attempt")
+    # The attempt-specific endpoint binds evidence even when job payloads omit
+    # run_attempt: https://docs.github.com/en/rest/actions/workflow-jobs#list-jobs-for-a-workflow-run-attempt
+    query = urlencode({"per_page": 100})
+    data = _request("GET", f"/repos/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs?{query}",
+                    token=token, opener=opener)
+    if not isinstance(data, dict) or not isinstance(data.get("jobs"), list):
+        raise DispatchError("Invalid scan evidence")
+    jobs = data["jobs"]
+    count = data.get("total_count")
+    # This workflow has one job. Refuse incomplete/truncated evidence rather
+    # than treating a missing step on the first page as proof it did not run.
+    if type(count) is not int or count != len(jobs) or count > 100:
+        raise DispatchError("Incomplete scan evidence")
+    scan_steps = []
+    for job in jobs:
+        if (not isinstance(job, dict) or job.get("run_id") != run_id
+                or job.get("run_attempt", attempt) != attempt
+                or not isinstance(job.get("steps"), list)):
+            raise DispatchError("Invalid scan evidence identity")
+        for step in job["steps"]:
+            if not isinstance(step, dict):
+                raise DispatchError("Invalid scan step evidence")
+            if step.get("name") == SCAN_STEP_NAME:
+                scan_steps.append(job.get("status") == "completed"
+                                  and job.get("conclusion") == "success"
+                                  and step.get("status") == "completed"
+                                  and step.get("conclusion") == "success")
+    return len(scan_steps) == 1 and scan_steps[0]
+
+
 def _recent_active(run, now, max_age_seconds):
     if _run_phase(run) not in {s.upper() for s in ACTIVE_STATUSES}:
         return False
@@ -226,7 +303,7 @@ def _recent_active(run, now, max_age_seconds):
 
 
 def _observe_run(result, field, run, now, success_fresh_seconds):
-    """Keep the run identity and its derived freshness from the same snapshot."""
+    """Keep workflow-result freshness separate from verified scan execution."""
     prefix = "native" if field == "native_schedule" else "fallback"
     result[field] = run
     result[f"{prefix}_result_age_seconds"] = _age_seconds(run, now)
@@ -260,14 +337,43 @@ def dispatch(
     )
 
 
-def _api_error(result, previous, now, stage, exc, status_path):
+def _api_error(result, previous, now, stage, exc, status_path, *, status="API_ERROR"):
     result.update(_persistent(previous))
-    result["status"] = "API_ERROR"
-    result["reason"] = f"{stage}: {type(exc).__name__}: {str(exc)[:240]}"
+    result["status"] = status
+    result["reason"] = f"{stage}: GITHUB_REQUEST_FAILED"
     result["api_error_at_utc"] = now.isoformat()
     result["api_error_stage"] = stage
     _write_state(status_path, result)
     return result
+
+
+def _state_error(result, stage):
+    result["status"] = "STATE_ERROR"
+    result["reason"] = f"{stage}: DISPATCH_STATE_UNAVAILABLE"
+    return result
+
+
+def _unresolved_attempt(result):
+    attempt = result.get("dispatch_attempt")
+    return (attempt is not None and (not isinstance(attempt, dict)
+            or attempt.get("state") not in {"CONFIRMED", "RECONCILED"}))
+
+
+def _reconcile_scan_attempt(result, run, *, repo, workflow, ref):
+    """A subsequent verified scan restores service without attributing a POST."""
+    attempt = result.get("dispatch_attempt")
+    if not _unresolved_attempt(result) or not isinstance(attempt, dict):
+        return
+    if (attempt.get("repo"), attempt.get("workflow"), attempt.get("ref")) != (repo, workflow, ref):
+        return
+    started = _parse_time(attempt.get("started_at_utc"))
+    created = _parse_time(run.get("created_at"))
+    if (started is None or created is None or created < started.replace(microsecond=0)
+            or run.get("id") in attempt.get("known_run_ids", [])):
+        return
+    result["dispatch_attempt"] = {**attempt, "state": "RECONCILED",
+                                  "reconciled_run_id": run["id"],
+                                  "resolution": "subsequent_scan_step_verified"}
 
 
 def run_once(
@@ -286,12 +392,25 @@ def run_once(
 ):
     now = now or datetime.now(timezone.utc)
     token = token if token is not None else os.getenv("QD_GITHUB_FALLBACK_TOKEN", "").strip()
-    previous = _load_state(status_path)
+    try:
+        previous = _load_state(status_path)
+    except DispatchError:
+        return _state_error(_base_result(now, repo, workflow, {}), "read_dispatch_state")
     result = _base_result(now, repo, workflow, previous)
+    result["ref"] = ref
 
     if not in_work_window(now):
         result["status"] = "OUTSIDE_MARKET_WINDOW"
         result["reason"] = "normal_no_run_outside_et_weekday_window"
+        _write_state(status_path, result)
+        return result
+
+    result["runtime_session"] = session_name(now.timestamp())
+    if result["runtime_session"] not in {"PRE", "RTH", "POST"}:
+        result["status"] = "OUTSIDE_MARKET_SESSION"
+        result["reason"] = "normal_no_run_closed_market_session"
+        result["skip_reason"] = ("NON_TRADING_DAY" if result["runtime_session"] == "CLOSED"
+                                 else "OUTSIDE_SESSION_HOURS")
         _write_state(status_path, result)
         return result
 
@@ -304,8 +423,13 @@ def run_once(
     _observe_run(result, "native_schedule", native, now, native_success_fresh_seconds)
     native_phase = _run_phase(native)
 
-    # A completed successful scan is the only native state called healthy.
-    if _recent_success(native, now, native_success_fresh_seconds):
+    try:
+        native_succeeded = _recent_scan_success(native, now, native_success_fresh_seconds,
+                                                repo=repo, token=token, opener=opener)
+    except Exception as exc:
+        return _api_error(result, previous, now, "verify_native_scan_step", exc, status_path)
+    if native_succeeded:
+        _reconcile_scan_attempt(result, native, repo=repo, workflow=workflow, ref=ref)
         stamp = _result_time(native)
         result["status"] = "NATIVE_SCHEDULE_SUCCESS"
         result["reason"] = "recent_completed_success"
@@ -343,7 +467,13 @@ def run_once(
         _write_state(status_path, result)
         return result
 
-    if _recent_success(fallback, now, fallback_success_fresh_seconds):
+    try:
+        fallback_succeeded = _recent_scan_success(fallback, now, fallback_success_fresh_seconds,
+                                                  repo=repo, token=token, opener=opener)
+    except Exception as exc:
+        return _api_error(result, previous, now, "verify_fallback_scan_step", exc, status_path)
+    if fallback_succeeded:
+        _reconcile_scan_attempt(result, fallback, repo=repo, workflow=workflow, ref=ref)
         stamp = _result_time(fallback)
         result["status"] = "FALLBACK_SCAN_SUCCESS"
         result["reason"] = "recent_workflow_dispatch_completed_successfully"
@@ -352,6 +482,15 @@ def run_once(
         result["dispatch_url"] = fallback.get("html_url")
         result["validation"]["fallback_run_created"] = True
         result["validation"]["fallback_scan_succeeded"] = True
+        _write_state(status_path, result)
+        return result
+
+    # An accepted request can lose its response or run listing. Time alone never
+    # proves it was not sent. Keep this quarantine across restarts until a later
+    # scan is verified above, or an operator reviews and repairs local state.
+    if _unresolved_attempt(result):
+        result["status"] = "DISPATCH_OUTCOME_UNKNOWN"
+        result["reason"] = "previous_dispatch_requires_scan_verification_or_operator_review"
         _write_state(status_path, result)
         return result
 
@@ -386,7 +525,13 @@ def run_once(
     fallback_latest = fallback_recheck[0] if fallback_recheck else None
     _observe_run(result, "native_schedule", native_latest, now, native_success_fresh_seconds)
     _observe_run(result, "workflow_dispatch", fallback_latest, now, fallback_success_fresh_seconds)
-    if _recent_success(native_latest, now, native_success_fresh_seconds):
+    try:
+        native_succeeded = _recent_scan_success(native_latest, now, native_success_fresh_seconds,
+                                                repo=repo, token=token, opener=opener)
+    except Exception as exc:
+        return _api_error(result, previous, now, "pre_dispatch_verify_native_scan_step", exc, status_path)
+    if native_succeeded:
+        _reconcile_scan_attempt(result, native_latest, repo=repo, workflow=workflow, ref=ref)
         stamp = _result_time(native_latest)
         result["status"] = "NATIVE_SCHEDULE_SUCCESS"
         result["reason"] = "native_recovered_before_external_dispatch"
@@ -412,7 +557,13 @@ def run_once(
         result["validation"]["fallback_run_created"] = True
         _write_state(status_path, result)
         return result
-    if _recent_success(fallback_latest, now, fallback_success_fresh_seconds):
+    try:
+        fallback_succeeded = _recent_scan_success(fallback_latest, now, fallback_success_fresh_seconds,
+                                                  repo=repo, token=token, opener=opener)
+    except Exception as exc:
+        return _api_error(result, previous, now, "pre_dispatch_verify_fallback_scan_step", exc, status_path)
+    if fallback_succeeded:
+        _reconcile_scan_attempt(result, fallback_latest, repo=repo, workflow=workflow, ref=ref)
         stamp = _result_time(fallback_latest)
         result["status"] = "FALLBACK_SCAN_SUCCESS"
         result["reason"] = "fallback_completed_before_duplicate_request"
@@ -425,6 +576,21 @@ def run_once(
         _write_state(status_path, result)
         return result
 
+    # Write ahead of the non-idempotent POST. If the process stops at any point
+    # after this record, a restart must not silently replay the request.
+    if not status_path:
+        return _state_error(result, "persist_dispatch_attempt")
+    attempt = {"repo": repo, "workflow": workflow, "ref": ref,
+               "started_at_utc": now.isoformat(), "state": "PENDING",
+               "known_run_ids": [row["id"] for row in native_recheck + fallback_recheck]}
+    result["dispatch_attempt"] = attempt
+    result["status"] = "DISPATCH_OUTCOME_UNKNOWN"
+    result["reason"] = "dispatch_attempt_recorded_before_request"
+    try:
+        _write_state(status_path, result)
+    except OSError:
+        return _state_error(result, "persist_dispatch_attempt")
+
     try:
         response = dispatch(
             token=token,
@@ -433,11 +599,20 @@ def run_once(
             ref=ref,
             opener=opener,
         )
+        if not isinstance(response, dict):
+            raise DispatchError("Invalid dispatch response")
+        run_id = response.get("workflow_run_id")
+        if run_id is not None and (type(run_id) is not int or run_id <= 0):
+            raise DispatchError("Invalid dispatch run ID")
     except Exception as exc:
-        return _api_error(result, previous, now, "create_workflow_dispatch", exc, status_path)
+        attempt = {**attempt, "state": "UNKNOWN"}
+        return _api_error(result, {**previous, "dispatch_attempt": attempt}, now,
+                          "create_workflow_dispatch", exc, status_path, status="DISPATCH_OUTCOME_UNKNOWN")
 
-    run_id = response.get("workflow_run_id")
     run_url = response.get("html_url")
+    result["dispatch_attempt"] = {**attempt,
+                                  "state": "CONFIRMED" if run_id else "ACCEPTED_UNCONFIRMED",
+                                  "run_id": run_id}
     result["dispatched"] = True
     result["dispatch_run_id"] = run_id
     result["dispatch_url"] = run_url
@@ -462,7 +637,7 @@ def main():
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if result["status"] == "TOKEN_MISSING":
         raise SystemExit(3)
-    if result["status"] == "API_ERROR":
+    if result["status"] in {"API_ERROR", "STATE_ERROR", "DISPATCH_OUTCOME_UNKNOWN"}:
         raise SystemExit(4)
 
 
