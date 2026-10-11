@@ -71,6 +71,27 @@ def rfile_vals(raw: pathlib.Path, t: str, acc: str, r: int) -> dict:
     return out
 
 
+def classify_other_filings(this_accn, this_filed, this_val, others):
+    """Compare one fact with the same tag/unit/start/end reported in OTHER filings.
+
+    others: iterable of dict(accn, filed (YYYY-MM-DD public filing date), val, form).
+    Only a STRICTLY later public filing date counts as 'later'; same-day filings cannot be ordered
+    from filing dates alone and older filings are never 'later'. Output is sorted (input-order
+    independent). Neither list implies restatement, nor does an empty list imply no restatement
+    (companyfacts coverage is not guaranteed complete)."""
+    later, other = [], []
+    for o in sorted(others, key=lambda o: (o["filed"], o["accn"])):
+        if o["accn"] == this_accn or o["val"] == this_val:
+            continue
+        item = (o["accn"], o["filed"], o["val"])
+        (later if o["filed"] > this_filed else other).append(item)
+    return {"later_filed_value_difference": later, "earlier_or_same_day_value_difference": other}
+
+
+def _fmt(items):
+    return ";".join(f"{a}:{f}:{v}" for a, f, v in items) or "none"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--raw", default="_raw")
@@ -107,7 +128,7 @@ def main() -> None:
                     else:
                         ptype = "instant"
                     others = [y for y in cf[tag]["units"]["USD"] if y["end"] == x["end"] and y.get("start") == x.get("start") and y["accn"] != acc]
-                    restated = [(y["accn"], y["val"]) for y in others if y["val"] != x["val"]]
+                    cls = classify_other_filings(acc, filed, x["val"], [dict(accn=y["accn"], filed=y["filed"], val=y["val"], form=y["form"]) for y in others])
                     col = 0 if x["end"] == rep else 1
                     rf = rv.get(tag)
                     rfval = rfsrc = rfref = None
@@ -120,7 +141,8 @@ def main() -> None:
                         period_end_fy=rep, fiscal_year_label=fy, period_type=ptype, tag="us-gaap:" + tag, unit="USD", currency="USD",
                         scale="as stored in XBRL (full USD)", start=x.get("start"), end=x["end"], value=x["val"],
                         companyfacts_fy=x["fy"], companyfacts_fp=x["fp"],
-                        later_restatement=";".join(f"{aa}:{v}" for aa, v in restated) or "none",
+                        later_filed_value_difference=_fmt(cls["later_filed_value_difference"]),
+                        earlier_or_same_day_value_difference=_fmt(cls["earlier_or_same_day_value_difference"]),
                         amendments_10KA_in_recent_submissions=";".join(aa for _, aa in amend) or "none",
                         rfile_value=rfval, rfile_page=rfsrc, rfile_ref=rfref,
                         rfile_matches=("" if rfval is None else rfval == x["val"])))

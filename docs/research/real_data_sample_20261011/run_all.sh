@@ -2,7 +2,10 @@
 # End-to-end reproduction of the real-data sample. Raw downloads go to UNTRACKED _raw/ and _out/.
 # Usage: bash run_all.sh [LOGDIR]      (run from anywhere; needs python3>=3.11 and, for the repo-code
 # cross-check, `uv` with the repo environment: uv run python ...)
-set -u
+set -uo pipefail
+# Exit status policy (audit 2026-10-11): EVERY step runs (so the log is complete) but any failing step
+# sets rc!=0 and the script exits non-zero even if later steps/copies succeed. The pipeline status is
+# captured IMMEDIATELY after the pipeline, before any other command can overwrite PIPESTATUS.
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/../../.." && pwd)"
 LOG="${1:-$HERE/reproduce_run_$(date -u +%Y%m%d)}"
@@ -20,11 +23,14 @@ step() { echo; echo "=== $1 ==="; }
   python3 extract.py --raw _raw --out _out/data_points.csv || rc=$?
   if cmp -s _out/data_points.csv data_points.csv; then echo "DATA_POINTS_IDENTICAL_TO_COMMITTED"; else echo "DATA_POINTS_DIFFER_FROM_COMMITTED"; diff <(cut -d, -f1-12 _out/data_points.csv) <(cut -d, -f1-12 data_points.csv) | head; rc=1; fi
   step "3 recompute GP/A + Sloan from rebuilt data points; must equal committed results.json"
-  python3 recompute.py _out/data_points.csv _out/results.json > _out/recompute_output.txt || rc=$?
+  python3 recompute.py _out/data_points.csv _out/results.json _out/used_inputs.json > _out/recompute_output.txt || rc=$?
   if cmp -s _out/results.json results.json; then echo "RESULTS_IDENTICAL_TO_COMMITTED"; else echo "RESULTS_DIFFER_FROM_COMMITTED"; rc=1; fi
+  if cmp -s _out/used_inputs.json used_inputs.json; then echo "USED_INPUTS_IDENTICAL_TO_COMMITTED"; else echo "USED_INPUTS_DIFFER_FROM_COMMITTED"; rc=1; fi
   step "4 MAX with the fixed (explicit calendar_tz) repo implementation on fresh prices"
   (cd "$REPO" && uv run python "$HERE/max_prices.py" --raw "$HERE/_raw" --out-dir "$HERE/_out" > "$HERE/_out/max_output.txt") || rc=$?
   tail -3 _out/max_output.txt
+  step "4b daily price CSVs regenerated from fresh prices vs price_manifest.json (informational; verify_inputs decides)"
+  python3 price_manifest.py --check _out || echo "(daily CSV bytes differ from manifest: see step 5 for the explicit tolerance decision)"
   step "5 verify_inputs (values vs fresh downloads; tolerance fallback if hashes differ)"
   python3 verify_inputs.py --raw _raw || rc=$?
   step "6 cross-check recompute against repo factor_candidates code at this HEAD"
@@ -32,6 +38,11 @@ step() { echo; echo "=== $1 ==="; }
   echo; echo "end_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ) exit_code=$rc"
   [ "$rc" -eq 0 ]
 } 2>&1 | tee "$LOG/run.log"
-cp _raw/retrieval_log.json "$LOG/retrieval_log.json" 2>/dev/null
-cp _out/max_results.json "$LOG/max_results_fresh.json" 2>/dev/null
-exit "${PIPESTATUS[0]}"
+pipeline_rc=${PIPESTATUS[0]}   # must be read before any other command
+final=$pipeline_rc
+for pair in "_raw/retrieval_log.json:$LOG/retrieval_log.json" "_out/max_results.json:$LOG/max_results_fresh.json"; do
+  src=${pair%%:*}; dst=${pair#*:}
+  if [ -e "$src" ]; then cp "$src" "$dst" || final=1; fi
+done
+if [ "$final" -ne 0 ]; then echo "RUN_ALL_FAILED exit=$final (pipeline_rc=$pipeline_rc)" | tee -a "$LOG/run.log" >&2; fi
+exit "$final"

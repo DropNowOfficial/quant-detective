@@ -64,6 +64,15 @@ if _cerrs:
 else:
     print(f"OK JSON Schema 2020-12 {CONTRACT_PATH.relative_to(ROOT)}")
 
+sys.path.insert(0, str(ROOT / "scripts"))
+import check_no_raw_market_data  # noqa: E402  (AGENTS.md rule 6)
+
+_raw = check_no_raw_market_data.violations(check_no_raw_market_data.tracked(ROOT), ROOT)
+if _raw:
+    errors.extend(f"raw market data tracked in Git (AGENTS.md rule 6): {p}" for p in _raw)
+else:
+    print("OK no raw market data tracked")
+
 if errors:
     print("SCHEMA_GATE_FAIL")
     for e in errors:

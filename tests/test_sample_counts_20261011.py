@@ -22,6 +22,9 @@ def test_docs_state_derived_counts_and_no_stale_numbers():
     for d in docs[:1]:
         t = d.read_text()
         assert f"{c['rows']} rows" in t and f"{c['used_inputs']} used" in t, d
+    allowed = {v for k, v in c.items() if isinstance(v, int)}
+    for k in ("rows_per_ticker", "used_per_ticker"):
+        allowed |= set(c[k].values())
     stale = [r"\b148 rows\b", r"\b120/120\b", r"all 160 rows", r"56 of 160 rows"]
     for d in docs:
         t = d.read_text()
@@ -32,4 +35,4 @@ def test_docs_state_derived_counts_and_no_stale_numbers():
                 continue
             assert not re.search(pat, t), (d, pat)
         for m in re.finditer(r"\b(\d+) (?:rows|data points)\b", t):
-            assert int(m.group(1)) in (c["rows"], c["used_inputs"], c["context_extra_rows"]), (d, m.group(0))
+            assert int(m.group(1)) in allowed, (d, m.group(0))

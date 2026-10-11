@@ -17,6 +17,8 @@ Compustat item -> XBRL tag mapping is UNVERIFIED. Sloan is NOT usable for scorin
 import csv, json, sys
 DATA = sys.argv[1] if len(sys.argv) > 1 else "data_points.csv"
 RESULTS_OUT = sys.argv[2] if len(sys.argv) > 2 else "results.json"
+USED_OUT = sys.argv[3] if len(sys.argv) > 3 else "used_inputs.json"
+USED = set()
 STD = {"AAPL": ["CommercialPaper", "LongTermDebtCurrent"], "JNJ": ["ShortTermBorrowings"], "ADBE": ["DebtCurrent"]}
 STI = {"AAPL": "MarketableSecuritiesCurrent", "JNJ": "MarketableSecuritiesCurrent", "ADBE": "ShortTermInvestments"}
 DEP_TAGS = {"AAPL": ["DepreciationDepletionAndAmortization"], "JNJ": ["DepreciationDepletionAndAmortization"],
@@ -27,6 +29,7 @@ rows = list(csv.DictReader(open(DATA)))
 def val(t, acc, tag, end):
     m = [r for r in rows if r["ticker"] == t and r["accession"] == acc and r["tag"] == "us-gaap:" + tag and r["end"] == end]
     assert len(m) == 1, (t, acc, tag, end, len(m))
+    USED.add((t, acc, "us-gaap:" + tag, end))
     return float(m[0]["value"])
 
 
@@ -66,6 +69,7 @@ for t in STD:
             sloan_previous_cash_only=acc_bs_cash_only / Aavg,
             ni=ni, cfo=cfo, accr_cf=ni - cfo, sloan_cf=(ni - cfo) / Aavg))
 json.dump(out, open(RESULTS_OUT, "w"), indent=1)
+json.dump(sorted(USED), open(USED_OUT, "w"), indent=0)  # every data_points.csv row read by val(): the inputs actually used
 for o in out:
     print(f"{o['t']} FY end {o['end']} ({o['acc']}) prior {o['prior']}")
     for k in ["gp", "A", "Ap", "Aavg", "dCA", "dCashOnly", "dSTI", "dCash", "dCL", "dSTD", "dTP", "dep", "ni", "cfo"]:
