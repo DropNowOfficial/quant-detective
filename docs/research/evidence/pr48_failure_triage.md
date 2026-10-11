@@ -1,10 +1,10 @@
 # Triage of the "107 failed" before-evidence (PR #48 / #49)
 
-Honest summary: **most of the 107 failures are NOT demonstrations of old-code defects.** Mechanically, 104 of 107 are
-failures caused by the new API/field names/timestamp types not existing yet (category c), 2 are a real "old code did not
-raise" behavioural failure (a), and 1 is additionally traceable to a wrong test fixture (b; its old-run failure was also
-mechanical). `107 failed` therefore overstates the evidence of defects. Real old-code defects ARE present, but they are
-shown separately by direct probes of the old code through its own (date-based) API, not by the 107 count.
+Honest summary: **most of the 107 failures are NOT demonstrations of old-code defects.** 105 of 107 are failures caused
+by the new API/field names/timestamp types not existing yet (category c); only 2 are a behavioural "old code did not raise"
+failure (a). One of the 105 (`test_accruals_no_lookahead`) also exposes a wrong test fixture (b overlay). `107 failed`
+therefore overstates the evidence of defects. Real old-code defects ARE present, but they are shown by direct probes of the
+old code through its own (date-based) API, not by the 107 count.
 
 NOT_VALIDATED: this triage says nothing about factor validity.
 
@@ -27,15 +27,13 @@ NOT_VALIDATED: this triage says nothing about factor validity.
 5. Defect reality check on old code: `pr48_old_code_probes.py` (output in `pr48_old_code_probes_output.txt`), run in the
    old worktree with the old API.
 
-## Counts (107 failures, mutually exclusive by old-run mechanism)
+## Counts (107 failures)
 | category | count | what |
 |---|---|---|
 | (a) real old-code defect reached by the test | 2 | `test_gp_invalid_required_value_rejected[security-]` (empty security accepted), `test_gp_period_end_must_be_a_date_not_datetime` (datetime accepted as period_end) |
-| (b) test-fixture's own error | 1 (overlaps (c) mechanism) | `test_accruals_no_lookahead`: fails in old run by TypeError, and independently would fail on final code with the 00:00Z fixture. Counted once, as (b) here, listed within the (c) bucket below mechanically |
-| (c) new API/fields/timestamp types did not exist | 104 (incl. the one in (b) -> 103 excl.) | 90 TypeError date vs datetime (old code is date-typed, tests use tz-aware datetimes); 12 missing new field names (`period_type`, `currency`, `unit_scale`, `statement_ref`, `revision`, `adjustment_basis`); 3 `max_lottery(variant=...)` unexpected keyword |
-
-Exclusive totals: a=2, b=1, c=104-1=**103**; 2+1+103 = 107 (the 90+12+3 = 105 mechanical c-bucket includes the b test and
-excludes nothing else; 105 + 2 = 107, so b is a re-labelling of one of the 105).
+| (c) new API/fields/timestamp types did not exist yet | 105 | 90 TypeError date vs tz-aware datetime (old code is date-typed, tests use datetimes); 12 missing new field names (`period_type`, `currency`, `unit_scale`, `statement_ref`, `revision`, `adjustment_basis`); 3 `max_lottery(variant=...)` unexpected keyword |
+| total | 107 | 2 + 105 |
+| (b) overlay: fixture's own error | 1 of the 105 | `test_accruals_no_lookahead` fails in the old run mechanically (c) and would additionally fail on final code with the 00:00Z fixture; it is a (c) failure that also exposes a fixture error, not a separate failure |
 
 Same 107 by what each test is *about* (intent, from test names; mechanism is still mostly (c)):
 required-field/invalid-value validation 37; order/conflict/version selection 13; new fields/variant/semantics 13;
