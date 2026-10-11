@@ -38,11 +38,19 @@ step() { echo; echo "=== $1 ==="; }
   echo; echo "end_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ) exit_code=$rc"
   [ "$rc" -eq 0 ]
 } 2>&1 | tee "$LOG/run.log"
-pipeline_rc=${PIPESTATUS[0]}   # must be read before any other command
-final=$pipeline_rc
+# Capture the FULL PIPESTATUS array immediately: it is overwritten by the very next command.
+st=("${PIPESTATUS[@]}")
+producer_rc=${st[0]:-1}
+tee_rc=${st[1]:-1}     # missing element => treat as failure
+final=0
+if [ "$producer_rc" -ne 0 ]; then final=1; echo "RUN_ALL_PIPELINE_FAIL side=producer (steps block) rc=$producer_rc" >&2; fi
+if [ "$tee_rc" -ne 0 ]; then final=1; echo "RUN_ALL_PIPELINE_FAIL side=tee (log writer: could not write $LOG/run.log) rc=$tee_rc" >&2; fi
 for pair in "_raw/retrieval_log.json:$LOG/retrieval_log.json" "_out/max_results.json:$LOG/max_results_fresh.json"; do
   src=${pair%%:*}; dst=${pair#*:}
-  if [ -e "$src" ]; then cp "$src" "$dst" || final=1; fi
+  if [ -e "$src" ]; then cp "$src" "$dst" || { final=1; echo "RUN_ALL_COPY_FAIL $src -> $dst" >&2; }; fi
 done
-if [ "$final" -ne 0 ]; then echo "RUN_ALL_FAILED exit=$final (pipeline_rc=$pipeline_rc)" | tee -a "$LOG/run.log" >&2; fi
+if [ "$final" -ne 0 ]; then
+  # tee -a may itself fail (e.g. run.log is a directory); the stderr line is the guaranteed record
+  echo "RUN_ALL_FAILED exit=$final (producer_rc=$producer_rc tee_rc=$tee_rc)" | tee -a "$LOG/run.log" >&2 || echo "RUN_ALL_FAILED exit=$final (producer_rc=$producer_rc tee_rc=$tee_rc)" >&2
+fi
 exit "$final"
