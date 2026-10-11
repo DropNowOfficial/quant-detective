@@ -56,6 +56,14 @@ for p in sorted((ROOT / "failure_museum/exhibits").glob("*.json")):
     except Exception as e:
         errors.append(f"{p}: {e}")
 
+from schemas.factor_contracts import CONTRACT_PATH, validate_candidate_contract  # noqa: E402
+
+_cerrs = validate_candidate_contract(load(CONTRACT_PATH), ROOT)
+if _cerrs:
+    errors.extend(f"{CONTRACT_PATH.relative_to(ROOT)}: {m}" for m in _cerrs)
+else:
+    print(f"OK JSON Schema 2020-12 {CONTRACT_PATH.relative_to(ROOT)}")
+
 if errors:
     print("SCHEMA_GATE_FAIL")
     for e in errors:

@@ -17,7 +17,7 @@ from datetime import date, datetime
 from typing import Iterable, Optional
 
 from .common import (
-    as_of_utc, finite_or_none, scaled, select_version, validate_filing_basis,
+    as_of_utc, calendar_date, finite_or_none, scaled, select_version, validate_filing_basis,
 )
 
 
@@ -43,6 +43,7 @@ def gross_profitability(
     as_of: datetime,
     max_age_days: int = 548,
     period_type: str = "annual",
+    calendar_tz: str = "America/New_York",
 ) -> Optional[float]:
     as_of = as_of_utc(as_of)
     facts = list(facts)
@@ -54,7 +55,7 @@ def gross_profitability(
     if not visible:
         return None
     latest_pe = max(f.period_end for f in visible)
-    if (as_of.date() - latest_pe).days > max_age_days:
+    if (calendar_date(as_of, calendar_tz) - latest_pe).days > max_age_days:
         return None
     best = select_version([f for f in visible if f.period_end == latest_pe],
                           f"{security}@{latest_pe} GP/A")

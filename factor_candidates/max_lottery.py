@@ -10,6 +10,13 @@ ALTERNATIVE (not the paper's definition): trailing fixed window of the last
 `window` (default 21) trading days ending at as_of -> variant
 "fixed_21_trading_days". Always label results with the variant used.
 
+CALENDAR TIMEZONE: trading days and DailyReturn.day are dates in the exchange's
+local calendar. `calendar_tz` (IANA name, REQUIRED, e.g. "America/New_York" for
+US equities) is applied to as_of BEFORE the as_of date and the "previous
+calendar month" are chosen, so the same instant gives the same MAX however its
+UTC offset is written (2026-03-01T00:30Z == 2026-02-28 19:30 ET -> prior month
+is January in both). known_at <= as_of is an instant comparison and unaffected.
+
 Rows are versioned (known_at, revision); only rows with known_at <= as_of are
 visible. Same-day conflicting rows raise AmbiguousVersionError. All rows for a
 security/day must share one adjustment_basis. Missing/NaN returns are skipped,
@@ -23,7 +30,7 @@ from datetime import date, datetime
 from typing import Iterable, Optional, Sequence
 
 from .common import (
-    PITError, as_of_utc, clean_trading_days, finite_or_none, require_date,
+    PITError, as_of_utc, calendar_date, clean_trading_days, finite_or_none, require_date,
     require_provenance, require_revision, require_text, select_version,
 )
 
@@ -52,6 +59,8 @@ def max_lottery(
     security: str,
     as_of: datetime,
     trading_days: Sequence[date],
+    *,
+    calendar_tz: str,
     variant: str = VARIANT_PRIOR_MONTH,
     window: int = 21,
     min_obs: int = 15,
@@ -60,7 +69,7 @@ def max_lottery(
         raise ValueError(f"unknown MAX variant {variant!r}; use one of {VARIANTS}")
     as_of = as_of_utc(as_of)
     cal = clean_trading_days(trading_days)
-    as_of_date = as_of.date()
+    as_of_date = calendar_date(as_of, calendar_tz)
     upto = [d for d in cal if d <= as_of_date]
     if variant == VARIANT_FIXED:
         days = upto[-window:]

@@ -8,6 +8,7 @@ from __future__ import annotations
 import dataclasses
 import re
 from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from typing import Iterable, Mapping, Optional, Sequence
 
 PERIOD_TYPES = ("annual", "quarterly", "ttm")
@@ -79,6 +80,25 @@ def validate_filing_basis(f: object) -> None:
 
 def as_of_utc(as_of: object, label: str = "as_of") -> datetime:
     return require_aware_datetime(as_of, label)
+
+
+def require_calendar_tz(name: object, label: str = "calendar_tz") -> ZoneInfo:
+    """Explicit IANA trading-calendar timezone (e.g. 'America/New_York' for US)."""
+    if not isinstance(name, str) or not name.strip():
+        raise PITError(f"{label}: explicit IANA timezone name required (e.g. 'America/New_York')")
+    try:
+        return ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError, OSError) as e:
+        raise PITError(f"{label}: unknown IANA timezone {name!r}") from e
+
+
+def calendar_date(as_of: datetime, calendar_tz: object, label: str = "as_of") -> date:
+    """The trading-calendar date of an instant: convert to the calendar tz, THEN take .date().
+
+    The same instant yields the same date however its offset is written.
+    """
+    tz = require_calendar_tz(calendar_tz)
+    return require_aware_datetime(as_of, label).astimezone(tz).date()
 
 
 def finite_or_none(x: Optional[float]) -> Optional[float]:

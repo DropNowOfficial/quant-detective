@@ -13,8 +13,17 @@ import pytest
 import factor_candidates as fc
 from factor_candidates import (
     BalanceSheetFact, DailyReturn, FundamentalFact, PITError,
-    cross_sectional_rank, gross_profitability, max_lottery, sloan_accruals,
+    cross_sectional_rank, gross_profitability, sloan_accruals,
 )
+from factor_candidates import max_lottery as _max_lottery
+
+
+def max_lottery(*a, **k):
+    """Legacy-test shim: these tests predate the explicit calendar_tz parameter
+    (audit 2026-10-11). New tests in test_factor_audit_20261011.py pass it
+    explicitly and verify it is required by the real API."""
+    k.setdefault("calendar_tz", "America/New_York")
+    return _max_lottery(*a, **k)
 
 UTC = timezone.utc
 D = date
@@ -217,7 +226,8 @@ def bs_kw(pe, ka, **kw):
     base = dict(security="A", period_end=pe, known_at=ka, source="synthetic",
                 period_type="annual", currency="USD", unit_scale=1.0,
                 statement_ref=f"synthetic:10-K:{pe.year}", revision=0,
-                current_assets=100.0, cash=20.0, current_liabilities=50.0,
+                current_assets=100.0, cash=20.0, short_term_investments=0.0,
+                current_liabilities=50.0,
                 short_term_debt=10.0, tax_payable=5.0, depreciation_amortization=8.0,
                 total_assets=400.0)
     base.update(kw)
@@ -594,3 +604,6 @@ def test_candidate_contracts_are_not_validated_and_well_formed():
         assert e["DATA_STATUS"] in life["data_status"]
         assert e["VALIDATION_STATUS"] == "NOT_VALIDATED"
         assert (root.parent.parent / e["implementation"]).exists()
+    # real structural gate (mutation-tested in test_candidate_contract_schema.py)
+    from schemas.factor_contracts import validate_candidate_contract
+    assert validate_candidate_contract(c, root.parent.parent) == []
