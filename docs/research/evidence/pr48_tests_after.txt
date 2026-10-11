@@ -1,0 +1,7 @@
+# PR48 strengthened tests run against FIXED code
+# date: 2026-10-11T04:55:17-07:00
+# Note: one test-only fix was made after the tests-only commit: CUR fixture known_at moved from 00:00Z to 21:30Z (fixture bug that made test_accruals_no_lookahead wrong); test_max_prior_month fixed nothing else in tests; code fix removed a faulty calendar-completeness heuristic.
+# command: uv run --extra research pytest -q tests/test_factor_candidates.py -p no:cacheprovider
+........................................................................ [ 56%]
+.......................................................                  [100%]
+127 passed in 0.12s
