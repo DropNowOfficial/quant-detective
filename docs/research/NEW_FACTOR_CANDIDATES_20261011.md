@@ -19,9 +19,9 @@ Scope: US equities and China A-shares. Not duplicates of the seven locked compon
 | 2 | Sloan balance-sheet accruals | 4 | 4 | 5 | 80 | implemented (contract) |
 | 3 | MAX lottery demand | 4 | 5 | 4 | 80 | implemented (contract) |
 | 4 | Betting-against-beta (low beta) | 4 | 4 | 4 | 64 | candidate |
-| 5 | 52-week-high proximity | 4 | 5 | 3 | 60 | candidate; overlaps momentum |
+| 5 | 52-week-high proximity | 4 | 5 | 3 | 60 | candidate; overlap with momentum to be tested |
 | 6 | Net share issuance (composite) | 4 | 4 | 3 | 48 | candidate; partial overlap with Capital Allocation Intent |
-| 7 | Industry momentum | 3 | 4 | 3 | 36 | candidate; overlaps Residual Momentum |
+| 7 | Industry momentum | 3 | 4 | 3 | 36 | candidate; overlap with Residual Momentum to be tested |
 | 8 | Overnight-vs-intraday return split | 3 | 3 | 4 | 36 | **weak** (cost/microstructure) |
 | 9 | Distress risk (CHS) | 2 | 3 | 3 | 18 | **weak** (anomalously low returns, complex, decayed) |
 
@@ -31,7 +31,7 @@ Ties 2/3 broken by implementation simplicity. Top 3 are implemented as `NOT_VALI
 
 ## 1. Gross profitability (GP/A)
 * **Mechanism**: profitable firms are productive assets bought cheaply relative to valuation; value and profitability are complementary (Novy-Marx). Plausibly also quality/investor underreaction.
-* **Formula**: `GP/A = (Revenue − COGS) / TotalAssets`, latest statement with `known_at ≤ as_of`.
+* **Formula**: `GP/A = GrossProfit / TotalAssets`, with GrossProfit = Revenue − COGS (gross **profit** over total **assets**; this is not gross margin, which divides by revenue). Latest statement with `known_at ≤ as_of` (timezone-aware timestamp). Novy-Marx full text not read in this repo; the revenue−COGS construction is a reference choice.
 * **Inputs**: revenue, COGS, total assets. US: SEC XBRL (`known_at` = acceptance time). CN: exchange/CNINFO filings (`known_at` = announcement date).
 * **Crowding/publication**: published 2013; widely used in quality sleeves; decay expected. Crowded in US large caps.
 * **Failure modes**: banks/insurers lack COGS; CN COGS definitions vary; asset-light vs asset-heavy industry bias (neutralise by industry); intangible capitalisation differences; correlation with value/quality factors.
@@ -41,7 +41,7 @@ Ties 2/3 broken by implementation simplicity. Top 3 are implemented as `NOT_VALI
 
 ## 2. Sloan balance-sheet accruals
 * **Mechanism**: accrual component of earnings is less persistent than cash flow; investors fixate on earnings (Sloan).
-* **Formula**: `((ΔCA − ΔCash) − (ΔCL − ΔSTD − ΔTaxPayable) − Dep) / avg(TA_t, TA_{t−1})`; hypothesis: higher → lower returns.
+* **Formula** (verified against Sloan 1996 full text, p.~296-297 of the JSTOR scan; see `evidence/pr48_sources.md`): `((ΔCA − ΔCash) − (ΔCL − ΔSTD − ΔTP) − Dep) / avg(TA_t, TA_{t−1})`, where Dep is depreciation **and amortization** expense (Compustat item 14), subtracted, and the denominator is the average of beginning- and end-of-year total assets. Hypothesis: higher → lower returns. Mapping of Compustat items 34/71 to XBRL/IFRS tags is UNVERIFIED.
 * **Inputs**: seven balance-sheet/IS items, two consecutive fiscal years, same source + `known_at` rules as #1.
 * **Crowding/publication**: published 1996; very well known; evidence of decay after publication in many studies (not re-verified here beyond the McLean-Pontiff aggregate).
 * **Failure modes**: M&A and divestitures distort balance-sheet accruals (cash-flow-statement version preferable if data allows); strict missing rule drops many names; fiscal-year-end seasonality; CN earnings-management regimes differ; announced restatements.
@@ -51,7 +51,7 @@ Ties 2/3 broken by implementation simplicity. Top 3 are implemented as `NOT_VALI
 
 ## 3. MAX lottery demand
 * **Mechanism**: investors with poor diversification/preference for lottery payoffs overpay for stocks with extreme positive returns (Bali-Cakici-Whitelaw).
-* **Formula**: `MAX = max daily return over the trailing 21 trading days`; hypothesis: higher → lower returns.
+* **Formula (primary, original)**: `MAX = max daily return within the previous calendar month` (BCW: portfolios sorted on MAX over the previous month; checked in the Aug-2008 NYU working paper, not the published JFE text). Implemented as variant `prior_calendar_month`. **Alternative variant (not the paper's definition)**: max over the trailing fixed 21 trading days, `fixed_21_trading_days`. Hypothesis: higher → lower returns. `min_obs=15` is a project choice, not from the paper.
 * **Inputs**: adjusted daily returns (`known_at` = day close), explicit trading calendar.
 * **Crowding/publication**: published 2011; price-only so cheap and crowded in shorts; short leg is costly/capacity-limited (hard to borrow, esp. A-shares where shorting is constrained).
 * **Failure modes**: short-leg dominated; microcap dominated (use size screens); overlaps idiosyncratic volatility and short-term reversal (locked Residual Volatility); A-share price limits censor MAX; corporate-action adjustments.
@@ -64,7 +64,7 @@ Ties 2/3 broken by implementation simplicity. Top 3 are implemented as `NOT_VALI
 * **Formula**: `β_i = ρ_{i,m} · σ_i/σ_m` with 1y daily vol and 5y 3-day-overlap correlation shrunk `β = 0.6 β_ts + 0.4` (Frazzini-Pedersen construction — verify exact windows against the paper before implementing); rank by β ascending.
 * **Inputs**: adjusted daily returns, market index returns (`known_at` day close).
 * **Crowding/publication**: published 2014, very well known (low-vol ETFs); risk of drawdown when funding conditions tighten (paper's own prediction 3).
-* **Failure modes**: sector concentration in defensives; rate-sensitivity; correlation with Residual Volatility (locked) — high overlap; leverage-dependent BAB implementation, which is out of scope here.
+* **Failure modes**: sector concentration in defensives; rate-sensitivity; overlap with Residual Volatility (locked) is **to be tested** (no correlation data computed; do not assume it is high or low); leverage-dependent BAB implementation, which is out of scope here.
 * **Literature**: Frazzini & Pedersen (2014), JFE 111(1), 1-25, doi:10.1016/j.jfineco.2013.10.005 (verified).
 * **Feasibility**: high.
 * **Hurdle**: incremental alpha after Residual Volatility; unlevered, sector-neutral version positive net of costs; stable in both bull and tightening-funding regimes.
@@ -73,7 +73,7 @@ Ties 2/3 broken by implementation simplicity. Top 3 are implemented as `NOT_VALI
 * **Mechanism**: anchoring to the 52-week high causes underreaction (George-Hwang).
 * **Formula**: `P_t / max(P over trailing 252 trading days)`.
 * **Inputs**: unadjusted-consistent daily closes.
-* **Crowding**: published 2004; overlaps momentum strongly. Novelty vs Residual Momentum is limited.
+* **Crowding**: published 2004; overlap with momentum / Residual Momentum is **to be tested** (not measured here).
 * **Failure modes**: momentum crashes; January; A-share price-limit and suspension gaps; adjustments for splits.
 * **Literature**: George & Hwang (2004), JF 59(5), 2145-2176, doi:10.1111/j.1540-6261.2004.00695.x (verified).
 * **Feasibility**: high.
@@ -93,7 +93,7 @@ Ties 2/3 broken by implementation simplicity. Top 3 are implemented as `NOT_VALI
 * **Mechanism**: industry-level return continuation (Moskowitz-Grinblatt).
 * **Formula**: value-weighted industry return over months t−12…t−2 (skip last month); stock gets its industry's score.
 * **Inputs**: PIT industry classification (`known_at` of reclassification), returns.
-* **Crowding/overlap**: overlaps Residual Momentum; novelty moderate; few independent bets (≈ 10-30 industries) → low statistical power.
+* **Crowding/overlap**: overlap with Residual Momentum to be tested; novelty moderate; few independent bets (≈ 10-30 industries) → low statistical power.
 * **Failure modes**: GICS/CSRC/SW reclassification look-ahead; sector rotations; few effective observations.
 * **Literature**: Moskowitz & Grinblatt (1999), JF 54(4), 1249-1290 (verified).
 * **Feasibility**: medium (PIT industry history).
@@ -113,7 +113,7 @@ Ties 2/3 broken by implementation simplicity. Top 3 are implemented as `NOT_VALI
 * **Mechanism**: distress-risk-based failure probability; distressed stocks had *anomalously low* returns historically (Campbell et al.), i.e. a mispricing, not a risk premium.
 * **Formula**: logit failure model on NI/MTA, TL/MTA, excess return, σ, cash/MTA, size, MB, price (coefficients must be re-estimated PIT, not copied).
 * **Inputs**: fundamentals, market equity, failure/delisting labels (survivorship-sensitive).
-* **Failure modes**: model re-estimation leakage; delisting data quality; CN special-treatment (ST) regime is a different default process; heavy overlap with Residual Volatility, size, profitability (#1).
+* **Failure modes**: model re-estimation leakage; delisting data quality; CN special-treatment (ST) regime is a different default process; overlap with Residual Volatility, size, profitability (#1) to be tested (not measured).
 * **Literature**: Campbell, Hilscher & Szilagyi (2008), JF 63(6), 2899-2939 (verified bibliographic details).
 * **Feasibility**: low-medium.
 * **Hurdle**: expanding-window PIT model; incremental to GP/A + Residual Volatility; failure-prediction AUC out of sample before any return claim.
@@ -125,3 +125,9 @@ Ties 2/3 broken by implementation simplicity. Top 3 are implemented as `NOT_VALI
 * No A-share-specific evidence for any candidate was verified.
 * Exact BAB beta-estimation windows and Daniel-Titman composite issuance definition must be checked against the papers before implementation.
 * No data was run; no performance numbers are claimed. Data pipelines for PIT fundamentals and adjusted prices are not in the repo.
+
+
+## Filing-basis and PIT contract for the reference implementations (added after review)
+Every fundamental record carries: `security`, `period_end` (date), `known_at` (**timezone-aware datetime**; date-only and naive values are rejected), `source`, `period_type` (annual / quarterly / ttm), `currency`, `unit_scale`, `statement_ref` (accession / form / original-statement reference) and `revision` (0 = original). Daily return rows carry `adjustment_basis` and `revision`.
+
+Version selection (order-independent): visible records (`known_at ≤ as_of`) for one fact are ordered by `(known_at, revision)`; revision must not decrease as `known_at` increases; records with equal revision must have identical content; otherwise `AmbiguousVersionError` is raised. Duplicate trading days raise `TradingCalendarError`. Synthetic tests prove code behaviour only, not factor validity.
