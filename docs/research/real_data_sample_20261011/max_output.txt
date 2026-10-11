@@ -1,0 +1,123 @@
+{
+ "AAPL": {
+  "n_days": 71,
+  "first": "2026-07-01",
+  "last": "2026-10-09",
+  "missing_dates": [],
+  "sept_n_returns": 21,
+  "MAX_primary_prior_full_month_Sep2026": {
+   "ret": 0.03561239017170226,
+   "date": "2026-09-10"
+  },
+  "MAX_alt_21d_ending_2026_09_30": {
+   "ret": 0.03561239017170226,
+   "date": "2026-09-10",
+   "window": [
+    "2026-09-01",
+    "2026-09-30"
+   ],
+   "n": 21
+  },
+  "MAX_alt_21d_ending_last_avail": {
+   "ret": 0.017454088133066703,
+   "date": "2026-09-11",
+   "window": [
+    "2026-09-11",
+    "2026-10-09"
+   ],
+   "n": 21
+  },
+  "raw_close_vs_nasdaq_mismatch_count": 0,
+  "raw_close_vs_nasdaq_mismatches": [],
+  "adj_vs_raw_last": [
+   336.6400146484375,
+   336.6400146484375
+  ],
+  "dividends": {
+   "1786368600": {
+    "amount": 0.27,
+    "date": 1786368600
+   }
+  },
+  "splits": null
+ },
+ "JNJ": {
+  "n_days": 71,
+  "first": "2026-07-01",
+  "last": "2026-10-09",
+  "missing_dates": [],
+  "sept_n_returns": 21,
+  "MAX_primary_prior_full_month_Sep2026": {
+   "ret": 0.020086500715788436,
+   "date": "2026-09-01"
+  },
+  "MAX_alt_21d_ending_2026_09_30": {
+   "ret": 0.020086500715788436,
+   "date": "2026-09-01",
+   "window": [
+    "2026-09-01",
+    "2026-09-30"
+   ],
+   "n": 21
+  },
+  "MAX_alt_21d_ending_last_avail": {
+   "ret": 0.019338705718249916,
+   "date": "2026-10-09",
+   "window": [
+    "2026-09-11",
+    "2026-10-09"
+   ],
+   "n": 21
+  },
+  "raw_close_vs_nasdaq_mismatch_count": 0,
+  "raw_close_vs_nasdaq_mismatches": [],
+  "adj_vs_raw_last": [
+   261.44000244140625,
+   261.44000244140625
+  ],
+  "dividends": {
+   "1787664600": {
+    "amount": 1.34,
+    "date": 1787664600
+   }
+  },
+  "splits": null
+ },
+ "ADBE": {
+  "n_days": 71,
+  "first": "2026-07-01",
+  "last": "2026-10-09",
+  "missing_dates": [],
+  "sept_n_returns": 21,
+  "MAX_primary_prior_full_month_Sep2026": {
+   "ret": 0.053007218025008296,
+   "date": "2026-09-14"
+  },
+  "MAX_alt_21d_ending_2026_09_30": {
+   "ret": 0.053007218025008296,
+   "date": "2026-09-14",
+   "window": [
+    "2026-09-01",
+    "2026-09-30"
+   ],
+   "n": 21
+  },
+  "MAX_alt_21d_ending_last_avail": {
+   "ret": 0.053007218025008296,
+   "date": "2026-09-14",
+   "window": [
+    "2026-09-11",
+    "2026-10-09"
+   ],
+   "n": 21
+  },
+  "raw_close_vs_nasdaq_mismatch_count": 0,
+  "raw_close_vs_nasdaq_mismatches": [],
+  "adj_vs_raw_last": [
+   242.27000427246094,
+   242.27000427246094
+  ],
+  "dividends": null,
+  "splits": null
+ }
+}
