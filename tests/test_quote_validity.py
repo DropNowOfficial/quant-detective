@@ -270,6 +270,8 @@ def test_each_github_publication_revalidates_without_false_event_markers(monkeyp
     from market_data import github_alerts
     monkeypatch.setenv("GITHUB_REPOSITORY", "DropNowOfficial/quant-detective")
     monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1369484548")
+    monkeypatch.setenv("GITHUB_REF", "refs/heads/main")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
     monkeypatch.setenv("GITHUB_TOKEN", "synthetic-test-token")
     first = event_at()
     second = event_at() | {"symbol": "BBB", "event_key": "2026-10-05|BBB|ENTRY_CONFIRMED"}
@@ -314,7 +316,7 @@ def test_publisher_failure_still_persists_full_report_and_diagnostics(monkeypatc
         raise RuntimeError("synthetic publication failure")
     monkeypatch.setattr(github_alerts, "publish", publish)
     output = tmp_path / "report.json"
-    with pytest.raises(RuntimeError, match="synthetic publication failure"):
+    with pytest.raises(RuntimeError, match="PUBLICATION_FAILED"):
         us_watch.run(symbols=("AAA",), once=True, github_alerts=True, output=output)
     assert json.loads(output.read_text()) == report
 
@@ -326,7 +328,7 @@ def test_workflow_always_retains_full_scan_artifact():
     step = text.split("uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02")[0].split("- name:")[-1]
     assert "if: always()" in step
     artifact = text.split("uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02", 1)[1]
-    assert "path: market-watch.json" in artifact
+    assert "market-watch.json" in artifact and "notification-delivery.json" in artifact
     assert "retention-days: 30" in artifact
 
 
@@ -387,6 +389,8 @@ def test_malformed_confirmation_is_rejected_without_aborting_later_publications(
     from market_data import github_alerts
     monkeypatch.setenv("GITHUB_REPOSITORY", "DropNowOfficial/quant-detective")
     monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1369484548")
+    monkeypatch.setenv("GITHUB_REF", "refs/heads/main")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
     monkeypatch.setenv("GITHUB_TOKEN", "synthetic-test-token")
     invalid = event_at() | {"confirmation_validity": proof}
     valid = event_at() | {"symbol": "BBB", "event_key": "2026-10-05|BBB|ENTRY_CONFIRMED"}

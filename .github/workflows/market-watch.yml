@@ -7,6 +7,8 @@ on:
       - 'market_data/github_alerts.py'
       - 'market_data/slack_alerts.py'
       - 'market_data/scan_health.py'
+      - 'market_data/scan_status.py'
+      - 'market_data/cli.py'
       - 'market_data/us_watch.py'
       - 'market_data/quote_validity.py'
       - '.github/workflows/market-watch.yml'
@@ -39,11 +41,14 @@ concurrency:
 
 jobs:
   scan:
+    if: ${{ github.repository == 'DropNowOfficial/quant-detective' && github.repository_id == '1369484548' && github.ref == 'refs/heads/main' && contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) }}
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Install uv
         uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
@@ -104,6 +109,30 @@ jobs:
         run: |
           python3 -m market_data.slack_alerts forward --budget-seconds "$QD_SLACK_REMAINING_BUDGET"
 
+      - name: Verify actual notification delivery
+        id: delivery_verdict
+        if: ${{ !cancelled() && github.repository == 'DropNowOfficial/quant-detective' && github.repository_id == '1369484548' && github.ref == 'refs/heads/main' && contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) && vars.QD_SLACK_ENABLED == 'true' }}
+        env:
+          QD_LEDGER_READY: ${{ steps.slack_prepare.outputs.ledger_ready }}
+          QD_HEALTH_OUTCOME: ${{ steps.scan_health.outcome }}
+          QD_FORWARD_OUTCOME: ${{ steps.slack_forward.outcome }}
+          QD_DELIVERY_HEALTHY: ${{ steps.slack_forward.outputs.delivery_healthy }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          result = {
+              'ledger_ready': os.environ.get('QD_LEDGER_READY') == 'true',
+              'health_persisted': os.environ.get('QD_HEALTH_OUTCOME') == 'success',
+              'forward_completed': os.environ.get('QD_FORWARD_OUTCOME') == 'success',
+              'delivery_healthy': os.environ.get('QD_DELIVERY_HEALTHY') == 'true',
+          }
+          with open('notification-delivery.json', 'w', encoding='utf-8') as f:
+              json.dump(result, f, sort_keys=True)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as f:
+              f.write('\nNotification delivery: ' + json.dumps(result, sort_keys=True) + '\n')
+          raise SystemExit(0 if all(result.values()) else 1)
+          PY
+
       - name: Write compact run summary
         if: always()
         shell: bash
@@ -119,6 +148,7 @@ jobs:
               f"Generated: {data.get('generated_at_et')}",
               "Scope: configured core watchlist / public observation fallback",
               f"Scan status: {data.get('scan_status')} | Runtime session: {data.get('runtime_session')}",
+              f"Coverage: {json.dumps(data.get('coverage'), sort_keys=True)}",
               f"Skip reason: {data.get('skip_reason') or 'none'}",
               "",
           ]
@@ -127,7 +157,7 @@ jobs:
               out.append(
                   f"- **{r['symbol']}** {r.get('state')} | "
                   f"{i.get('change_pct')}% | d5={i.get('d5_atr')} ATR | "
-                  f"{r.get('reason')}"
+                  f"{r.get('status')}"
               )
           with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as f:
               f.write("\n".join(out)+"\n")
@@ -139,6 +169,8 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: market-watch-${{ github.run_id }}-${{ github.run_attempt }}
-          path: market-watch.json
+          path: |
+            market-watch.json
+            notification-delivery.json
           if-no-files-found: warn
           retention-days: 30

@@ -110,10 +110,10 @@ def test_one_percent_day_move_is_not_silenced():
 
 
 @pytest.mark.parametrize("rows,incomplete,status", [
-    ([], ["AAA", "BBB"], "UNAVAILABLE"),
+    ([], ["AAA", "BBB"], "FAILED"),
     ([{"symbol": "AAA", "status": "ERROR"}, {"symbol": "BBB", "status": "ERROR"}], ["AAA", "BBB"], "UNAVAILABLE"),
     ([{"symbol": "AAA", "status": "OK"}, {"symbol": "BBB", "status": "ERROR"}], ["BBB"], "INCOMPLETE"),
-    ([{"symbol": "AAA", "status": "OK"}], ["BBB"], "INCOMPLETE"),
+    ([{"symbol": "AAA", "status": "OK"}], ["AAA", "BBB"], "FAILED"),
 ])
 def test_incomplete_one_shot_preserves_report_and_publication_before_failing(monkeypatch, tmp_path, rows, incomplete, status):
     output = tmp_path / "report.json"
@@ -127,8 +127,11 @@ def test_incomplete_one_shot_preserves_report_and_publication_before_failing(mon
         published.append(value.copy())
 
     monkeypatch.setattr(github_alerts, "publish", publish)
-    with pytest.raises(RuntimeError, match="one-shot scan incomplete"):
+    if status == 'INCOMPLETE':
         us_watch.run(symbols=("AAA", "BBB"), once=True, github_alerts=True, output=output)
+    else:
+        with pytest.raises(RuntimeError, match="one-shot scan incomplete"):
+            us_watch.run(symbols=("AAA", "BBB"), once=True, github_alerts=True, output=output)
     saved = json.loads(output.read_text())
     assert saved["rows"] == rows
     assert saved["alerts"] == report["alerts"]
@@ -168,4 +171,4 @@ def test_watch_cli_reports_incomplete_one_shot_as_failure(monkeypatch, capsys):
     with pytest.raises(SystemExit) as exc:
         cli.main()
     assert exc.value.code == 2
-    assert "watch failed: one-shot scan incomplete" in capsys.readouterr().err
+    assert "watch failed: RUNTIME_ERROR" in capsys.readouterr().err

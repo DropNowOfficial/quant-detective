@@ -27,6 +27,8 @@ def _report(alerts=None):
 def test_heartbeat_updates_even_without_material_alerts(monkeypatch):
     monkeypatch.setenv("GITHUB_REPOSITORY","DropNowOfficial/quant-detective")
     monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1369484548")
+    monkeypatch.setenv("GITHUB_REF", "refs/heads/main")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
     monkeypatch.setenv("GITHUB_TOKEN","token")
     monkeypatch.setenv("GITHUB_EVENT_NAME","schedule")
     monkeypatch.setenv("GITHUB_RUN_ID","12345")
@@ -61,6 +63,8 @@ def test_heartbeat_updates_even_without_material_alerts(monkeypatch):
 def test_heartbeat_created_when_missing(monkeypatch):
     monkeypatch.setenv("GITHUB_REPOSITORY","DropNowOfficial/quant-detective")
     monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1369484548")
+    monkeypatch.setenv("GITHUB_REF", "refs/heads/main")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
     monkeypatch.setenv("GITHUB_TOKEN","token")
     calls=[]
     issue = _issue()
@@ -86,6 +90,8 @@ def test_heartbeat_created_when_missing(monkeypatch):
 def _runtime(monkeypatch):
     monkeypatch.setenv("GITHUB_REPOSITORY", "DropNowOfficial/quant-detective")
     monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1369484548")
+    monkeypatch.setenv("GITHUB_REF", "refs/heads/main")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
     monkeypatch.setenv("GITHUB_TOKEN", "token")
     monkeypatch.setenv("GITHUB_RUN_ID", "12345")
 

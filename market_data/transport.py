@@ -79,7 +79,7 @@ def fetch(url, kind='json'):
         receipt['http_status'] = int(status) if status.isdigit() and int(status) else None
         if process.returncode:
             receipt.update(error_code='TIMEOUT' if process.returncode == 28 else 'NETWORK_ERROR',
-                           error='请求超时，已停止。' if process.returncode == 28 else f'网络请求失败（curl {process.returncode}）：{error.strip()[:240]}')
+                           error='PUBLIC_REQUEST_TIMEOUT' if process.returncode == 28 else 'PUBLIC_NETWORK_ERROR')
             raise FetchError(receipt)
         if receipt['http_status'] != 200:
             receipt.update(error_code='HTTP_ERROR', error=f'HTTP {receipt["http_status"]}；未补造K线，也未替换来源。')
@@ -95,7 +95,7 @@ def fetch(url, kind='json'):
         receipt['ok'] = True
         return {'data': data, 'receipt': receipt}
     except OSError as exc:
-        receipt.update(error_code='CURL_UNAVAILABLE', error=f'无法启动公开HTTP读取器：{exc}')
-        raise FetchError(receipt) from exc
+        receipt.update(error_code='CURL_UNAVAILABLE', error='PUBLIC_TRANSPORT_UNAVAILABLE')
+        raise FetchError(receipt) from None
     finally:
         receipt['received_at_utc'] = datetime.now(timezone.utc).isoformat()

@@ -17,6 +17,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 
 from .quote_validity import (
     BAR_SECONDS, CLOCK_SKEW_SECONDS, ET, RECEIPT_MAX_SECONDS,
@@ -116,12 +117,16 @@ def _boundary_publications(report, started, generated, wanted):
                  "publication request was outside the scan's supported runtime")
         key = request.get("event_key")
         parts = key.split("|") if isinstance(key, str) else []
-        _require(len(parts) == 3 and parts[0] == stamp.astimezone(ET).date().isoformat()
+        _require(len(parts) in {3, 4} and parts[0] == stamp.astimezone(ET).date().isoformat()
                  and parts[1] in wanted and parts[2] in {"ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH"},
                  "publication event does not match scan scope")
         _require(type(comment.get("id")) is int and comment["id"] > 0
                  and type(request.get("comment_id")) is int and request["comment_id"] == comment["id"],
                  "publication response does not match its request")
+        if len(parts) == 4:
+            _require(re.fullmatch(r'[1-9][0-9]{0,19}', parts[3]) is not None
+                     and int(parts[3]) < comment["id"],
+                     "publication predecessor is invalid or not earlier than the source")
         _require(comment["id"] not in seen_ids and key not in seen_keys, "duplicate boundary publication evidence")
         seen_ids.add(comment["id"])
         seen_keys.add(key)
