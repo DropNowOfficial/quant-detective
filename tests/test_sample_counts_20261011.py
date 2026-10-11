@@ -25,6 +25,7 @@ def test_docs_state_derived_counts_and_no_stale_numbers():
     allowed = {v for k, v in c.items() if isinstance(v, int)}
     for k in ("rows_per_ticker", "used_per_ticker"):
         allowed |= set(c[k].values())
+    allowed |= {e["rows"] for e in json.loads((S / "price_manifest.json").read_text())["files"].values()}  # daily price rows
     stale = [r"\b148 rows\b", r"\b120/120\b", r"all 160 rows", r"56 of 160 rows"]
     for d in docs:
         t = d.read_text()
