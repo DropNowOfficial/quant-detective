@@ -1,0 +1,105 @@
+....FFF.                                                                 [100%]
+=================================== FAILURES ===================================
+_________ test_log_write_fails_while_all_steps_succeed_overall_nonzero _________
+
+tmp_path = PosixPath('/tmp/pytest-of-box/pytest-10/test_log_write_fails_while_all0')
+
+    def test_log_write_fails_while_all_steps_succeed_overall_nonzero(tmp_path):
+        """run.log pre-created as a DIRECTORY: tee fails, every verification step succeeds -> must be non-zero."""
+        p, log = run(tmp_path, logfile_is_dir=True)
+        assert (log / "run.log").is_dir()
+>       assert p.returncode != 0, "FALSE SUCCESS: log write failed (tee) but run_all.sh exited 0\n" + p.stdout + p.stderr
+E       AssertionError: FALSE SUCCESS: log write failed (tee) but run_all.sh exited 0
+E         start_utc=2026-10-11T16:38:49Z host_tz_now=MST
+E         fatal: not a git repository (or any of the parent directories): .git
+E         fatal: not a git repository (or any of the parent directories): .git
+E         git_head= factor_candidates_tree=
+E         fatal: not a git repository (or any of the parent directories): .git
+E         git_dirty_paths=0
+E         
+E         === 1 fetch_all (download + SHA256 vs committed manifests) ===
+E         
+E         === 2 extract (rebuild data_points.csv from fresh raw; must equal committed file) ===
+E         DATA_POINTS_IDENTICAL_TO_COMMITTED
+E         
+E         === 3 recompute GP/A + Sloan from rebuilt data points; must equal committed results.json ===
+E         RESULTS_IDENTICAL_TO_COMMITTED
+E         USED_INPUTS_IDENTICAL_TO_COMMITTED
+E         
+E         === 4 MAX with the fixed (explicit calendar_tz) repo implementation on fresh prices ===
+E         
+E         === 4b daily price CSVs regenerated from fresh prices vs price_manifest.json (informational; verify_inputs decides) ===
+E         python3: can't open file '/tmp/pytest-of-box/pytest-10/test_log_write_fails_while_all0/docs/research/real_data_sample_20261011/price_manifest.py': [Errno 2] No such file or directory
+E         (daily CSV bytes differ from manifest: see step 5 for the explicit tolerance decision)
+E         
+E         === 5 verify_inputs (values vs fresh downloads; tolerance fallback if hashes differ) ===
+E         
+E         === 6 cross-check recompute against repo factor_candidates code at this HEAD ===
+E         
+E         end_utc=2026-10-11T16:38:49Z exit_code=0
+E         tee: /tmp/pytest-of-box/pytest-10/test_log_write_fails_while_all0/log/run.log: Is a directory
+E         
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['bash', '/tmp/pytest-of-box/pytest-10/test_log_write_fails_while_all0/docs/research/real_data_s...it_code=0\n", stderr='tee: /tmp/pytest-of-box/pytest-10/test_log_write_fails_while_all0/log/run.log: Is a directory\n').returncode
+
+tests/test_run_all_exit_status_20261011.py:82: AssertionError
+__________________ test_producer_ok_tee_fails_names_tee_side ___________________
+
+tmp_path = PosixPath('/tmp/pytest-of-box/pytest-10/test_producer_ok_tee_fails_nam0')
+
+    def test_producer_ok_tee_fails_names_tee_side(tmp_path):
+        p, _ = run(tmp_path, logfile_is_dir=True)
+        out = p.stdout + p.stderr
+>       assert p.returncode != 0
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['bash', '/tmp/pytest-of-box/pytest-10/test_producer_ok_tee_fails_nam0/docs/research/real_data_s...it_code=0\n", stderr='tee: /tmp/pytest-of-box/pytest-10/test_producer_ok_tee_fails_nam0/log/run.log: Is a directory\n').returncode
+
+tests/test_run_all_exit_status_20261011.py:89: AssertionError
+________________ test_producer_fails_tee_ok_names_producer_side ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-box/pytest-10/test_producer_fails_tee_ok_nam0')
+
+    def test_producer_fails_tee_ok_names_producer_side(tmp_path):
+        p, log = run(tmp_path, failing="verify_inputs.py")
+        out = p.stdout + p.stderr
+        assert p.returncode != 0
+>       assert "RUN_ALL_FAILED" in out and "producer_rc=1" in out and "tee_rc=0" in out, out
+E       AssertionError: start_utc=2026-10-11T16:38:49Z host_tz_now=MST
+E         fatal: not a git repository (or any of the parent directories): .git
+E         fatal: not a git repository (or any of the parent directories): .git
+E         git_head= factor_candidates_tree=
+E         fatal: not a git repository (or any of the parent directories): .git
+E         git_dirty_paths=0
+E         
+E         === 1 fetch_all (download + SHA256 vs committed manifests) ===
+E         
+E         === 2 extract (rebuild data_points.csv from fresh raw; must equal committed file) ===
+E         DATA_POINTS_IDENTICAL_TO_COMMITTED
+E         
+E         === 3 recompute GP/A + Sloan from rebuilt data points; must equal committed results.json ===
+E         RESULTS_IDENTICAL_TO_COMMITTED
+E         USED_INPUTS_IDENTICAL_TO_COMMITTED
+E         
+E         === 4 MAX with the fixed (explicit calendar_tz) repo implementation on fresh prices ===
+E         
+E         === 4b daily price CSVs regenerated from fresh prices vs price_manifest.json (informational; verify_inputs decides) ===
+E         python3: can't open file '/tmp/pytest-of-box/pytest-10/test_producer_fails_tee_ok_nam0/docs/research/real_data_sample_20261011/price_manifest.py': [Errno 2] No such file or directory
+E         (daily CSV bytes differ from manifest: see step 5 for the explicit tolerance decision)
+E         
+E         === 5 verify_inputs (values vs fresh downloads; tolerance fallback if hashes differ) ===
+E         stub step failing
+E         
+E         === 6 cross-check recompute against repo factor_candidates code at this HEAD ===
+E         
+E         end_utc=2026-10-11T16:38:49Z exit_code=1
+E         RUN_ALL_FAILED exit=1 (pipeline_rc=1)
+E         
+E       assert ('RUN_ALL_FAILED' in 'start_utc=2026-10-11T16:38:49Z host_tz_now=MST\nfatal: not a git repository (or any of the parent directories): .git\..._candidates code at this HEAD ===\n\nend_utc=2026-10-11T16:38:49Z exit_code=1\nRUN_ALL_FAILED exit=1 (pipeline_rc=1)\n' and 'producer_rc=1' in 'start_utc=2026-10-11T16:38:49Z host_tz_now=MST\nfatal: not a git repository (or any of the parent directories): .git\..._candidates code at this HEAD ===\n\nend_utc=2026-10-11T16:38:49Z exit_code=1\nRUN_ALL_FAILED exit=1 (pipeline_rc=1)\n')
+
+tests/test_run_all_exit_status_20261011.py:97: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_run_all_exit_status_20261011.py::test_log_write_fails_while_all_steps_succeed_overall_nonzero
+FAILED tests/test_run_all_exit_status_20261011.py::test_producer_ok_tee_fails_names_tee_side
+FAILED tests/test_run_all_exit_status_20261011.py::test_producer_fails_tee_ok_names_producer_side
+3 failed, 5 passed in 1.31s
+/usr/bin/python3: No module named pytest

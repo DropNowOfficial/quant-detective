@@ -1,0 +1,14 @@
+# Audit fixes 2026-10-11 — failing-before / passing-after evidence
+
+| # | Finding | Failing before (commit `389245e`) | Fix (commit `061bac3` unless noted) | Passing after |
+|---|---|---|---|---|
+| 1 | MAX month chosen from `as_of.date()` in the input's own zone | `audit20261011_max_tz_probe_before.txt`: `2026-03-01T00:30Z` → **0.9**, `2026-02-28T19:30-05:00` → **0.2** (same instant). 20 new MAX tests fail. | `max_lottery(..., *, calendar_tz)` required IANA name; `as_of` converted to it before date/month are chosen (`common.calendar_date`); invalid/missing tz raises. GP/A and Sloan staleness use `calendar_tz` (default America/New_York). | `audit20261011_max_tz_probe_after.txt`: both **0.2**. Tests: any offset (−8…+14), month boundaries incl. DST (`04:59:59Z`/`05:00:00Z` Mar 1, `03:59:59Z`/`04:00:00Z` Apr 1), fixed-21 window end. |
+| 2 | Apple acceptance +4 h | 3 tests in `tests/test_real_data_sample_20261011.py` fail (new columns absent) | `4c688c5`: v2 `extract.py`; audit in `acceptance_time_audit.md` | tests pass; `verify_inputs.py` compares index/hdr/submissions on each run |
+| 3 | MAX price files not delivered | — | `4c688c5`/`556f20b`: `reproduce.md`, `fetch_all.py`, `verify_inputs.py`, `run_all.sh`, manifests | `reproduce_run_20261011/run.log` (exit 0; Yahoo bytes MISMATCH, values identical) |
+| 4 | Contract tests pass with formula/inputs/required fields deleted | `audit20261011_old_contract_test_vs_mutated_contract.txt`: old test **passes** on a contract with formula, inputs, required_record_fields, pit_rule, missing_rule deleted from every candidate. New schema test module fails to import. | `schemas/factor_candidate_contract.schema.json` (draft 2020-12), `schemas/factor_contracts.py`, gate in `scripts/validate_schemas.py`, `jsonschema` dependency | mutation tests: each top-level and per-candidate key deleted one by one, input sub-keys, empty/mistyped values, provenance/variant/lifecycle rules → all fail as required; verify recipe prints `OK JSON Schema 2020-12 …` |
+| 5 | AAPL tax payable source | — | `4c688c5`: located in 10-K note R50.htm / R49.htm; `rfile_ref` column; REPORT wording | `verify_inputs.py` compares those R values exactly |
+| 6a | Sloan ΔCash scope | 8 Sloan tests fail (`short_term_investments` not supported) | `BalanceSheetFact.short_term_investments` + `no_short_term_investments`; missing without flag raises `PITError` | tests pass; six values recomputed (REPORT) |
+| 6b | D&A scope | — | explicit per-company tag list in `recompute.py`/REPORT; ADBE accretion caveat; mapping still unverified | n/a (documentation + recompute) |
+| 7 | code-version audit | — | `audit_code_version.md` | `run_all.sh` @ `556f20b` |
+
+Full verify recipe on `556f20b`: `audit20261011_verify_after.txt` (schema gate OK, kernel, pytest 1595 passed, legacy unittest OK, time_machine fixture OK, `VERIFY_OK`).
