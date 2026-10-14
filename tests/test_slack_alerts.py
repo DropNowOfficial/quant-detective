@@ -883,15 +883,19 @@ def test_cursor_advances_only_after_full_discovery_is_durable(failure):
     old_cursor = store.load().manifest.cursor
     http.date = NOW + timedelta(minutes=5)
     original = http.request
+    entry_posts = 0
     def broken(method, url, **kwargs):
+        nonlocal entry_posts
         path = urlsplit(url).path
         query = parse_qs(urlsplit(url).query)
+        if method == "POST" and path == f"{BASE}/issues/{LEDGER_ISSUE}/comments":
+            entry_posts += 1
         document = json.loads(kwargs["body"]) if kwargs["body"] else {}
         is_cursor = method == "PATCH" and path == f"{BASE}/issues/{LEDGER_ISSUE}" and (
             decode_document(document["body"])["manifest"]["cursor"] != old_cursor.isoformat())
         if ((failure == "second_page" and path == BASE + "/issues/comments" and query.get("page") == ["2"])
                 or (failure == "issue_read" and path == BASE + "/issues/7")
-                or (failure == "entry_write" and method == "PATCH" and "/issues/comments/" in path)
+                or (failure == "entry_write" and method == "POST" and entry_posts == 2)
                 or (failure == "cursor_write" and is_cursor)):
             return sa.HttpResponse(500, {}, b"{}")
         return original(method, url, **kwargs)
@@ -903,7 +907,10 @@ def test_cursor_advances_only_after_full_discovery_is_durable(failure):
     if failure in {"second_page", "issue_read"}:
         assert failed.entries == {}
     elif failure == "entry_write":
-        assert set(failed.entries) == {101}
+        # A complete first shard is durable; interruption prevents the next.
+        assert 0 < len(failed.entries) < 101
+        assert set(failed.entries).issubset(set(range(101, 202)))
+        assert all(entry.status == "pending" for entry in failed.entries.values())
     else:
         assert len(failed.entries) == 101
     http.request = original
@@ -1098,12 +1105,13 @@ def test_discovery_requires_fresh_trusted_first_page_date(date):
     assert restored.entries == {} and restored.manifest.cursor == NOW
 
 
-def test_discovery_budget_expiration_between_puts_leaves_cursor_and_resume_safe():
+def test_discovery_budget_expiration_during_batch_leaves_cursor_and_resume_safe():
     http, store = initialized()
     daily_issue(http)
-    source_comment(http, 101)
-    source_comment(http, 102, symbol="TSLA")
+    for index in range(25):
+        source_comment(http, 101 + index, symbol=f"S{index}")
     budget = FakeBudget()
+    store = make_store(http, budget=budget)
     def expire(request):
         if request["method"] == "POST":
             budget.clock.sleep(30)
@@ -1111,10 +1119,12 @@ def test_discovery_budget_expiration_between_puts_leaves_cursor_and_resume_safe(
     with pytest.raises(sa.BudgetExpired):
         run_discovery(store, budget=budget)
     restored = make_store(FakeHTTP(http.server)).load()
-    assert set(restored.entries) == {101} and restored.manifest.cursor == NOW
+    assert 0 < len(restored.entries) < 25
+    assert set(restored.entries).issubset(set(range(101, 126)))
+    assert restored.manifest.cursor == NOW
     http.on_request = None
-    assert run_discovery(make_store(http)) == 1
-    assert set(make_store(FakeHTTP(http.server)).load().entries) == {101, 102}
+    assert run_discovery(make_store(http)) == 25 - len(restored.entries)
+    assert set(make_store(FakeHTTP(http.server)).load().entries) == set(range(101, 126))
 
 
 def test_discovery_ignores_heartbeat_and_untrusted_author_without_fetching_issue():
@@ -2360,16 +2370,16 @@ def large_delivery_fixture(completed_shards=2400, pending=4):
     return http
 
 
-def test_forward_budget_large_existing_ledger_makes_progress_before_discovery_and_across_restarts():
+def test_forward_large_ledger_attempts_discovery_then_progresses_across_restarts():
     prior = large_delivery_fixture()
     summary, first = forward_run(prior, latency=0.3)
     assert summary.delivered >= 1, (summary, first.clock.elapsed, len(first.requests))
     assert first.clock.elapsed <= 30
     assert first.server["slack_posts"][0][2] == 101
-    # No historical traversal may run before at least one old entry is sent.
+    # Discovery is attempted first; bounded read-only deferral preserves old work.
     discovery = [i for i, r in enumerate(first.trace) if r[2].startswith(sa.API + BASE + "/issues/comments?")]
     first_post = next(i for i, r in enumerate(first.trace) if r[0] == "slack_post")
-    assert not discovery or min(discovery) > first_post
+    assert discovery and min(discovery) < first_post
     old_count = sum(e.status == "delivered" for e in restored(first).entries.values())
     _, second = forward_run(first, latency=0.3, now=first.clock.now() + timedelta(seconds=60))
     assert sum(e.status == "delivered" for e in restored(second).entries.values()) > old_count
@@ -2540,12 +2550,12 @@ def test_cli_hard_budget_in_send_window_recovers_unknown_without_replay(monkeypa
         def request(self, method, url, **kwargs):
             response = super().request(method, url, **kwargs)
             if url == WEBHOOK:
-                time.sleep(4)
+                time.sleep(6)
             return response
     monkeypatch.setattr(sa, "StdlibHttpClient", lambda: BlockSlack(prior.server))
-    assert sa.main(["forward", "--budget-seconds", "1.1"]) == 0
-    assert json.loads(capsys.readouterr().out)["paused_reason"] == "budget_exhausted"
-    assert restored(prior).entries[101].status == "attempting"
+    assert sa.main(["forward", "--budget-seconds", "9.5"]) == 0
+    assert json.loads(capsys.readouterr().out)["paused_reason"] == "delivery_uncertain"
+    assert restored(prior).entries[101].status == "unknown"
     _, fresh = forward_run(prior, now=NOW + timedelta(days=1))
     assert restored(fresh).entries[101].status == "unknown"
     assert len(fresh.server["slack_posts"]) == 1
@@ -2661,11 +2671,11 @@ def test_forward_due_order_and_cross_run_send_spacing():
     records = store.load().entries
     store.put(replace(records[103], status="retry_wait", attempts=1, next_attempt_at=NOW))
     store.put(replace(records[102], status="retry_wait", attempts=1, next_attempt_at=NOW + timedelta(days=1)))
-    summary, first = forward_run(prior, seconds=1.01)
-    assert summary.delivered == 1 and first.server["slack_posts"][0][2] == 103
+    summary, first = forward_run(prior, seconds=9.01)
+    assert summary.delivered == 1 and first.server["slack_posts"][0][2] == 101
     _, second = forward_run(first)
     posts = second.server["slack_posts"]
-    assert [p[2] for p in posts] == [103, 101]
+    assert [p[2] for p in posts] == [101, 103]
     assert (posts[1][0] - posts[0][0]).total_seconds() >= 1
     assert restored(second).entries[102].attempts == 1
 

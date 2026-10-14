@@ -6,6 +6,7 @@ on:
     paths:
       - 'market_data/github_alerts.py'
       - 'market_data/slack_alerts.py'
+      - 'market_data/slack_drain.py'
       - 'market_data/scan_health.py'
       - 'market_data/us_watch.py'
       - 'market_data/quote_validity.py'
@@ -42,6 +43,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
+      - name: Record hosted job start
+        id: job_budget
+        run: |
+          python3 -c 'import time; print(f"started_monotonic={time.monotonic():.9f}")' >> "$GITHUB_OUTPUT"
+
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
@@ -101,8 +107,9 @@ jobs:
           QD_SLACK_PRODUCER_IDS: ${{ vars.QD_SLACK_PRODUCER_IDS }}
           QD_SLACK_WEBHOOK_URL: ${{ secrets.QD_SLACK_WEBHOOK_URL }}
           QD_SLACK_REMAINING_BUDGET: ${{ steps.slack_prepare.outputs.remaining_budget }}
+          QD_SLACK_JOB_STARTED_MONOTONIC: ${{ steps.job_budget.outputs.started_monotonic }}
         run: |
-          python3 -m market_data.slack_alerts forward --budget-seconds "$QD_SLACK_REMAINING_BUDGET"
+          python3 -m market_data.slack_drain --first-budget-seconds "$QD_SLACK_REMAINING_BUDGET"
 
       - name: Write compact run summary
         if: always()

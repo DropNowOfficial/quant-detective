@@ -199,8 +199,37 @@ does not consume Slack activity time, but the whole job still has its unchanged
 eight-minute limit. Per-request timeouts are bounded by the allowance, and the
 Linux wall timer also limits blocking work. At least one second separates actual
 POST writes; an uncertain attempt retains its conservative durable channel hold.
-Due old queue work is considered before new discovery. Budget exhaustion leaves
-unfinished work for a later existing workflow run.
+Discovery is attempted before selecting due work. Its source changes are batched
+per touched shard, in two durable phases (retire old canonical roots, then admit
+replacements); the cursor advances only after the complete traversal is durable.
+If retained due work exists, the read-only traversal reserves one safe send
+transaction. A traversal that cannot fit yields `discovery_deferred` before any
+source mutation, allowing already-verified work to progress. This is explicit
+capacity degradation, not evidence that there are no new sources. All non-deferral
+discovery failures refresh authoritative state before any old queue is reused.
+
+When discovery completes, first-attempt, same-ET-date sources with trusted scan
+age 0–600 seconds in the observation window are fresh. At most two fresh attempts
+precede a due historical attempt; each class remains in source timestamp/ID order.
+The recent durable attempt history carries this fairness across fresh processes.
+Selection and POST-time history labels both use current time. Unknown scan times,
+retries, older results and out-of-window results remain historical. Rate-limit
+holds always precede sending. Fresh-before-undiscovered-work cannot be guaranteed
+when traversal is explicitly deferred; known work still progresses safely.
+
+The workflow now runs `market_data.slack_drain`: the original prepare remainder
+funds the first forward, then fresh sequential prepare/forward pairs may continue
+inside the SAME job/concurrency group. Every pair retains the 30-second hard cap;
+there are at most eight slices (240 active seconds allocated), and a separate
+270-second wrapper wall limit. An earliest-job monotonic timestamp also stops
+new slices before the eight-minute job deadline, reserving 45 seconds for shutdown
+and artifacts; a full next slice plus process margin must fit. The market scan is not rerun. No second writer is
+created. Holds, new uncertainty, read/write errors and no confirmed progress stop
+continuation. Existing quarantined unknown records are retained, never replayed,
+and do not prevent healthy work. `discovery_complete=false` cannot be reported
+as an empty, fully drained channel. Remaining work stays durable for a later run.
+The eight-minute whole-job cap remains unchanged; its hard cancellation can still
+interrupt an unusually slow setup/scan, and must be treated conservatively.
 
 The implementation requires **one serialized writer** using the existing
 `hosted-core-watch-fallback` concurrency group with `cancel-in-progress: false`,
@@ -213,16 +242,27 @@ at the next full load; they are outside the serialized-writer prerequisite.
 
 Deterministic offline latency evidence, not production throughput promises:
 
-- A fixture with **2,400 underfilled completed shards**, four old queued sources,
-  220 unrelated historical comments, and one new source progresses at 300 ms per
-  HTTP request. Prepare uses **7.8 s**, leaving **22.2 s** for forward, which
-  confirms **two old entries** within the combined 30-second allowance. Fresh
-  runs continue the durable queue. Separate full-allowance forward runs confirm
-  four old entries in 30 s and the new-history entry in the next 22.5 s.
-- At **1.2 s per request**, the same fixture's initial full load requires
-  **26 requests / 31.2 s**. It safely pauses at 30 s with `budget_exhausted` and
-  no POST. If complete validation cannot fit, repeated runs cannot solve that
-  scale/latency boundary. Real parsing/serialization overhead can reduce capacity.
+- 25 retained completed shards plus 25 new burst sources and one existing fixture
+  discovery source at 300 ms per HTTP request: all 26 unique messages confirmed in
+  eight prepare/forward slices, 162.3 simulated active seconds, no unknowns or
+  duplicates. Every slice stays within the shared 30-second allowance.
+- 2,400 completed underfilled shards at 300 ms/request still make confirmed old
+  queue progress within prepare+forward's shared allowance by deferring the
+  oversized read-only discovery traversal. This is not a freshness guarantee.
+- At 1.2 s/request, a full read of that retained ledger cannot fit 30 seconds.
+  Even for a small ledger, an estimated transaction that cannot fit remains
+  pending with zero attempts; drain stops on no verified delivery progress.
+  Capacity failure is reported, not hidden by increasing the per-slice cap.
+
+Before persisting attempting, admission reserves eight observed GitHub request
+latencies for preparation, up to five seconds for Slack POST, and twelve observed
+GitHub request latencies (minimum four seconds) for closeout/429/reconciliation.
+The POST receives a reserved-budget view and a nested Linux hard deadline; the
+outer absolute alarm is restored without extension. A timed-out POST is persisted
+as unknown while closeout time remains. These are mitigations, not a guarantee
+against process death, sudden slow GitHub reads or an unbounded reconciliation
+refresh. Never retry an unknown delivery automatically. Request latency metrics
+are run-local and contain no credentials, URLs or response bodies.
 
 Use the run's fixed diagnostic and durable state to choose the next action:
 
@@ -238,7 +278,8 @@ Use the run's fixed diagnostic and durable state to choose the next action:
 | `retry_wait` with no new delivery | Inspect the persisted next-attempt/channel-hold time and wait for a due existing run |
 | `unknown` or `needs_attention` | Reconcile the specific source and delivery evidence; do not reset attempts or replay automatically |
 
-Do not automatically increase the 30-second budget or eight-minute job timeout,
+Do not automatically increase the 30-second per-slice budget, eight-slice drain
+limit, or eight-minute job timeout,
 clear the ledger, discard history, weaken validation, or change storage to hide
 a scale problem. A migration, compaction design, or replay tool is a separate
 reviewed and authorized change.
@@ -324,3 +365,18 @@ access from an unchanged old comment. On failure it stops additional locks and
 reports the verified result; it never deletes comments, resets the ledger,
 replays unknown deliveries, or automatically unlocks a target. Current runner
 results, not this document, establish locked-writer compatibility.
+
+## Regression-test interpretation (2026-10-14 repair)
+
+The first three new latency acceptance cases implement the newly approved capacity
+and scheduling policy; they were not violations of the previous old-queue-first
+contract. Short-budget admission and POST-time history classification correct
+reliability/display edge cases. Existing crash, canonicalization, cooldown and
+unknown-quarantine protections remain mandatory. The source fixture's HTTP Date
+must be set on the fresh forward client, not a discarded predecessor instance.
+
+Observability scope: this repair adds `discovery_complete` and aggregate drain
+counts/stop reasons. Per-phase elapsed, cursor lag, oldest pending age, and exact
+POST-start/response/receipt-readback timing are not implemented yet. Do not infer
+those timings from attempted_at/delivered_at or claim the full observability
+proposal is complete.
