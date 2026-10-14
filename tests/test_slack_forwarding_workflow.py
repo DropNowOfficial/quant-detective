@@ -185,9 +185,10 @@ def test_workflow_scopes_credentials_and_forwards_only_remaining_activity_budget
     assert forward == common | {
         "QD_SLACK_WEBHOOK_URL": "${{ secrets.QD_SLACK_WEBHOOK_URL }}",
         "QD_SLACK_REMAINING_BUDGET": "${{ steps.slack_prepare.outputs.remaining_budget }}",
+        "QD_SLACK_JOB_STARTED_MONOTONIC": "${{ steps.job_budget.outputs.started_monotonic }}",
     }
     assert run_command(step("slack_forward")) == (
-        'python3 -m market_data.slack_alerts forward --budget-seconds "$QD_SLACK_REMAINING_BUDGET"')
+        'python3 -m market_data.slack_drain --first-budget-seconds "$QD_SLACK_REMAINING_BUDGET"')
     assert workflow().count("secrets.QD_SLACK_WEBHOOK_URL") == 1
     assert workflow().count("secrets.GITHUB_TOKEN") == 4
     assert workflow().count("env:") == 4
@@ -212,7 +213,8 @@ def test_workflow_preserves_schedule_concurrency_permissions_and_scan_summary():
     assert section(text, "concurrency") == "  group: hosted-core-watch-fallback\n  cancel-in-progress: false\n\n"
     assert "    branches: [main]\n" in triggers
     assert re.findall(r"^      - '(.+)'$", triggers, re.M) == [
-        "market_data/github_alerts.py", "market_data/slack_alerts.py", "market_data/scan_health.py",
+        "market_data/github_alerts.py", "market_data/slack_alerts.py", "market_data/slack_drain.py",
+        "market_data/scan_health.py",
         "market_data/us_watch.py", "market_data/quote_validity.py", ".github/workflows/market-watch.yml"]
     summary = steps()["Write compact run summary"].split("\n", 1)[1].rstrip() + "\n"
     # Exact pre-existing scan-summary block from baseline 582db9d.
