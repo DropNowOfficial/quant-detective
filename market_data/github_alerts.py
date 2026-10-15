@@ -138,7 +138,11 @@ def _event_markdown(event: dict, *, generated_at_et: str | None = None,
         lines.append(f"- Regime: NQ={_fmt(nq.get('change_pct'))}% | ES={_fmt(es.get('change_pct'))}% | QQQ={_fmt(qqq.get('change_pct'))}%")
         for symbol, proxy in context.items():
             provenance = proxy.get("quote_validity") or {}
-            lines.append(f"- {symbol} source bar: {provenance.get('source_bar_start_utc')} to {provenance.get('source_bar_end_utc')}; HTTP receipt: {provenance.get('received_at_utc')}")
+            if symbol in {"NQ=F", "ES=F"}:
+                availability = proxy.get("availability") or {}
+                lines.append(f"- {symbol} source observation: {provenance.get('source_bar_start_utc')}; bar completion unverified; HTTP receipt: {provenance.get('received_at_utc')}; availability: {availability.get('status', 'UNVERIFIED')} (not certified real-time)")
+            else:
+                lines.append(f"- {symbol} source bar: {provenance.get('source_bar_start_utc')} to {provenance.get('source_bar_end_utc')}; HTTP receipt: {provenance.get('received_at_utc')}")
     news = event.get("news") or []
     if news:
         lines.append("- Recent news context:")

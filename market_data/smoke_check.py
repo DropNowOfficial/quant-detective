@@ -7,7 +7,8 @@ Missing current-date bars that produce ERROR rows remain failures.
 
 Evidence is validated at report generation, with a separate 120-second report
 age limit. This checks the captured scan, not present publication eligibility.
-Futures must remain fresh; this helper does not model CME closure exceptions.
+Futures remain unavailable during a narrowly evidenced normal-day CME maintenance
+and Yahoo delayed-reopen window. This is a limited pass, never fresh futures data.
 """
 from __future__ import annotations
 
@@ -20,7 +21,7 @@ from pathlib import Path
 
 from .quote_validity import (
     BAR_SECONDS, CLOCK_SKEW_SECONDS, ET, RECEIPT_MAX_SECONDS,
-    previous_session_date, quote_evidence, session_bounds, session_name, utc_time,
+    previous_session_date, quote_evidence, session_bounds, session_name, utc_time, futures_availability,
 )
 
 SYMBOLS = ("NVDA", "TSM", "MSFT")
@@ -230,6 +231,7 @@ def validate_report(report, *, symbols=SYMBOLS, scan_exit_code, now=None):
 
     context = _object(report.get("market_context"), "market_context")
     _require(set(context) == {"NQ=F", "ES=F", "QQQ"}, "missing or unexpected market proxies")
+    futures_limited = False
     for symbol, proxy in context.items():
         proxy = _object(proxy, symbol)
         _require(proxy.get("symbol") == symbol, f"{symbol}: mismatched proxy symbol")
@@ -242,11 +244,19 @@ def validate_report(report, *, symbols=SYMBOLS, scan_exit_code, now=None):
             _require(_finite(proxy.get("price")) and proxy["price"] > 0 and _finite(proxy.get("change_pct")),
                      f"{symbol}: invalid live proxy values")
         else:
-            _require(not live_window and symbol == "QQQ", f"{symbol}: invalid live proxy data: {proof['rejection_reasons']}")
-            _closed_equity(proof, generated, symbol)
+            if symbol in {"NQ=F", "ES=F"}:
+                availability = futures_availability(proxy, generated)
+                _require(proxy.get("availability") == availability, f"{symbol}: inconsistent futures availability")
+                _require(availability["status"] in {"EXPECTED_MAINTENANCE", "EXPECTED_DELAYED_REOPEN"}
+                         and proof["rejection_reasons"] == ["BAR_EXPIRED"],
+                         f"{symbol}: invalid live proxy data: {proof['rejection_reasons']}")
+                futures_limited = True
+            else:
+                _require(not live_window, f"{symbol}: invalid live proxy data: {proof['rejection_reasons']}")
+                _closed_equity(proof, generated, symbol)
             _require(proxy.get("price") is None and proxy.get("change_pct") is None,
                      f"{symbol}: rejected proxy values were not cleared")
-    return "EXPECTED_CLOSED_SESSION_REJECTION" if incomplete else "FRESH_DATA_PASS"
+    return "EXPECTED_CLOSED_SESSION_REJECTION" if incomplete else "EXPECTED_FUTURES_LIMITATION" if futures_limited else "FRESH_DATA_PASS"
 
 
 def main(argv=None):
@@ -259,6 +269,7 @@ def main(argv=None):
         report = json.loads(Path(args.report).read_text(encoding="utf-8"))
         label = validate_report(report, scan_exit_code=args.scan_exit_code)
         detail = {
+            "EXPECTED_FUTURES_LIMITATION": "Equity checks passed; CME maintenance / delayed reopening verified within the bounded source window. Futures values remain unavailable, not real-time.",
             "FRESH_DATA_PASS": "Fresh data passed all smoke symbols at report generation.",
             "EXPECTED_SESSION_SKIP": "Runtime is outside the supported session; no market data was fetched.",
             "EXPECTED_SESSION_END": "The session ended during the scan; retained evidence is diagnostic only and no alerts were published.",

@@ -488,3 +488,37 @@ def test_boundary_publication_needs_coherent_preclose_request_evidence(mutate):
     mutate(report)
     with pytest.raises(ValueError):
         check(report)
+
+
+def maintenance_report(source='2026-10-15T16:59:59-04:00'):
+    from market_data.quote_validity import refresh_market_context
+    report = report_at('2026-10-15T18:09:09-04:00', '2026-10-15T18:07:00-04:00')
+    now = moment(report['generated_at_utc'])
+    for symbol in ('NQ=F','ES=F'):
+        proxy = report['market_context'][symbol]
+        proxy.update(source='Yahoo Finance public chart', exchange='CME', currency='USD', instrument_type='FUTURE',
+                     last_bar_utc=moment(source).isoformat(),
+                     quote_validity=quote_evidence(moment(source).timestamp(), now, now, equity=False))
+    report['market_context'] = refresh_market_context(report['market_context'], now)
+    return report
+
+
+def test_cme_delayed_reopen_pass_is_explicitly_limited():
+    report = maintenance_report()
+    assert check(report) == 'EXPECTED_FUTURES_LIMITATION'
+    for symbol in ('NQ=F','ES=F'):
+        assert report['market_context'][symbol]['price'] is None
+        assert report['market_context'][symbol]['change_pct'] is None
+
+
+@pytest.mark.parametrize('source', ['2026-10-15T16:40:00-04:00','2026-10-14T16:59:59-04:00'])
+def test_cme_window_does_not_excuse_abnormally_old_data(source):
+    with pytest.raises(ValueError):
+        check(maintenance_report(source))
+
+
+def test_asserted_cme_availability_is_not_proof():
+    report = maintenance_report()
+    report['market_context']['NQ=F']['availability']['status'] = 'EXPECTED_MAINTENANCE'
+    with pytest.raises(ValueError):
+        check(report)
