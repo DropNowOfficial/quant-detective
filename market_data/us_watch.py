@@ -23,7 +23,8 @@ from zoneinfo import ZoneInfo
 
 from .transport import fetch
 from .quote_validity import (confirmation_evidence, quote_evidence, session_name, utc_time,
-                             refresh_intraday, refresh_market_context, previous_session_date)
+                             refresh_intraday, refresh_market_context, previous_session_date,
+                             session_bounds)
 
 ET = ZoneInfo("America/New_York")
 DEFAULT_SYMBOLS = (
@@ -111,17 +112,63 @@ def _chart(fetcher, symbol, *, range_value, interval, include_prepost, require_u
     return rows, meta, receipt
 
 
+def _qqq_reference(fetcher, quote_stamp, now, clock=None):
+    """Dated, completed prior-session raw close; undated metadata is not evidence."""
+    quote_time = datetime.fromtimestamp(quote_stamp, timezone.utc)
+    day = quote_time.astimezone(ET).date()
+    result = {"prior_reference": None, "reference_status": "UNKNOWN",
+              "quote_session_date": day.isoformat(), "reference_session_date": None,
+              "reference_basis": "PREVIOUS_XNYS_SESSION_UNADJUSTED_DAILY_CLOSE"}
+    try:
+        if session_name(quote_stamp) not in {"PRE", "RTH", "POST"}:
+            raise ValueError("quote is outside a supported equity session")
+        expected = previous_session_date(quote_time)
+        result["expected_reference_session_date"] = expected
+        rows, meta, receipt = _chart(fetcher, "QQQ", range_value="1mo", interval="1d",
+                                     include_prepost=False)
+        now = clock() if clock else now
+        received = utc_time(receipt.get("received_at_utc"))
+        result["reference_known_at"] = receipt.get("received_at_utc")
+        result["reference_source"] = _yahoo_url("QQQ", range_value="1mo", interval="1d", include_prepost=False)
+        bounds = session_bounds(datetime.fromisoformat(expected).date())
+        if received is None or received > now or received < bounds[1]:
+            raise ValueError("reference receipt missing, future, or before session completion")
+        matching = [r for r in rows if datetime.fromtimestamp(r["t"], timezone.utc).astimezone(ET).date().isoformat() == expected]
+        if len(matching) != 1:
+            raise ValueError("exactly one daily bar for previous session required")
+        row = matching[0]
+        if row["t"] != int(bounds[0].timestamp()) or row["close"] <= 0:
+            raise ValueError("daily bar must be anchored to session open with positive close")
+        result.update(prior_reference=row["close"], reference_status="VERIFIED",
+                      reference_session_date=expected, reference_close_utc=bounds[1].isoformat())
+    except Exception as exc:
+        result["reference_reason"] = f"{type(exc).__name__}: {str(exc)[:200]}"
+    return result
+
+
 def _market_proxy(fetcher, symbol, now, clock=None):
     try:
         rows, meta, receipt = _chart(fetcher, symbol, range_value="5d", interval="5m",
-                                     include_prepost=True, require_us_equity=False)
+                                     include_prepost=True, require_us_equity=(symbol == "QQQ"))
         last = max(rows, key=lambda row: row["t"])
         now = clock() if clock else now
         prior = next((float(meta[k]) for k in ("regularMarketPreviousClose", "chartPreviousClose", "previousClose")
                       if _finite(meta.get(k))), None)
+        reference = {}
+        validity = quote_evidence(last["t"], receipt.get("received_at_utc"), now, equity=(symbol == "QQQ"))
+        if symbol == "QQQ":
+            reference = {"prior_reference": None, "reference_status": "UNKNOWN",
+                         "reference_session_date": None, "reference_reason": "QUOTE_NOT_CURRENT_OR_VALID"}
+            if validity["eligible"]:
+                reference = _qqq_reference(fetcher, last["t"], now, clock)
+            now = clock() if clock else now
+            validity = quote_evidence(last["t"], receipt.get("received_at_utc"), now, equity=True)
+            if not validity["eligible"]:
+                reference.update(prior_reference=None, reference_status="UNKNOWN", reference_reason="QUOTE_NOT_CURRENT_OR_VALID")
+            prior = reference["prior_reference"]
         return {
             "ok": True,
-            "quote_validity": quote_evidence(last["t"], receipt.get("received_at_utc"), now, equity=(symbol == "QQQ")),
+            "quote_validity": validity,
             "symbol": symbol,
             "instrument_type": meta.get("instrumentType"),
             "price": last["close"],
@@ -130,6 +177,7 @@ def _market_proxy(fetcher, symbol, now, clock=None):
             "last_bar_utc": datetime.fromtimestamp(last["t"], timezone.utc).isoformat(),
             "known_at": receipt.get("received_at_utc"),
             "role": "OVERNIGHT_REGIME_PROXY",
+            **reference,
         }
     except Exception as exc:
         return {"ok": False, "symbol": symbol, "role": "OVERNIGHT_REGIME_PROXY",
