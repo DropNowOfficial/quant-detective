@@ -72,8 +72,11 @@ def previous_session_date(now):
 def quote_evidence(stamp, received_at, now, *, equity=True, daily_date=None, require_daily=False):
     start = _bar_time(stamp)
     receipt = utc_time(received_at)
-    end = start + timedelta(seconds=BAR_SECONDS) if start else None
-    expiry = end + timedelta(seconds=BAR_SECONDS + GRACE_SECONDS) if end else None
+    # Yahoo futures timestamps can be irregular observations, not documented
+    # bucket opens. Preserve the old 11-minute observation-age gate without
+    # inventing a completed futures bar or adding five minutes across closure.
+    end = start + timedelta(seconds=BAR_SECONDS) if start and equity else None
+    expiry = start + timedelta(seconds=2 * BAR_SECONDS + GRACE_SECONDS) if start else None
     receipt_expiry = receipt + timedelta(seconds=RECEIPT_MAX_SECONDS) if receipt else None
     reasons = []
     if receipt is None:
@@ -201,6 +204,8 @@ def refresh_market_context(context, now):
             proxy.setdefault("observed_price", proxy.get("price"))
             proxy.setdefault("observed_change_pct", proxy.get("change_pct"))
             proxy["price"] = proxy["change_pct"] = None
+        if symbol in {"NQ=F", "ES=F"}:
+            proxy["availability"] = futures_availability(proxy, now)
         out[symbol] = proxy
     return out
 
@@ -233,3 +238,64 @@ def publication_event(event, now=None):
     return {**event, **state, "quote_validity": intra["quote_validity"],
             "confirmation_validity": intra["confirmation_validity"], "market_context": context,
             "classification_inputs": {"daily": inputs["daily"], "intraday": intra}}, None
+
+
+@lru_cache(maxsize=8)
+def _cme_exclusion_calendar(year):
+    # CMES is NOT an ES/NQ session calendar. Only use its special/closed days
+    # to deny the narrow ordinary-weekday exception below.
+    return xc.get_calendar('CMES', start=f'{year-1}-12-01', end=f'{year+1}-01-31')
+
+
+def _ordinary_cme_maintenance_day(day):
+    if day.weekday() >= 4:
+        return False
+    for candidate in (day, day + timedelta(days=1)):
+        ny = session_bounds(candidate)
+        cal = _cme_exclusion_calendar(candidate.year)
+        label = candidate.isoformat()
+        if ny is None or ny[1].astimezone(ET).hour != 16 or not cal.is_session(label):
+            return False
+        if cal.session_close(label).to_pydatetime().astimezone(ET).time().isoformat() != '18:00:00':
+            return False
+    return True
+
+
+def futures_availability(proxy, now):
+    """Narrow source-delay diagnostic, never an extension of quote eligibility.
+
+    Normal Mon-Thu only; special/holiday/weekend schedules are not certified.
+    Timestamp is an observation, NOT a verified five-minute bar opening.
+    """
+    result = {'version': 1, 'status': 'UNVERIFIED_OR_UNEXPECTED',
+              'realtime_eligible': False, 'source_bar_end_utc': None,
+              'provider_delay_seconds': 600, 'evaluated_at_utc': now.isoformat(),
+              'basis': 'CME_NORMAL_WEEKDAY_17_18_ET_YAHOO_10_MIN_DELAY',
+              'calendar_scope': 'NORMAL_MON_THU_ONLY_SPECIAL_DAYS_UNVERIFIED'}
+    stamp, receipt = utc_time(proxy.get('last_bar_utc')), utc_time(proxy.get('known_at'))
+    if (proxy.get('symbol') not in {'NQ=F', 'ES=F'}
+            or proxy.get('source') != 'Yahoo Finance public chart'
+            or proxy.get('instrument_type') != 'FUTURE' or proxy.get('exchange') != 'CME'
+            or proxy.get('currency') != 'USD' or stamp is None or receipt is None
+            or not 0 <= (now - receipt).total_seconds() <= RECEIPT_MAX_SECONDS
+            or stamp > receipt or stamp > now):
+        return result
+    local = now.astimezone(ET)
+    if not _ordinary_cme_maintenance_day(local.date()):
+        return result
+    close = local.replace(hour=17, minute=0, second=0, microsecond=0)
+    reopen = close + timedelta(hours=1)
+    deadline = reopen + timedelta(minutes=10)
+    if not close <= local < deadline:
+        return result
+    # A 5m observation plus the existing 60s grace, measured against the
+    # delayed source clock capped at maintenance. No fabricated bar close.
+    latest_expected = min(local - timedelta(minutes=10), close)
+    if not latest_expected - timedelta(seconds=BAR_SECONDS + GRACE_SECONDS) <= stamp < close:
+        return result
+    result.update(status='EXPECTED_MAINTENANCE' if local < reopen else 'EXPECTED_DELAYED_REOPEN',
+                  maintenance_start_utc=close.astimezone(timezone.utc).isoformat(),
+                  reopen_utc=reopen.astimezone(timezone.utc).isoformat(),
+                  exception_ends_at_utc=deadline.astimezone(timezone.utc).isoformat(),
+                  source_observation_utc=stamp.isoformat())
+    return result

@@ -212,7 +212,7 @@ def install_synthetic_charts(monkeypatch, *, receipt="2026-10-05T09:42:00-04:00"
     daily_rows = []
     for i, day in enumerate(sessions):
         close = 98 + i * .1
-        daily_rows.append({"t": int(day.timestamp()) + 14 * 3600,
+        daily_rows.append({"t": int(_calendar(2026).session_open(day).timestamp()),
                            "open": close, "high": close + .5, "low": close - .5,
                            "close": close, "volume": 1000})
     rows = [bar("2026-10-05T09:30:00-04:00", 100.25), bar("2026-10-05T09:35:00-04:00", 100.3)]
@@ -438,8 +438,10 @@ def test_alert_displays_separate_proxy_source_and_receipt_times():
         moment("2026-10-05T09:40:00-04:00").timestamp(), "2026-10-05T09:41:53-04:00",
         moment("2026-10-05T09:42:00-04:00"), equity=False)}}
     text = _event_markdown(event)
-    assert "NQ=F source bar" in text
-    assert "2026-10-05T13:45:00+00:00" in text
+    assert "NQ=F source observation" in text
+    assert "2026-10-05T13:40:00+00:00" in text
+    assert "bar completion unverified" in text
+    assert "2026-10-05T13:45:00+00:00" not in text
     assert "2026-10-05T09:41:53-04:00" in text
 
 
