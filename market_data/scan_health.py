@@ -85,6 +85,20 @@ def _health_sources(comments, issue, config):
     return sorted(sources, key=lambda source: (source.created_at, source.comment_id))
 
 
+def _coverage_worsened(assessment, previous):
+    """Compare trusted incident snapshots; equal-count symbol churn stays quiet."""
+    if (previous is None or previous.state != 'SCAN_DEGRADED'
+            or assessment['state'] != 'SCAN_DEGRADED' or not previous.body):
+        return False
+    counts = re.findall(r'^- Usable / requested symbols: ([0-9]{1,2}) / ([0-9]{1,2})$',
+                        previous.body, re.MULTILINE)
+    if len(counts) != 1:
+        return False
+    usable, requested = map(int, counts[0])
+    return (0 < usable < requested <= 60 and requested == assessment['requested']
+            and assessment['usable'] < usable)
+
+
 def publish_health(report, *, outcome, github, store, clock, delivery_test=False, run_id=None):
     """One verified source POST at most, never direct Slack or an uncertain retry."""
     assessment = {'state': 'SCAN_DELIVERY_TEST'} if delivery_test else assess(report, outcome)
@@ -113,9 +127,11 @@ def publish_health(report, *, outcome, github, store, clock, delivery_test=False
         previous = incidents[-1] if incidents else None
         if previous is None and state == 'SCAN_RECOVERED':
             return {'published': 0, 'reason': 'healthy_no_incident'}
-        if previous and state == previous.state:
+        coverage_worsened = _coverage_worsened(assessment, previous)
+        if previous and state == previous.state and not coverage_worsened:
             return {'published': 0, 'reason': 'unchanged'}
-        if (previous and (now - previous.created_at).total_seconds() < COOLDOWN_SECONDS
+        if (previous and not coverage_worsened
+                and (now - previous.created_at).total_seconds() < COOLDOWN_SECONDS
                 and SEVERITY[state] <= SEVERITY[previous.state]):
             return {'published': 0, 'reason': 'cooldown'}
         symbol = 'SCANNER.' + str(previous.comment_id if previous else 0)
