@@ -31,6 +31,7 @@ MAX_ATTEMPTS = 3
 SHARD_RECORDS = 64
 SHARD_BYTES = 48 * 1024
 BUDGET_SECONDS = 30
+EXTENDED_SLICE_SECONDS = 60
 MIN_SEND_INTERVAL = 1
 RECORD_BYTES = 40 * 1024
 MAX_VISIBLE_TEXT = 36_000
@@ -53,6 +54,47 @@ UTC = timezone.utc
 
 class LedgerUnavailable(RuntimeError):
     """The ledger cannot be completely read or trusted; stop dependent sends."""
+    def __init__(self, message="", *, reason="ledger_unavailable", http_status=None):
+        super().__init__(message)
+        self.reason = reason
+        self.http_status = http_status
+        self.stage = None
+        self.page = None
+
+
+def safe_discovery_diagnostic(value):
+    """Bounded machine evidence only; never serialize an exception or response."""
+    if not isinstance(value, dict):
+        return None
+    stage, reason = value.get("stage"), value.get("reason")
+    status, page = value.get("http_status"), value.get("page")
+    return {
+        "stage": stage if isinstance(stage, str) and stage in {
+            "load_ledger", "list_comments", "validate_cursor", "read_source_issue",
+            "reconcile_roots", "persist_retirements", "persist_roots",
+            "reload_ledger", "advance_cursor",
+        } else "unclassified",
+        "reason": reason if isinstance(reason, str) and reason in {
+            "http_status", "transport_timeout", "transport_failure", "invalid_json",
+            "pagination_invalid", "invalid_server_date", "cursor_regressed", "conflicting_attempts",
+            "ledger_unavailable",
+        } else "ledger_unavailable",
+        "http_status": status if type(status) is int and 100 <= status <= 599 else None,
+        "page": page if type(page) is int and 1 <= page <= 1_000_000 else None,
+    }
+
+
+@contextmanager
+def _diagnostic_context(*, stage=None, page=None):
+    try:
+        yield
+    except LedgerUnavailable as error:
+        # Enrich the same exception object; preserve subclass and control flow.
+        if stage is not None and error.stage is None:
+            error.stage = stage
+        if page is not None and error.page is None:
+            error.page = page
+        raise
 
 
 class SourceMissing(LedgerUnavailable):
@@ -183,6 +225,43 @@ class Summary:
     discovery_complete: bool = False
     budget_stop_stage: str | None = None
     safe_pending_continuation: bool = False
+    discovery_deferred: bool = False
+    budget_diagnostic: dict | None = None
+    discovery_failure: dict | None = None
+
+
+BUDGET_PHASES = frozenset({
+    "ledger_load", "recover_attempts", "discovery", "queue_select",
+    "channel_wait", "source_validation", "pre_attempt_reserve", "attempt_write",
+    "channel_reservation", "post", "receipt", "channel_closeout",
+})
+
+
+def safe_budget_diagnostic(value):
+    """Whitelist bounded numeric evidence only; never echo child text/objects."""
+    if not isinstance(value, dict) or type(value.get("phase")) is not str or value["phase"] not in BUDGET_PHASES:
+        return None
+
+    def numbers(source, keys):
+        result = {}
+        if not isinstance(source, dict):
+            return result
+        for key in keys:
+            number = source.get(key)
+            if (type(number) in (int, float) and 0 <= number <= 1_000_000
+                    and math.isfinite(number)
+                    and (key != "request_count" or type(number) is int)):
+                result[key] = number
+        return result
+
+    result = {"phase": value["phase"]}
+    result.update(numbers(value, ("remaining_seconds", "required_reserve_seconds",
+                                 "observed_peak_seconds", "request_count", "request_seconds")))
+    phases = value.get("phases")
+    if isinstance(phases, dict):
+        result["phases"] = {phase: numbers(phases[phase], ("request_count", "request_seconds"))
+                            for phase in sorted(BUDGET_PHASES) if phase in phases}
+    return result
 
 
 def _json(value) -> str:
@@ -376,7 +455,8 @@ def _server_date(response):
         value = parsedate_to_datetime(_header(response.headers, "Date") or "")
         return _utc(value)
     except (ValueError, TypeError, IndexError):
-        raise LedgerUnavailable("Missing trusted GitHub response Date") from None
+        raise LedgerUnavailable("Missing trusted GitHub response Date",
+                                reason="invalid_server_date", http_status=response.status) from None
 
 
 def _trusted_author(item, config: Config) -> bool:
@@ -429,16 +509,21 @@ class GitHubClient:
                                          body=None if document is None else _json(document).encode(), timeout=timeout)
         except BudgetExpired:
             raise
-        except Exception:
-            raise LedgerUnavailable("GitHub transport unavailable") from None
+        except Exception as error:
+            timeout = (isinstance(error, TimeoutError) or
+                       isinstance(error, TransportFailure) and error.code == "transport_timeout")
+            raise LedgerUnavailable("GitHub transport unavailable",
+                                    reason="transport_timeout" if timeout else "transport_failure") from None
         if response.status == 404:
-            raise SourceMissing("GitHub resource is missing")
+            raise SourceMissing("GitHub resource is missing", reason="http_status", http_status=404)
         if not 200 <= response.status < 300:
-            raise LedgerUnavailable("GitHub response was unsuccessful")
+            raise LedgerUnavailable("GitHub response was unsuccessful", reason="http_status",
+                                    http_status=response.status)
         try:
             value = json.loads(response.body)
         except (ValueError, UnicodeError):
-            raise LedgerUnavailable("GitHub response was malformed") from None
+            raise LedgerUnavailable("GitHub response was malformed", reason="invalid_json",
+                                    http_status=response.status) from None
         try:
             self.server_time = _server_date(response)
         except LedgerUnavailable:
@@ -464,29 +549,30 @@ class GitHubClient:
         page = 1
         next_page_advertised = False
         while True:
-            value, response = self._request("GET", path + "?" + urlencode(query | {"per_page": 100, "page": page}))
-            if repo_comments and page == 1:
-                self.repo_comments_started_at = _server_date(response)
-            if not isinstance(value, list) or len(value) > 100 or (next_page_advertised and not value):
-                raise LedgerUnavailable("Invalid GitHub pagination")
-            for item in value:
-                if not isinstance(item, dict) or type(item.get("id")) is not int or item["id"] <= 0 or item["id"] in seen:
-                    raise LedgerUnavailable("Duplicate or invalid GitHub page record")
-                seen.add(item["id"])
-                items.append(item)
-            link = _header(response.headers, "Link") or ""
-            next_links = re.findall(r'<([^>]+)>;\s*rel="next"', link)
-            if next_links:
-                if len(next_links) != 1:
-                    raise LedgerUnavailable("Ambiguous GitHub next page")
-                target = urlsplit(next_links[0])
-                expected = {k: [str(v)] for k, v in (query | {"per_page": 100, "page": page + 1}).items()}
-                if target.scheme != "https" or target.netloc != "api.github.com" or target.path != path or target.fragment or parse_qs(target.query) != expected or not value:
-                    raise LedgerUnavailable("Invalid GitHub next page")
-            elif len(value) < 100:
-                return items
-            next_page_advertised = bool(next_links)
-            page += 1
+            with _diagnostic_context(page=page):
+                value, response = self._request("GET", path + "?" + urlencode(query | {"per_page": 100, "page": page}))
+                if repo_comments and page == 1:
+                    self.repo_comments_started_at = _server_date(response)
+                if not isinstance(value, list) or len(value) > 100 or (next_page_advertised and not value):
+                    raise LedgerUnavailable("Invalid GitHub pagination", reason="pagination_invalid", http_status=response.status)
+                for item in value:
+                    if not isinstance(item, dict) or type(item.get("id")) is not int or item["id"] <= 0 or item["id"] in seen:
+                        raise LedgerUnavailable("Duplicate or invalid GitHub page record", reason="pagination_invalid", http_status=response.status)
+                    seen.add(item["id"])
+                    items.append(item)
+                link = _header(response.headers, "Link") or ""
+                next_links = re.findall(r'<([^>]+)>;\s*rel="next"', link)
+                if next_links:
+                    if len(next_links) != 1:
+                        raise LedgerUnavailable("Ambiguous GitHub next page", reason="pagination_invalid", http_status=response.status)
+                    target = urlsplit(next_links[0])
+                    expected = {k: [str(v)] for k, v in (query | {"per_page": 100, "page": page + 1}).items()}
+                    if target.scheme != "https" or target.netloc != "api.github.com" or target.path != path or target.fragment or parse_qs(target.query) != expected or not value:
+                        raise LedgerUnavailable("Invalid GitHub next page", reason="pagination_invalid", http_status=response.status)
+                elif len(value) < 100:
+                    return items
+                next_page_advertised = bool(next_links)
+                page += 1
 
     def list_issue_comments(self, number: int) -> list[dict]:
         _integer(number, 1)
@@ -1018,7 +1104,8 @@ def discover(store: LedgerStore, github: GitHubClient, clock: Clock, budget: Bud
     if github.config != store.config:
         raise LedgerUnavailable("Discovery configuration mismatch")
     budget.require()
-    ledger = store.load()
+    with _diagnostic_context(stage="load_ledger"):
+        ledger = store.load()
     original_source_ids = frozenset(ledger.entries)
     since = max(ledger.manifest.enabled_at - timedelta(seconds=1),
                 ledger.manifest.cursor - timedelta(seconds=OVERLAP_SECONDS))
@@ -1031,10 +1118,12 @@ def discover(store: LedgerStore, github: GitHubClient, clock: Clock, budget: Bud
         github.budget = read_budget
     try:
         read_budget.require()
-        comments = github.list_repo_comments(since)
-        started_at = _utc(github.repo_comments_started_at)
-        if started_at < ledger.manifest.cursor:
-            raise LedgerUnavailable("GitHub discovery time predates durable cursor")
+        with _diagnostic_context(stage="list_comments"):
+            comments = github.list_repo_comments(since)
+        with _diagnostic_context(stage="validate_cursor"):
+            started_at = _utc(github.repo_comments_started_at)
+            if started_at < ledger.manifest.cursor:
+                raise LedgerUnavailable("GitHub discovery time predates durable cursor", reason="cursor_regressed")
         entries, issues = dict(ledger.entries), {}
         for comment in comments:
             read_budget.require()
@@ -1051,7 +1140,8 @@ def discover(store: LedgerStore, github: GitHubClient, clock: Clock, budget: Bud
             if number is None:
                 continue
             if number not in issues:
-                issues[number], _ = github.get_issue(number)
+                with _diagnostic_context(stage="read_source_issue"):
+                    issues[number], _ = github.get_issue(number)
             source = parse_source(comment, issues[number], store.config)
             if source is not None and after_baseline(source, ledger.manifest):
                 candidate = Entry(source, "pending", 0, None, None, None, None, None, None)
@@ -1072,7 +1162,8 @@ def discover(store: LedgerStore, github: GitHubClient, clock: Clock, budget: Bud
     for group in groups.values():
         attempted = [entry for entry in group if _was_attempted(entry)]
         if len(attempted) > 1:
-            raise LedgerUnavailable("Conflicting attempted sources for one event")
+            with _diagnostic_context(stage="reconcile_roots"):
+                raise LedgerUnavailable("Conflicting attempted sources for one event", reason="conflicting_attempts")
         canonical = attempted[0] if attempted else group[0]
         root_id = canonical.source.comment_id
         roots.add(root_id)
@@ -1106,11 +1197,14 @@ def discover(store: LedgerStore, github: GitHubClient, clock: Clock, budget: Bud
         batch = [entry for entry in changes if (entry.source.comment_id in roots) == is_root]
         if batch:
             budget.require()
-            store.put_many(batch)
+            with _diagnostic_context(stage="persist_roots" if is_root else "persist_retirements"):
+                store.put_many(batch)
     budget.require()
-    durable = store.load()
+    with _diagnostic_context(stage="reload_ledger"):
+        durable = store.load()
     budget.require()
-    store.update_manifest(replace(durable.manifest, cursor=started_at))
+    with _diagnostic_context(stage="advance_cursor"):
+        store.update_manifest(replace(durable.manifest, cursor=started_at))
     return len(roots - original_source_ids)
 
 
@@ -1365,7 +1459,8 @@ def _later(now: datetime, seconds: int | float) -> datetime:
 
 
 def _summary(ledger: Ledger | None, delivered=0, paused=None, *, discovery_complete=False,
-             budget_stop_stage=None, safe_pending_continuation=False) -> Summary:
+             budget_stop_stage=None, safe_pending_continuation=False, discovery_deferred=False, budget_diagnostic=None,
+             discovery_failure=None) -> Summary:
     entries = list(ledger.entries.values()) if ledger is not None else []
     counts = {status: sum(entry.status == status for entry in entries) for status in STATUSES}
     return Summary(delivered, counts["pending"], counts["retry_wait"], counts["unknown"],
@@ -1373,7 +1468,8 @@ def _summary(ledger: Ledger | None, delivered=0, paused=None, *, discovery_compl
                    sum(entry.status == "needs_attention" and (entry.reason or "").startswith(
                        ("oversized:", "payload_rejected", "webhook_rejected", "invalid_webhook_url"))
                        for entry in entries), paused, discovery_complete,
-                   budget_stop_stage, safe_pending_continuation)
+                   budget_stop_stage, safe_pending_continuation, discovery_deferred,
+                   safe_budget_diagnostic(budget_diagnostic), safe_discovery_diagnostic(discovery_failure))
 
 
 class ReservedBudget:
@@ -1394,6 +1490,10 @@ class TimedHTTP:
     def __init__(self, wrapped: HttpClient, clock: Clock, observations=None):
         self.wrapped, self.clock = wrapped, clock
         self.observations = observations if observations is not None else [0.0]
+        self.phase = "ledger_load"
+        self.request_count = 0
+        self.request_seconds = 0.0
+        self.phases = {}
 
     @property
     def max_seconds(self):
@@ -1404,7 +1504,13 @@ class TimedHTTP:
         try:
             return self.wrapped.request(*args, **kwargs)
         finally:
-            self.observations[0] = max(self.max_seconds, self.clock.monotonic() - start)
+            elapsed = max(0.0, self.clock.monotonic() - start)
+            self.observations[0] = max(self.max_seconds, elapsed)
+            self.request_count += 1
+            self.request_seconds += elapsed
+            counts = self.phases.setdefault(self.phase, {"request_count": 0, "request_seconds": 0.0})
+            counts["request_count"] += 1
+            counts["request_seconds"] += elapsed
 
 
 def _fresh(entry: Entry, now: datetime, *, attempted=False) -> bool:
@@ -1466,12 +1572,31 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
     Complete discovery precedes fair fresh/history selection. No result re-runs market
     analysis. Every unconfirmed attempt is quarantined rather than replayed.
     """
+    def mark(phase):
+        if isinstance(github.http, TimedHTTP):
+            github.http.phase = phase
+        return phase
+
+    def diagnostic():
+        # GitHub requests only: includes failed calls, excludes sleeps and Slack.
+        return safe_budget_diagnostic({
+            "phase": stage, "remaining_seconds": budget.remaining(),
+            "required_reserve_seconds": required_reserve,
+            "observed_peak_seconds": getattr(github.http, "max_seconds", None),
+            "request_count": getattr(github.http, "request_count", None),
+            "request_seconds": getattr(github.http, "request_seconds", None),
+            "phases": getattr(github.http, "phases", None),
+        })
+
+    required_reserve = None
     ledger = None
     delivered = 0
     discovery_complete = False
     discovery_failed = False
+    discovery_deferred = False
+    discovery_failure = None
     queue_pause = None
-    stage = "ledger_load"
+    stage = mark("ledger_load")
     selected = None
     attempt_started = False
     post_budget_expired = False
@@ -1492,20 +1617,19 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
             store.update_manifest(value)
             ledger = Ledger(value, ledger.entries)
 
-        stage = "recover_attempts"
+        stage = mark("recover_attempts")
         for entry in list(ledger.entries.values()):
             if entry.status == "attempting":
                 save(replace(entry, status="unknown", reason="interrupted_attempt_unconfirmed"))
 
         discovery_failed = False
-        discovery_deferred = False
         observed = getattr(github.http, "max_seconds", 0.0)
         known_due = any(e.status in {"pending", "retry_wait"}
                         and (e.next_attempt_at is None or e.next_attempt_at <= clock.now())
                         for e in ledger.entries.values())
         read_reserve = (max(8.0, 10 * observed + 6.0 + max(4.0, 12 * observed))
                         if known_due else 0.0)
-        stage = "discovery"
+        stage = mark("discovery")
         try:
             discover(store, github, clock, budget, reserve_send_seconds=read_reserve)
             ledger = store.load()
@@ -1513,9 +1637,11 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
         except DiscoveryDeferred:
             # Deferral is raised only before discovery performs any mutations.
             discovery_deferred = True
-        except LedgerUncertain:
+        except LedgerUncertain as error:
+            discovery_failure = vars(error)
             raise
-        except LedgerUnavailable:
+        except LedgerUnavailable as error:
+            discovery_failure = vars(error)
             discovery_failed = True
             # Discovery may have durably retired roots before failing. Never
             # send from the pre-discovery snapshot after partial batch writes.
@@ -1526,9 +1652,9 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
         queue_pause = None
 
         def queue():
-            nonlocal delivered, ledger, fresh_streak, queue_pause, stage, selected, attempt_started, post_budget_expired
+            nonlocal delivered, ledger, fresh_streak, queue_pause, stage, selected, attempt_started, post_budget_expired, required_reserve
             while True:
-                stage = "queue_select"
+                stage = mark("queue_select")
                 selected = None
                 now = clock.now()
                 candidates = sorted((entry for entry in ledger.entries.values()
@@ -1554,10 +1680,10 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                     if delay > MIN_SEND_INTERVAL or rate_limited:
                         queue_pause = "channel_hold"
                         return False
-                    stage = "channel_wait"
+                    stage = mark("channel_wait")
                     budget.require(delay + 1)
                     clock.sleep(delay)
-                stage = "source_validation"
+                stage = mark("source_validation")
                 considered.add(entry.source.comment_id)
                 if entry.attempts >= MAX_ATTEMPTS:
                     save(replace(entry, status="needs_attention", reason="attempts_exhausted"))
@@ -1585,8 +1711,10 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                 # guarantee against process death or a sudden network stall.
                 observed = getattr(github.http, "max_seconds", 0.0)
                 receipt_reserve = max(4.0, 12 * observed)
-                stage = "pre_attempt_reserve"
-                budget.require(max(8.0, 8 * observed + 5.0 + receipt_reserve))
+                stage = mark("pre_attempt_reserve")
+                required_reserve = max(8.0, 8 * observed + 5.0 + receipt_reserve)
+                budget.require(required_reserve)
+                required_reserve = None
                 attempted = replace(entry, status="attempting", attempts=entry.attempts + 1,
                                     attempt_id=uuid4().hex, attempted_at=clock.now(),
                                     next_attempt_at=None, reason=None)
@@ -1596,18 +1724,18 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                     github.budget = send_budget
                     # From this point a durable write may have happened. Never
                     # infer safe replay from a stale in-memory pending snapshot.
-                    stage = "attempt_write"
+                    stage = mark("attempt_write")
                     attempt_started = True
                     save(attempted)
                     # Reserve through the outer slice deadline, not phase end.
-                    stage = "channel_reservation"
+                    stage = mark("channel_reservation")
                     manifest(replace(ledger.manifest, next_send_at=_later(
                         clock.now(), budget.remaining() + MIN_SEND_INTERVAL)))
                     send_budget.require()
                     # Use the immutable pre-attempt entry, freshly classified
                     # after durable writes: a first attempt is not a retry.
                     payload = format_payload(entry, clock.now())
-                    stage = "post"
+                    stage = mark("post")
                     try:
                         with _post_deadline(send_budget):
                             result = send_webhook(webhook_url, payload, http=http, budget=send_budget)
@@ -1620,7 +1748,7 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                 # Connecting can take longer than the channel interval. Hold
                 # from observed completion, which is after any actual write,
                 # so a faster next connection cannot collapse POST spacing.
-                stage = "receipt"
+                stage = mark("receipt")
                 next_send = _later(clock.now(), MIN_SEND_INTERVAL)
                 if result.kind == "accepted":
                     final = replace(attempted, status="delivered", delivered_at=clock.now(), reason=None)
@@ -1654,7 +1782,7 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                         raise LedgerUnavailable("Unexpected delivery receipt state") from None
                 if result.kind == "accepted":
                     delivered += 1
-                stage = "channel_closeout"
+                stage = mark("channel_closeout")
                 manifest(replace(ledger.manifest, next_send_at=next_send))
                 if result.status == 429:
                     queue_pause = "channel_hold"
@@ -1669,17 +1797,23 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
         return _summary(ledger, delivered, queue_pause or ("discovery_unavailable" if discovery_failed else
                                                          "discovery_deferred" if discovery_deferred else None),
                         discovery_complete=discovery_complete,
-                        budget_stop_stage="post" if post_budget_expired else None)
+                        budget_stop_stage="post" if post_budget_expired else None,
+                        discovery_deferred=discovery_deferred, discovery_failure=discovery_failure)
     except BudgetExpired:
         return _summary(ledger, delivered, queue_pause or ("discovery_unavailable" if discovery_failed else "budget_exhausted"),
                         discovery_complete=discovery_complete, budget_stop_stage=stage,
+                        budget_diagnostic=diagnostic(), discovery_failure=discovery_failure,
+                        discovery_deferred=discovery_deferred,
+                        # Deferral occurs before discovery mutates sources/cursor;
+                        # the fully loaded existing queue is still authoritative.
                         safe_pending_continuation=(
-                            stage == "pre_attempt_reserve" and discovery_complete
+                            stage == "pre_attempt_reserve" and (discovery_complete or discovery_deferred)
                             and not discovery_failed and queue_pause is None
                             and not attempt_started and selected is not None
                             and selected.status == "pending" and not _was_attempted(selected)))
     except LedgerUnavailable:
-        return _summary(ledger, delivered, "ledger_unavailable", discovery_complete=discovery_complete)
+        return _summary(ledger, delivered, "ledger_unavailable", discovery_complete=discovery_complete,
+                        discovery_deferred=discovery_deferred, discovery_failure=discovery_failure)
 
 
 def forward(config: Config, *, store: LedgerStore, github: GitHubClient,
@@ -1707,8 +1841,8 @@ class SystemClock:
 
 
 class MonotonicBudget:
-    def __init__(self, clock: Clock, seconds: float = BUDGET_SECONDS):
-        if not math.isfinite(seconds) or not 0 <= seconds <= BUDGET_SECONDS:
+    def __init__(self, clock: Clock, seconds: float = BUDGET_SECONDS, *, maximum=BUDGET_SECONDS):
+        if maximum not in (BUDGET_SECONDS, EXTENDED_SLICE_SECONDS) or not math.isfinite(seconds) or not 0 <= seconds <= maximum:
             raise ValueError("Invalid activity budget")
         self.clock = clock
         self.deadline = clock.monotonic() + seconds
@@ -1791,6 +1925,7 @@ def main(argv: list[str] | None = None) -> int:
         prepare_parser.add_argument("--initialize", action="store_true")
         forward_parser = commands.add_parser("forward")
         forward_parser.add_argument("--budget-seconds", type=float, default=BUDGET_SECONDS)
+        forward_parser.add_argument("--extended-slice", action="store_true")
         args = parser.parse_args(argv)
         preparing = args.command == "prepare"
         if os.environ.get("QD_SLACK_ENABLED") != "true":
@@ -1804,7 +1939,8 @@ def main(argv: list[str] | None = None) -> int:
             if preparing and args.initialize and os.environ.get("GITHUB_EVENT_NAME") != "workflow_dispatch":
                 raise ValueError("Initialization requires explicit trusted dispatch")
             clock = SystemClock()
-            budget = MonotonicBudget(clock, BUDGET_SECONDS if preparing else args.budget_seconds)
+            budget = MonotonicBudget(clock, BUDGET_SECONDS if preparing else args.budget_seconds,
+                                     maximum=(EXTENDED_SLICE_SECONDS if not preparing and args.extended_slice else BUDGET_SECONDS))
             issue = os.environ.get("QD_SLACK_LEDGER_ISSUE", "")
             producers = os.environ.get("QD_SLACK_PRODUCER_IDS", "")
             if not re.fullmatch(r"[1-9][0-9]*", issue) or producers != str(PRODUCER_ID):
