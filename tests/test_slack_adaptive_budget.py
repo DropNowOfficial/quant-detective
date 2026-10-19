@@ -48,6 +48,8 @@ def test_extended_forward_budget_is_explicit_and_bounded():
 
 
 def test_late_job_cannot_start_extended_pair(monkeypatch,capsys):
+    # A freshly booted CI runner may have less uptime than this synthetic job.
+    monkeypatch.setattr(sd.time, "monotonic", lambda: 1000.0)
     started=sd.time.monotonic() - (sd.JOB_TIMEOUT_SECONDS-sd.ARTIFACT_RESERVE_SECONDS-50)
     _,report,runner=execute(sd,monkeypatch,capsys,[capacity()],job_started=str(started))
     assert report['paused_reason']=='wall_limit' and len(runner.calls)==1
