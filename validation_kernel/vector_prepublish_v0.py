@@ -258,7 +258,7 @@ def demo_selftest():
 
     ok, rep = prepublish_check({
         "as_of": "2026-09-13",
-        "model_registry": str(_REPO_ROOT / "model_registry" / "DEEP_DURATION_FCFF_V1.2.json"),
+        "model_registry": str(_REPO_ROOT / "contracts" / "model_registry" / "DEEP_DURATION_FCFF_V1.2.json"),
         "outputs": {"growth_paths": [
             {"g": 0.22, "rr": 0.10, "iroic": None, "g_eff": None},
             {"g": 0.93, "rr": 0.10, "iroic": None, "g_eff": None},
@@ -270,7 +270,7 @@ def demo_selftest():
     # Clean V1.2 path should pass descriptive stress cite
     ok, rep = prepublish_check({
         "as_of": "2026-09-13",
-        "model_registry": str(_REPO_ROOT / "model_registry" / "DEEP_DURATION_FCFF_V1.2.json"),
+        "model_registry": str(_REPO_ROOT / "contracts" / "model_registry" / "DEEP_DURATION_FCFF_V1.2.json"),
         "outputs": {"growth_paths": [
             {"g": 0.222, "rr": 0.08, "iroic": 1.0, "g_eff": 0.142, "rr_is_proxy": True, "rr_label": "CapEx_guide/NOPAT"},
         ]},
