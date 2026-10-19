@@ -181,6 +181,8 @@ class Summary:
     rejected: int
     paused_reason: str | None
     discovery_complete: bool = False
+    budget_stop_stage: str | None = None
+    safe_pending_continuation: bool = False
 
 
 def _json(value) -> str:
@@ -1362,14 +1364,16 @@ def _later(now: datetime, seconds: int | float) -> datetime:
     return now + timedelta(seconds=seconds)
 
 
-def _summary(ledger: Ledger | None, delivered=0, paused=None, *, discovery_complete=False) -> Summary:
+def _summary(ledger: Ledger | None, delivered=0, paused=None, *, discovery_complete=False,
+             budget_stop_stage=None, safe_pending_continuation=False) -> Summary:
     entries = list(ledger.entries.values()) if ledger is not None else []
     counts = {status: sum(entry.status == status for entry in entries) for status in STATUSES}
     return Summary(delivered, counts["pending"], counts["retry_wait"], counts["unknown"],
                    counts["needs_attention"], counts["duplicate_source"],
                    sum(entry.status == "needs_attention" and (entry.reason or "").startswith(
                        ("oversized:", "payload_rejected", "webhook_rejected", "invalid_webhook_url"))
-                       for entry in entries), paused, discovery_complete)
+                       for entry in entries), paused, discovery_complete,
+                   budget_stop_stage, safe_pending_continuation)
 
 
 class ReservedBudget:
@@ -1467,6 +1471,10 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
     discovery_complete = False
     discovery_failed = False
     queue_pause = None
+    stage = "ledger_load"
+    selected = None
+    attempt_started = False
+    post_budget_expired = False
     try:
         if store.config != config or github.config != config:
             raise LedgerUnavailable("Forward configuration mismatch")
@@ -1484,6 +1492,7 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
             store.update_manifest(value)
             ledger = Ledger(value, ledger.entries)
 
+        stage = "recover_attempts"
         for entry in list(ledger.entries.values()):
             if entry.status == "attempting":
                 save(replace(entry, status="unknown", reason="interrupted_attempt_unconfirmed"))
@@ -1496,6 +1505,7 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                         for e in ledger.entries.values())
         read_reserve = (max(8.0, 10 * observed + 6.0 + max(4.0, 12 * observed))
                         if known_due else 0.0)
+        stage = "discovery"
         try:
             discover(store, github, clock, budget, reserve_send_seconds=read_reserve)
             ledger = store.load()
@@ -1516,8 +1526,10 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
         queue_pause = None
 
         def queue():
-            nonlocal delivered, ledger, fresh_streak, queue_pause
+            nonlocal delivered, ledger, fresh_streak, queue_pause, stage, selected, attempt_started, post_budget_expired
             while True:
+                stage = "queue_select"
+                selected = None
                 now = clock.now()
                 candidates = sorted((entry for entry in ledger.entries.values()
                                      if entry.status in {"pending", "retry_wait"}
@@ -1529,6 +1541,7 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                 fresh = [entry for entry in candidates if _fresh(entry, now)]
                 history = [entry for entry in candidates if not _fresh(entry, now)]
                 entry = (history if history and (fresh_streak >= 2 or not fresh) else fresh)[0]
+                selected = entry
                 budget.require(1)
                 now = clock.now()
                 if entry.next_attempt_at is not None and entry.next_attempt_at > now:
@@ -1541,8 +1554,10 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                     if delay > MIN_SEND_INTERVAL or rate_limited:
                         queue_pause = "channel_hold"
                         return False
+                    stage = "channel_wait"
                     budget.require(delay + 1)
                     clock.sleep(delay)
+                stage = "source_validation"
                 considered.add(entry.source.comment_id)
                 if entry.attempts >= MAX_ATTEMPTS:
                     save(replace(entry, status="needs_attention", reason="attempts_exhausted"))
@@ -1570,6 +1585,7 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                 # guarantee against process death or a sudden network stall.
                 observed = getattr(github.http, "max_seconds", 0.0)
                 receipt_reserve = max(4.0, 12 * observed)
+                stage = "pre_attempt_reserve"
                 budget.require(max(8.0, 8 * observed + 5.0 + receipt_reserve))
                 attempted = replace(entry, status="attempting", attempts=entry.attempts + 1,
                                     attempt_id=uuid4().hex, attempted_at=clock.now(),
@@ -1578,18 +1594,25 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                 send_budget = ReservedBudget(budget, receipt_reserve)
                 try:
                     github.budget = send_budget
+                    # From this point a durable write may have happened. Never
+                    # infer safe replay from a stale in-memory pending snapshot.
+                    stage = "attempt_write"
+                    attempt_started = True
                     save(attempted)
                     # Reserve through the outer slice deadline, not phase end.
+                    stage = "channel_reservation"
                     manifest(replace(ledger.manifest, next_send_at=_later(
                         clock.now(), budget.remaining() + MIN_SEND_INTERVAL)))
                     send_budget.require()
                     # Use the immutable pre-attempt entry, freshly classified
                     # after durable writes: a first attempt is not a retry.
                     payload = format_payload(entry, clock.now())
+                    stage = "post"
                     try:
                         with _post_deadline(send_budget):
                             result = send_webhook(webhook_url, payload, http=http, budget=send_budget)
                     except BudgetExpired:
+                        post_budget_expired = True
                         result = SendResult("unknown", None, None, "post_deadline_unconfirmed")
                 finally:
                     github.budget = original_budget
@@ -1597,6 +1620,7 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                 # Connecting can take longer than the channel interval. Hold
                 # from observed completion, which is after any actual write,
                 # so a faster next connection cannot collapse POST spacing.
+                stage = "receipt"
                 next_send = _later(clock.now(), MIN_SEND_INTERVAL)
                 if result.kind == "accepted":
                     final = replace(attempted, status="delivered", delivered_at=clock.now(), reason=None)
@@ -1630,6 +1654,7 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                         raise LedgerUnavailable("Unexpected delivery receipt state") from None
                 if result.kind == "accepted":
                     delivered += 1
+                stage = "channel_closeout"
                 manifest(replace(ledger.manifest, next_send_at=next_send))
                 if result.status == 429:
                     queue_pause = "channel_hold"
@@ -1643,10 +1668,16 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
         queue()
         return _summary(ledger, delivered, queue_pause or ("discovery_unavailable" if discovery_failed else
                                                          "discovery_deferred" if discovery_deferred else None),
-                        discovery_complete=discovery_complete)
+                        discovery_complete=discovery_complete,
+                        budget_stop_stage="post" if post_budget_expired else None)
     except BudgetExpired:
         return _summary(ledger, delivered, queue_pause or ("discovery_unavailable" if discovery_failed else "budget_exhausted"),
-                        discovery_complete=discovery_complete)
+                        discovery_complete=discovery_complete, budget_stop_stage=stage,
+                        safe_pending_continuation=(
+                            stage == "pre_attempt_reserve" and discovery_complete
+                            and not discovery_failed and queue_pause is None
+                            and not attempt_started and selected is not None
+                            and selected.status == "pending" and not _was_attempted(selected)))
     except LedgerUnavailable:
         return _summary(ledger, delivered, "ledger_unavailable", discovery_complete=discovery_complete)
 

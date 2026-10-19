@@ -224,8 +224,17 @@ there are at most eight slices (240 active seconds allocated), and a separate
 270-second wrapper wall limit. An earliest-job monotonic timestamp also stops
 new slices before the eight-minute job deadline, reserving 45 seconds for shutdown
 and artifacts; a full next slice plus process margin must fit. The market scan is not rerun. No second writer is
-created. Holds, new uncertainty, read/write errors and no confirmed progress stop
-continuation. Existing quarantined unknown records are retained, never replayed,
+created. Holds, new uncertainty and read/write errors stop continuation. A
+zero-delivery slice normally stops as `no_verified_progress`. Once per drain,
+complete discovery plus `budget_stop_stage=pre_attempt_reserve` and an explicit
+`safe_pending_continuation=true` may grant a new slice: the selected durable
+pending entry has no attempt evidence, and this slice has not begun any attempt
+write. This exception never applies after attempting/POST/receipt work, to
+incomplete discovery, or to a retry/channel hold. A second zero-delivery budget
+pause stops; the existing eight-slice and wall/job limits still apply.
+`budget_stops` retains the fixed stage and slice number in the final drain report,
+including when continuation succeeds. No URLs, payloads or credentials are logged.
+Existing quarantined unknown records are retained, never replayed,
 and do not prevent healthy work. `discovery_complete=false` cannot be reported
 as an empty, fully drained channel. Remaining work stays durable for a later run.
 The eight-minute whole-job cap remains unchanged; its hard cancellation can still

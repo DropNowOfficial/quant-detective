@@ -10,8 +10,10 @@ keeps its final 45 seconds for shutdown, summaries and artifact upload, even whe
 setup or scanning runs slowly. A full next slice must fit before it is started.
 The retained-ledger 25-symbol burst fixture fits this eight-slice allowance.
 
-Only confirmed deliveries justify continuation. Discovery-only progress, holds,
-uncertainty, invalid reports and process failures stop this job's drain. Existing
+Confirmed deliveries justify continuation. Once per drain, a verified budget stop
+before any attempt may also grant a fresh slice for an unattempted pending source.
+Other discovery-only progress, holds, uncertainty, invalid reports and process
+failures stop this job's drain. Existing
 quarantined unknown entries remain untouched and do not block healthy work.
 """
 from __future__ import annotations
@@ -124,6 +126,7 @@ def _drain(first_allowance, report, job_started):
         report["paused_reason"] = "no_initial_budget"
         return
     allowance = first_allowance
+    unused_pre_attempt_continuation = True
     for index in range(MAX_SLICES):
         if time.monotonic() >= deadline:
             report["paused_reason"] = "wall_limit"
@@ -153,6 +156,15 @@ def _drain(first_allowance, report, job_started):
         report["discovery_complete"] = forwarded["discovery_complete"]
         report.update({key: forwarded[key] for key in COUNTS if key != "delivered"})
         reason = forwarded["paused_reason"]
+        stage = forwarded.get("budget_stop_stage")
+        # Fixed vocabulary only: never echo arbitrary child diagnostics.
+        report["budget_stop_stage"] = stage if isinstance(stage, str) and stage in {
+            "ledger_load", "recover_attempts", "discovery", "queue_select",
+            "channel_wait", "source_validation", "pre_attempt_reserve",
+            "attempt_write", "channel_reservation", "post", "receipt", "channel_closeout",
+        } else None
+        if report["budget_stop_stage"] is not None:
+            report["budget_stops"].append({"slice": index + 1, "stage": report["budget_stop_stage"]})
         # A new uncertainty/hold/error always stops, even if pending is zero.
         if reason not in {None, "budget_exhausted", "discovery_deferred"}:
             report["paused_reason"] = reason if reason in SAFE_PAUSES else "forward_paused"
@@ -168,14 +180,23 @@ def _drain(first_allowance, report, job_started):
             report["paused_reason"] = "forward_paused"
             return
         if not forwarded["delivered"]:
-            report["paused_reason"] = "no_verified_progress"
-            return
+            if (unused_pre_attempt_continuation and reason == "budget_exhausted"
+                    and forwarded["discovery_complete"]
+                    and stage == "pre_attempt_reserve"
+                    and forwarded.get("safe_pending_continuation") is True):
+                unused_pre_attempt_continuation = False
+                report["pre_attempt_continuations"] = 1
+            else:
+                report["paused_reason"] = "no_verified_progress"
+                return
     report["paused_reason"] = "slice_limit"
 
 
 def main(argv=None):
     report = {key: None for key in COUNTS}
-    report.update(delivered=0, slices_started=0, discovery_complete=None, paused_reason="invalid_configuration")
+    report.update(delivered=0, slices_started=0, discovery_complete=None,
+                  pre_attempt_continuations=0, budget_stop_stage=None, budget_stops=[],
+                  paused_reason="invalid_configuration")
     code = 0
     try:
         parser = _SafeParser(description="Bounded sequential durable Slack notification drain")
