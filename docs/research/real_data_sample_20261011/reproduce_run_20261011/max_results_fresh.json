@@ -1,0 +1,137 @@
+{
+ "AAPL": {
+  "n_days": 71,
+  "first": "2026-07-01",
+  "last": "2026-10-09",
+  "missing_dates": [],
+  "calendar_tz": "America/New_York",
+  "as_of_now_utc": "2026-10-11T12:00:00+00:00",
+  "MAX_primary_prior_calendar_month_Sep2026": {
+   "ret": 0.03561239017170226,
+   "date": "2026-09-10",
+   "n_returns_in_month": 21
+  },
+  "same_instant_other_spellings": {
+   "UTC": 0.03561239017170226,
+   "America/New_York": 0.03561239017170226,
+   "Asia/Tokyo": 0.03561239017170226,
+   "Pacific/Auckland": 0.03561239017170226
+  },
+  "MAX_fixed_21_trading_days_asof_2026_09_30": {
+   "ret": 0.03561239017170226,
+   "window": [
+    "2026-09-01",
+    "2026-09-30"
+   ],
+   "n": 21
+  },
+  "MAX_fixed_21_trading_days_asof_2026_10_11": {
+   "ret": 0.017454088133066703,
+   "window": [
+    "2026-09-11",
+    "2026-10-09"
+   ],
+   "n": 21
+  },
+  "repo_code_equals_standalone": true,
+  "raw_close_vs_nasdaq_mismatch_count": 0,
+  "raw_close_vs_nasdaq_mismatches": [],
+  "dividends": {
+   "1786368600": {
+    "amount": 0.27,
+    "date": 1786368600
+   }
+  },
+  "splits": null
+ },
+ "JNJ": {
+  "n_days": 71,
+  "first": "2026-07-01",
+  "last": "2026-10-09",
+  "missing_dates": [],
+  "calendar_tz": "America/New_York",
+  "as_of_now_utc": "2026-10-11T12:00:00+00:00",
+  "MAX_primary_prior_calendar_month_Sep2026": {
+   "ret": 0.020086500715788436,
+   "date": "2026-09-01",
+   "n_returns_in_month": 21
+  },
+  "same_instant_other_spellings": {
+   "UTC": 0.020086500715788436,
+   "America/New_York": 0.020086500715788436,
+   "Asia/Tokyo": 0.020086500715788436,
+   "Pacific/Auckland": 0.020086500715788436
+  },
+  "MAX_fixed_21_trading_days_asof_2026_09_30": {
+   "ret": 0.020086500715788436,
+   "window": [
+    "2026-09-01",
+    "2026-09-30"
+   ],
+   "n": 21
+  },
+  "MAX_fixed_21_trading_days_asof_2026_10_11": {
+   "ret": 0.019338705718249916,
+   "window": [
+    "2026-09-11",
+    "2026-10-09"
+   ],
+   "n": 21
+  },
+  "repo_code_equals_standalone": true,
+  "raw_close_vs_nasdaq_mismatch_count": 0,
+  "raw_close_vs_nasdaq_mismatches": [],
+  "dividends": {
+   "1787664600": {
+    "amount": 1.34,
+    "date": 1787664600
+   }
+  },
+  "splits": null
+ },
+ "ADBE": {
+  "n_days": 71,
+  "first": "2026-07-01",
+  "last": "2026-10-09",
+  "missing_dates": [],
+  "calendar_tz": "America/New_York",
+  "as_of_now_utc": "2026-10-11T12:00:00+00:00",
+  "MAX_primary_prior_calendar_month_Sep2026": {
+   "ret": 0.053007218025008296,
+   "date": "2026-09-14",
+   "n_returns_in_month": 21
+  },
+  "same_instant_other_spellings": {
+   "UTC": 0.053007218025008296,
+   "America/New_York": 0.053007218025008296,
+   "Asia/Tokyo": 0.053007218025008296,
+   "Pacific/Auckland": 0.053007218025008296
+  },
+  "MAX_fixed_21_trading_days_asof_2026_09_30": {
+   "ret": 0.053007218025008296,
+   "window": [
+    "2026-09-01",
+    "2026-09-30"
+   ],
+   "n": 21
+  },
+  "MAX_fixed_21_trading_days_asof_2026_10_11": {
+   "ret": 0.053007218025008296,
+   "window": [
+    "2026-09-11",
+    "2026-10-09"
+   ],
+   "n": 21
+  },
+  "repo_code_equals_standalone": true,
+  "raw_close_vs_nasdaq_mismatch_count": 0,
+  "raw_close_vs_nasdaq_mismatches": [],
+  "dividends": null,
+  "splits": null
+ },
+ "_code_version": {
+  "git_head": "c24ee5d0bd9fd4df6604696d7e308475525afc85",
+  "factor_candidates_tree": "6ea006a98602cf0c026b562679eb95afa6798fc8",
+  "factor_or_sample_dirty": true
+ }
+}

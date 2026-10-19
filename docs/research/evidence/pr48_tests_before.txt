@@ -1,0 +1,336 @@
+# PR48 strengthened tests run against OLD factor_candidates code (unchanged from 11d1c7d)
+# command: uv run --extra research pytest -q --tb=line tests/test_factor_candidates.py -p no:cacheprovider -rf
+# date: 2026-10-11T04:53:32-07:00
+# HEAD (code under test): 11d1c7dadaa0b85df2bfdc78c03966809074887f
+# Note: most failures are TypeError/AttributeError because the old API lacks the new required fields; behavioural failures (no exception on conflict/duplicate days/naive timestamps) show as 'DID NOT RAISE'.
+FFFFFFFFFFFFFFF....FFFFF..FFFFFFFFFFFFF.FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.. [ 56%]
+..FFFFF.FFFFF.FFFFFFFFFFFFFFFFFFFFFF....FF.FFFFFFFFFF..                  [100%]
+=================================== FAILURES ===================================
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   AssertionError: period_type must be a declared field of FundamentalFact
+    assert 'period_type' in {'cogs', 'known_at', 'period_end', 'revenue', 'security', 'source', ...}
+/workspace/qd-factors/tests/test_factor_candidates.py:159: AssertionError: period_type must be a declared field of FundamentalFact
+E   AssertionError: currency must be a declared field of FundamentalFact
+    assert 'currency' in {'cogs', 'known_at', 'period_end', 'revenue', 'security', 'source', ...}
+/workspace/qd-factors/tests/test_factor_candidates.py:159: AssertionError: currency must be a declared field of FundamentalFact
+E   AssertionError: unit_scale must be a declared field of FundamentalFact
+    assert 'unit_scale' in {'cogs', 'known_at', 'period_end', 'revenue', 'security', 'source', ...}
+/workspace/qd-factors/tests/test_factor_candidates.py:159: AssertionError: unit_scale must be a declared field of FundamentalFact
+E   AssertionError: statement_ref must be a declared field of FundamentalFact
+    assert 'statement_ref' in {'cogs', 'known_at', 'period_end', 'revenue', 'security', 'source', ...}
+/workspace/qd-factors/tests/test_factor_candidates.py:159: AssertionError: statement_ref must be a declared field of FundamentalFact
+E   AssertionError: revision must be a declared field of FundamentalFact
+    assert 'revision' in {'cogs', 'known_at', 'period_end', 'revenue', 'security', 'source', ...}
+/workspace/qd-factors/tests/test_factor_candidates.py:159: AssertionError: revision must be a declared field of FundamentalFact
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   Failed: DID NOT RAISE PITError
+/workspace/qd-factors/tests/test_factor_candidates.py:173: Failed: DID NOT RAISE PITError
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:37: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: can't compare offset-naive and offset-aware datetimes
+/workspace/qd-factors/factor_candidates/gross_profitability.py:37: TypeError: can't compare offset-naive and offset-aware datetimes
+E   TypeError: '<=' not supported between instances of 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:37: TypeError: '<=' not supported between instances of 'datetime.datetime' and 'datetime.date'
+E   Failed: DID NOT RAISE PITError
+/workspace/qd-factors/tests/test_factor_candidates.py:190: Failed: DID NOT RAISE PITError
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/gross_profitability.py:42: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   AssertionError: assert 'period_type' in {'cash', 'current_assets', 'current_liabilities', 'depreciation', 'known_at', 'period_end', ...}
+/workspace/qd-factors/tests/test_factor_candidates.py:332: AssertionError: assert 'period_type' in {'cash', 'current_assets', 'current_liabilities', 'depreciation', 'known_at', 'period_end', ...}
+E   AssertionError: assert 'currency' in {'cash', 'current_assets', 'current_liabilities', 'depreciation', 'known_at', 'period_end', ...}
+/workspace/qd-factors/tests/test_factor_candidates.py:332: AssertionError: assert 'currency' in {'cash', 'current_assets', 'current_liabilities', 'depreciation', 'known_at', 'period_end', ...}
+E   AssertionError: assert 'unit_scale' in {'cash', 'current_assets', 'current_liabilities', 'depreciation', 'known_at', 'period_end', ...}
+/workspace/qd-factors/tests/test_factor_candidates.py:332: AssertionError: assert 'unit_scale' in {'cash', 'current_assets', 'current_liabilities', 'depreciation', 'known_at', 'period_end', ...}
+E   AssertionError: assert 'statement_ref' in {'cash', 'current_assets', 'current_liabilities', 'depreciation', 'known_at', 'period_end', ...}
+/workspace/qd-factors/tests/test_factor_candidates.py:332: AssertionError: assert 'statement_ref' in {'cash', 'current_assets', 'current_liabilities', 'depreciation', 'known_at', 'period_end', ...}
+E   AssertionError: assert 'revision' in {'cash', 'current_assets', 'current_liabilities', 'depreciation', 'known_at', 'period_end', ...}
+/workspace/qd-factors/tests/test_factor_candidates.py:332: AssertionError: assert 'revision' in {'cash', 'current_assets', 'current_liabilities', 'depreciation', 'known_at', 'period_end', ...}
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/accruals.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: can't compare offset-naive and offset-aware datetimes
+/workspace/qd-factors/factor_candidates/accruals.py:33: TypeError: can't compare offset-naive and offset-aware datetimes
+E   TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+/workspace/qd-factors/factor_candidates/accruals.py:51: TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'datetime.date'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: max_lottery() got an unexpected keyword argument 'variant'
+/workspace/qd-factors/tests/test_factor_candidates.py:417: TypeError: max_lottery() got an unexpected keyword argument 'variant'
+E   TypeError: max_lottery() got an unexpected keyword argument 'variant'
+/workspace/qd-factors/tests/test_factor_candidates.py:425: TypeError: max_lottery() got an unexpected keyword argument 'variant'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: max_lottery() got an unexpected keyword argument 'variant'
+/workspace/qd-factors/tests/test_factor_candidates.py:474: TypeError: max_lottery() got an unexpected keyword argument 'variant'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   AssertionError: assert 'adjustment_basis' in {'day', 'known_at', 'ret', 'security', 'source'}
+/workspace/qd-factors/tests/test_factor_candidates.py:539: AssertionError: assert 'adjustment_basis' in {'day', 'known_at', 'ret', 'security', 'source'}
+E   AssertionError: assert 'revision' in {'day', 'known_at', 'ret', 'security', 'source'}
+/workspace/qd-factors/tests/test_factor_candidates.py:539: AssertionError: assert 'revision' in {'day', 'known_at', 'ret', 'security', 'source'}
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+E   TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+/workspace/qd-factors/factor_candidates/max_lottery.py:33: TypeError: '<=' not supported between instances of 'datetime.date' and 'datetime.datetime'
+=========================== short test summary info ============================
+FAILED tests/test_factor_candidates.py::test_gp_value_is_gross_profit_over_total_assets
+FAILED tests/test_factor_candidates.py::test_gp_no_lookahead_to_the_second - ...
+FAILED tests/test_factor_candidates.py::test_gp_non_utc_known_at_compared_by_instant
+FAILED tests/test_factor_candidates.py::test_gp_late_revision_not_visible_in_earlier_computation
+FAILED tests/test_factor_candidates.py::test_gp_late_published_filing_not_visible_in_earlier_computation
+FAILED tests/test_factor_candidates.py::test_gp_same_known_at_higher_revision_wins_in_any_order
+FAILED tests/test_factor_candidates.py::test_gp_same_known_at_same_revision_conflict_raises_not_order_dependent
+FAILED tests/test_factor_candidates.py::test_gp_exact_duplicate_record_is_not_a_conflict
+FAILED tests/test_factor_candidates.py::test_gp_conflict_hidden_if_not_yet_visible
+FAILED tests/test_factor_candidates.py::test_gp_revision_number_must_not_decrease_over_time
+FAILED tests/test_factor_candidates.py::test_gp_period_type_selected_not_mixed
+FAILED tests/test_factor_candidates.py::test_gp_unit_scale_applied - TypeErro...
+FAILED tests/test_factor_candidates.py::test_gp_missing_is_not_zero - TypeErr...
+FAILED tests/test_factor_candidates.py::test_gp_zero_cogs_is_real_value_not_missing
+FAILED tests/test_factor_candidates.py::test_gp_stale_is_missing - TypeError:...
+FAILED tests/test_factor_candidates.py::test_gp_deleting_required_field_fails[period_type]
+FAILED tests/test_factor_candidates.py::test_gp_deleting_required_field_fails[currency]
+FAILED tests/test_factor_candidates.py::test_gp_deleting_required_field_fails[unit_scale]
+FAILED tests/test_factor_candidates.py::test_gp_deleting_required_field_fails[statement_ref]
+FAILED tests/test_factor_candidates.py::test_gp_deleting_required_field_fails[revision]
+FAILED tests/test_factor_candidates.py::test_gp_invalid_required_value_rejected[statement_ref-]
+FAILED tests/test_factor_candidates.py::test_gp_invalid_required_value_rejected[statement_ref-None]
+FAILED tests/test_factor_candidates.py::test_gp_invalid_required_value_rejected[currency-]
+FAILED tests/test_factor_candidates.py::test_gp_invalid_required_value_rejected[currency-usd]
+FAILED tests/test_factor_candidates.py::test_gp_invalid_required_value_rejected[currency-None]
+FAILED tests/test_factor_candidates.py::test_gp_invalid_required_value_rejected[period_type-monthly]
+FAILED tests/test_factor_candidates.py::test_gp_invalid_required_value_rejected[period_type-None]
+FAILED tests/test_factor_candidates.py::test_gp_invalid_required_value_rejected[unit_scale-0]
+FAILED tests/test_factor_candidates.py::test_gp_invalid_required_value_rejected[unit_scale--1.0]
+FAILED tests/test_factor_candidates.py::test_gp_invalid_required_value_rejected[unit_scale-None]
+FAILED tests/test_factor_candidates.py::test_gp_invalid_required_value_rejected[revision--1]
+FAILED tests/test_factor_candidates.py::test_gp_invalid_required_value_rejected[revision-None]
+FAILED tests/test_factor_candidates.py::test_gp_invalid_required_value_rejected[revision-1.5]
+FAILED tests/test_factor_candidates.py::test_gp_invalid_required_value_rejected[security-]
+FAILED tests/test_factor_candidates.py::test_gp_known_at_must_be_timezone_aware_datetime[bad0]
+FAILED tests/test_factor_candidates.py::test_gp_known_at_must_be_timezone_aware_datetime[bad1]
+FAILED tests/test_factor_candidates.py::test_gp_as_of_must_be_timezone_aware_datetime
+FAILED tests/test_factor_candidates.py::test_gp_period_end_must_be_a_date_not_datetime
+FAILED tests/test_factor_candidates.py::test_gp_shuffled_input_order_does_not_change_result
+FAILED tests/test_factor_candidates.py::test_accruals_value_matches_sloan_1996_formula
+FAILED tests/test_factor_candidates.py::test_accruals_depreciation_amortization_is_subtracted
+FAILED tests/test_factor_candidates.py::test_accruals_no_lookahead - TypeErro...
+FAILED tests/test_factor_candidates.py::test_accruals_prior_year_must_be_visible
+FAILED tests/test_factor_candidates.py::test_accruals_late_revision_of_prior_year_not_in_earlier_computation
+FAILED tests/test_factor_candidates.py::test_accruals_late_revision_of_current_year_not_in_earlier_computation
+FAILED tests/test_factor_candidates.py::test_accruals_conflict_same_known_at_same_revision_raises
+FAILED tests/test_factor_candidates.py::test_accruals_same_known_at_higher_revision_wins_any_order
+FAILED tests/test_factor_candidates.py::test_accruals_currency_mismatch_between_years_raises
+FAILED tests/test_factor_candidates.py::test_accruals_unit_scale_applied_across_years
+FAILED tests/test_factor_candidates.py::test_accruals_period_type_annual_only_by_default
+FAILED tests/test_factor_candidates.py::test_accruals_missing_component_is_not_zero[cash]
+FAILED tests/test_factor_candidates.py::test_accruals_missing_component_is_not_zero[short_term_debt]
+FAILED tests/test_factor_candidates.py::test_accruals_missing_component_is_not_zero[tax_payable]
+FAILED tests/test_factor_candidates.py::test_accruals_missing_component_is_not_zero[current_assets]
+FAILED tests/test_factor_candidates.py::test_accruals_missing_component_is_not_zero[current_liabilities]
+FAILED tests/test_factor_candidates.py::test_accruals_missing_component_is_not_zero[depreciation_amortization]
+FAILED tests/test_factor_candidates.py::test_accruals_missing_component_is_not_zero[total_assets]
+FAILED tests/test_factor_candidates.py::test_accruals_missing_prior_year_component_is_not_zero[cash]
+FAILED tests/test_factor_candidates.py::test_accruals_missing_prior_year_component_is_not_zero[short_term_debt]
+FAILED tests/test_factor_candidates.py::test_accruals_missing_prior_year_component_is_not_zero[tax_payable]
+FAILED tests/test_factor_candidates.py::test_accruals_missing_prior_year_component_is_not_zero[current_assets]
+FAILED tests/test_factor_candidates.py::test_accruals_missing_prior_year_component_is_not_zero[current_liabilities]
+FAILED tests/test_factor_candidates.py::test_accruals_missing_prior_year_component_is_not_zero[total_assets]
+FAILED tests/test_factor_candidates.py::test_accruals_deleting_required_field_fails[period_type]
+FAILED tests/test_factor_candidates.py::test_accruals_deleting_required_field_fails[currency]
+FAILED tests/test_factor_candidates.py::test_accruals_deleting_required_field_fails[unit_scale]
+FAILED tests/test_factor_candidates.py::test_accruals_deleting_required_field_fails[statement_ref]
+FAILED tests/test_factor_candidates.py::test_accruals_deleting_required_field_fails[revision]
+FAILED tests/test_factor_candidates.py::test_accruals_invalid_required_value_rejected[statement_ref-]
+FAILED tests/test_factor_candidates.py::test_accruals_invalid_required_value_rejected[currency-us]
+FAILED tests/test_factor_candidates.py::test_accruals_invalid_required_value_rejected[period_type-x]
+FAILED tests/test_factor_candidates.py::test_accruals_invalid_required_value_rejected[unit_scale-0]
+FAILED tests/test_factor_candidates.py::test_accruals_invalid_required_value_rejected[revision--1]
+FAILED tests/test_factor_candidates.py::test_accruals_known_at_must_be_timezone_aware[bad0]
+FAILED tests/test_factor_candidates.py::test_accruals_known_at_must_be_timezone_aware[bad1]
+FAILED tests/test_factor_candidates.py::test_accruals_shuffled_input_order_does_not_change_result
+FAILED tests/test_factor_candidates.py::test_max_primary_is_prior_calendar_month
+FAILED tests/test_factor_candidates.py::test_max_prior_month_excludes_current_and_earlier_months
+FAILED tests/test_factor_candidates.py::test_max_prior_month_across_year_boundary
+FAILED tests/test_factor_candidates.py::test_max_fixed_21_variant_is_separate_and_labelled
+FAILED tests/test_factor_candidates.py::test_max_unknown_variant_raises - Typ...
+FAILED tests/test_factor_candidates.py::test_max_no_lookahead_known_at_hides_late_rows
+FAILED tests/test_factor_candidates.py::test_max_late_revision_not_visible_in_earlier_computation
+FAILED tests/test_factor_candidates.py::test_max_same_day_same_known_at_conflict_raises_any_order
+FAILED tests/test_factor_candidates.py::test_max_same_known_at_higher_revision_wins_any_order
+FAILED tests/test_factor_candidates.py::test_max_duplicate_trading_days_detected
+FAILED tests/test_factor_candidates.py::test_max_duplicate_trading_days_not_silently_shrinking_window
+FAILED tests/test_factor_candidates.py::test_max_trading_days_order_does_not_matter
+FAILED tests/test_factor_candidates.py::test_max_trading_days_must_be_dates
+FAILED tests/test_factor_candidates.py::test_max_shuffled_row_order_does_not_change_result
+FAILED tests/test_factor_candidates.py::test_max_missing_not_zero_negative_returns
+FAILED tests/test_factor_candidates.py::test_max_nan_and_none_skipped - TypeE...
+FAILED tests/test_factor_candidates.py::test_max_too_few_obs_is_missing - Typ...
+FAILED tests/test_factor_candidates.py::test_max_without_prior_month_history_is_missing
+FAILED tests/test_factor_candidates.py::test_max_other_security_ignored - Typ...
+FAILED tests/test_factor_candidates.py::test_max_deleting_required_field_fails[adjustment_basis]
+FAILED tests/test_factor_candidates.py::test_max_deleting_required_field_fails[revision]
+FAILED tests/test_factor_candidates.py::test_max_invalid_required_value_rejected[source-]
+FAILED tests/test_factor_candidates.py::test_max_invalid_required_value_rejected[source-None]
+FAILED tests/test_factor_candidates.py::test_max_invalid_required_value_rejected[basis-]
+FAILED tests/test_factor_candidates.py::test_max_invalid_required_value_rejected[basis-None]
+FAILED tests/test_factor_candidates.py::test_max_invalid_required_value_rejected[rev--1]
+FAILED tests/test_factor_candidates.py::test_max_invalid_required_value_rejected[rev-None]
+FAILED tests/test_factor_candidates.py::test_max_known_at_must_be_timezone_aware[bad0]
+FAILED tests/test_factor_candidates.py::test_max_known_at_must_be_timezone_aware[bad1]
+FAILED tests/test_factor_candidates.py::test_max_as_of_must_be_timezone_aware
+FAILED tests/test_factor_candidates.py::test_max_mixed_adjustment_basis_for_same_day_raises
+107 failed, 20 passed in 0.13s
