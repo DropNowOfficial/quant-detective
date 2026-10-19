@@ -219,21 +219,41 @@ when traversal is explicitly deferred; known work still progresses safely.
 
 The workflow now runs `market_data.slack_drain`: the original prepare remainder
 funds the first forward, then fresh sequential prepare/forward pairs may continue
-inside the SAME job/concurrency group. Every pair retains the 30-second hard cap;
-there are at most eight slices (240 active seconds allocated), and a separate
+inside the SAME job/concurrency group. Pairs default to 30 seconds. A proved
+pre-attempt capacity stop may reallocate a pair to at most 60 seconds, as described
+below. There are at most eight slices and 240 total allocated active seconds, with a separate
 270-second wrapper wall limit. An earliest-job monotonic timestamp also stops
 new slices before the eight-minute job deadline, reserving 45 seconds for shutdown
 and artifacts; a full next slice plus process margin must fit. The market scan is not rerun. No second writer is
 created. Holds, new uncertainty and read/write errors stop continuation. A
 zero-delivery slice normally stops as `no_verified_progress`. Once per drain,
-complete discovery plus `budget_stop_stage=pre_attempt_reserve` and an explicit
+complete discovery OR explicit read-only `discovery_deferred=true`, plus
+`budget_stop_stage=pre_attempt_reserve` and an explicit
 `safe_pending_continuation=true` may grant a new slice: the selected durable
 pending entry has no attempt evidence, and this slice has not begun any attempt
 write. This exception never applies after attempting/POST/receipt work, to
-incomplete discovery, or to a retry/channel hold. A second zero-delivery budget
+unclassified/failed incomplete discovery, or to a retry/channel hold. A read-only
+deferral preserves the durable cursor and existing verified queue; the next
+slice revalidates both. If the sanitized admission requirement is strictly above
+30 and below 60 seconds and exceeds remaining time, that one safe exception may
+choose a 60-second allocation. Prepare retains its 30-second ceiling; forward
+receives prepare's unspent remainder plus the borrowed 30 seconds. The first
+slice debits 30 seconds including its earlier prepare; each subsequent pair
+debits its entire allocation before starting. After confirmed progress, subsequent
+pairs may retain the 60-second allocation, still debiting the same 240-second pool.
+`allocated_activity_seconds` reports this conservative allocation, not actual
+elapsed time. `activity_limit` stops before a pair would exceed the pool. This
+never grants a second zero-delivery exception. Persistent capacity requirements
+that do not fit, or sudden latency increases, can still stop progress. A second zero-delivery budget
 pause stops; the existing eight-slice and wall/job limits still apply.
 `budget_stops` retains the fixed stage and slice number in the final drain report,
-including when continuation succeeds. No URLs, payloads or credentials are logged.
+including when continuation succeeds. Each stop may include a sanitized numeric
+`diagnostic`: remaining seconds, required admission reserve where known, observed
+GitHub request peak, GitHub request count/time, and fixed-phase count/time. Counts
+include failed GitHub calls; they exclude Slack calls, sleeps and process overhead.
+The reserve is the existing conservative admission calculation, not a prediction
+of future latency. Non-finite, negative, boolean or oversized numbers and unknown
+keys/phases are omitted. No URLs, payloads or credentials are logged.
 Existing quarantined unknown records are retained, never replayed,
 and do not prevent healthy work. `discovery_complete=false` cannot be reported
 as an empty, fully drained channel. Remaining work stays durable for a later run.
@@ -261,7 +281,15 @@ Deterministic offline latency evidence, not production throughput promises:
 - At 1.2 s/request, a full read of that retained ledger cannot fit 30 seconds.
   Even for a small ledger, an estimated transaction that cannot fit remains
   pending with zero attempts; drain stops on no verified delivery progress.
-  Capacity failure is reported, not hidden by increasing the per-slice cap.
+  Capacity failure is reported; no unlimited extension or reserve reduction occurs.
+- A small queue with one 1.5-second GET peak in every slice previously stopped
+  twice with a 35-second admission requirement. Bounded reallocation confirms
+  nine safe pending events while retaining one historical unknown in the fixture.
+  When base latency is 2.5 seconds plus the repeated peak (83-second requirement),
+  both slices stop before attempting, with the complete durable ledger unchanged.
+- Repeated same-slice `store.load()` calls already reuse `verified_run`'s validated
+  snapshot and issue no extra HTTP requests. `refresh()` and write guards remain
+  authoritative reads. This change does not remove any write-before-check read.
 
 Before persisting attempting, admission reserves eight observed GitHub request
 latencies for preparation, up to five seconds for Slack POST, and twelve observed
@@ -287,8 +315,8 @@ Use the run's fixed diagnostic and durable state to choose the next action:
 | `retry_wait` with no new delivery | Inspect the persisted next-attempt/channel-hold time and wait for a due existing run |
 | `unknown` or `needs_attention` | Reconcile the specific source and delivery evidence; do not reset attempts or replay automatically |
 
-Do not automatically increase the 30-second per-slice budget, eight-slice drain
-limit, or eight-minute job timeout,
+Do not increase the reviewed 60-second extended-slice ceiling, 240-second allocation
+pool, eight-slice drain limit, or eight-minute job timeout,
 clear the ledger, discard history, weaken validation, or change storage to hide
 a scale problem. A migration, compaction design, or replay tool is a separate
 reviewed and authorized change.

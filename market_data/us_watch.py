@@ -111,6 +111,90 @@ def _chart(fetcher, symbol, *, range_value, interval, include_prepost, require_u
     return rows, meta, receipt
 
 
+def _chart_tail_evidence(wrapped):
+    """Bounded numeric-only diagnostics, never a raw response or receipt dump."""
+    if not isinstance(wrapped, dict):
+        return None
+    data, receipt = wrapped.get("data"), wrapped.get("receipt")
+    chart = data.get("chart") if isinstance(data, dict) else None
+    results = chart.get("result") if isinstance(chart, dict) else None
+    if not isinstance(results, list) or not results or not isinstance(results[0], dict):
+        return None
+    item = results[0]
+    meta = item.get("meta") if isinstance(item.get("meta"), dict) else {}
+    granularity = meta.get("dataGranularity")
+    if not isinstance(granularity, str) or granularity not in {
+            "1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}:
+        granularity = None
+    received = receipt.get("received_at_utc") if isinstance(receipt, dict) else None
+    received = utc_time(received) if isinstance(received, str) and len(received) <= 64 else None
+    times = item.get("timestamp")
+    times = times if isinstance(times, list) else []
+    indicators = item.get("indicators")
+    quotes = indicators.get("quote") if isinstance(indicators, dict) else None
+    q = quotes[0] if isinstance(quotes, list) and quotes and isinstance(quotes[0], dict) else {}
+    names = ("open", "high", "low", "close", "volume")
+    fields = [q.get(k) for k in names]
+    shape_ok = all(isinstance(v, list) and len(v) == len(times) for v in fields)
+
+    def number(value):
+        # Do not copy arbitrary strings, nested values, huge integers or nonfinite JSON.
+        if not isinstance(value, (int, float, str)) or isinstance(value, bool):
+            return None
+        if isinstance(value, str) and len(value) > 64:
+            return None
+        try:
+            result = float(value)
+            return result if math.isfinite(result) and abs(result) <= 1e100 else None
+        except (TypeError, ValueError, OverflowError):
+            return None
+
+    tail = []
+    for i in range(max(0, len(times) - 5), len(times)):
+        raw = [v[i] if isinstance(v, list) and i < len(v) else None for v in fields]
+        reason = None
+        if not shape_ok:
+            reason = "OHLCV_LENGTH_MISMATCH"
+        else:
+            try:
+                o, h, l, c, volume = [float(x) for x in raw]
+                if not all(math.isfinite(x) for x in (o, h, l, c, volume)) or volume < 0:
+                    reason = "NONFINITE_OR_NEGATIVE_VOLUME"
+                elif not l <= min(o, c) <= max(o, c) <= h:
+                    reason = "INVALID_OHLC_ORDER"
+            except (TypeError, ValueError, OverflowError):
+                reason = "NONNUMERIC_OHLCV"
+        if reason is None:
+            try:
+                int(times[i])
+            except (TypeError, ValueError, OverflowError):
+                reason = "INVALID_TIMESTAMP"
+        tail.append({"timestamp": number(times[i]), **dict(zip(names, map(number, raw))),
+                     "discard_reason": reason})
+    return {"schema": 1, "data_granularity": granularity,
+            "http_received_at_utc": received.isoformat() if received else None, "tail": tail}
+
+
+def _scan_symbol_with_evidence(symbol, fetcher, now, qqq_change=None, clock=None):
+    """Keep only the latest bounded chart tail until final scan eligibility is known."""
+    evidence = None
+
+    def capture(*args, **kwargs):
+        nonlocal evidence
+        evidence = None  # A failed later request must not borrow an older chart tail.
+        wrapped = fetcher(*args, **kwargs)
+        evidence = _chart_tail_evidence(wrapped)
+        return wrapped
+
+    try:
+        row = _scan_symbol(symbol, capture, now, qqq_change, clock)
+    except Exception as exc:
+        row = {"symbol": symbol, "status": "ERROR", "error": f"{type(exc).__name__}: {str(exc)[:240]}"}
+    if evidence is not None:
+        row["_quote_tail"] = evidence
+    return row
+
+
 def _market_proxy(fetcher, symbol, now, clock=None):
     try:
         rows, meta, receipt = _chart(fetcher, symbol, range_value="5d", interval="5m",
@@ -510,7 +594,7 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8, clock
     qqq_change = (market_context.get("QQQ") or {}).get("change_pct")
     rows = []
     with ThreadPoolExecutor(max_workers=max(1, min(workers, 12)), thread_name_prefix="qd-us-watch") as pool:
-        futures = {pool.submit(_scan_symbol, s, fetcher, now, qqq_change, clock): s for s in symbols}
+        futures = {pool.submit(_scan_symbol_with_evidence, s, fetcher, now, qqq_change, clock): s for s in symbols}
         for future in as_completed(futures):
             symbol = futures[future]
             try:
@@ -548,6 +632,11 @@ def scan_once(symbols=DEFAULT_SYMBOLS, fetcher=fetch, now=None, workers=8, clock
         row["intraday"] = refresh_intraday(row["intraday"], now)
         row.update(classify(row["daily"], row["intraday"], qqq_change=qqq_change))
         row["status"] = "OK" if row["intraday"]["quote_validity"]["eligible"] else "INVALID_DATA"
+
+    for row in rows:
+        evidence = row.pop("_quote_tail", None)
+        if row.get("status") in {"ERROR", "INVALID_DATA"} and evidence is not None:
+            row["quote_failure_evidence"] = evidence
 
     et_date = now.astimezone(ET).date().isoformat()
     alert_states = {"ENTRY_CONFIRMED", "ENTRY_ARMED", "LEADER_HOT_NO_CHASE", "LEADER_WATCH"}
