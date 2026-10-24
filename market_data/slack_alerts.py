@@ -41,6 +41,7 @@ BLOCK_TEXT_CHARS = 3000
 # Unicode escaping and comment envelopes, while bounding any untrusted response.
 MAX_RESPONSE_BYTES = 32 * 1024 * 1024
 REPO = "DropNowOfficial/quant-detective"
+REPO_ID = 1369484548
 PRODUCER_ID = 41898282
 CHANNEL_ID = "C0C7HLTGQ0N"
 API = "https://api.github.com"
@@ -548,6 +549,11 @@ class GitHubClient:
         items, seen = [], set()
         page = 1
         next_page_advertised = False
+        # GitHub advertises the stable repository-ID alias in Link headers.
+        # Only this verified repository and the exact same endpoint may alias;
+        # all requests still use the original guarded /repos/ path below.
+        allowed_paths = {path, path.replace(f"/repos/{self.config.repo}/",
+                                           f"/repositories/{REPO_ID}/", 1)}
         while True:
             with _diagnostic_context(page=page):
                 value, response = self._request("GET", path + "?" + urlencode(query | {"per_page": 100, "page": page}))
@@ -561,13 +567,25 @@ class GitHubClient:
                     seen.add(item["id"])
                     items.append(item)
                 link = _header(response.headers, "Link") or ""
-                next_links = re.findall(r'<([^>]+)>;\s*rel="next"', link)
+                link_pattern = r'<([^<>]+)>;\s*rel="([^"\s]+)"'
+                if link and not re.fullmatch(r'\s*' + link_pattern + r'(?:\s*,\s*' + link_pattern + r')*\s*', link):
+                    raise LedgerUnavailable("Malformed GitHub pagination links", reason="pagination_invalid", http_status=response.status)
+                next_links = [url for url, relation in re.findall(link_pattern, link) if relation == "next"]
                 if next_links:
                     if len(next_links) != 1:
                         raise LedgerUnavailable("Ambiguous GitHub next page", reason="pagination_invalid", http_status=response.status)
-                    target = urlsplit(next_links[0])
                     expected = {k: [str(v)] for k, v in (query | {"per_page": 100, "page": page + 1}).items()}
-                    if target.scheme != "https" or target.netloc != "api.github.com" or target.path != path or target.fragment or parse_qs(target.query) != expected or not value:
+                    try:
+                        raw_target = next_links[0]
+                        target = urlsplit(raw_target)
+                        valid_target = (not any(ord(c) <= 32 or ord(c) == 127 for c in raw_target)
+                                        and "#" not in raw_target
+                                        and target.scheme == "https" and target.netloc == "api.github.com"
+                                        and target.path in allowed_paths
+                                        and parse_qs(target.query, keep_blank_values=True, strict_parsing=True) == expected)
+                    except ValueError:
+                        valid_target = False
+                    if not valid_target or not value:
                         raise LedgerUnavailable("Invalid GitHub next page", reason="pagination_invalid", http_status=response.status)
                 elif len(value) < 100:
                     return items
@@ -1606,7 +1624,8 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
         if not _valid_webhook_url(webhook_url):
             return _summary(None, paused="invalid_configuration")
         budget.require()
-        ledger = store.load()
+        with _diagnostic_context(stage="load_ledger"):
+            ledger = store.load()
 
         def save(entry):
             store.put(entry)
@@ -1811,7 +1830,9 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                             and not discovery_failed and queue_pause is None
                             and not attempt_started and selected is not None
                             and selected.status == "pending" and not _was_attempted(selected)))
-    except LedgerUnavailable:
+    except LedgerUnavailable as error:
+        if error.stage == "load_ledger":
+            discovery_failure = vars(error)
         return _summary(ledger, delivered, "ledger_unavailable", discovery_complete=discovery_complete,
                         discovery_deferred=discovery_deferred, discovery_failure=discovery_failure)
 
@@ -1931,7 +1952,7 @@ def main(argv: list[str] | None = None) -> int:
         if os.environ.get("QD_SLACK_ENABLED") != "true":
             data["paused_reason"] = "disabled"
         elif (os.environ.get("GITHUB_REPOSITORY") != REPO
-              or os.environ.get("GITHUB_REPOSITORY_ID") != "1369484548"
+              or os.environ.get("GITHUB_REPOSITORY_ID") != str(REPO_ID)
               or os.environ.get("GITHUB_REF") != "refs/heads/main"
               or os.environ.get("GITHUB_EVENT_NAME") not in {"push", "schedule", "workflow_dispatch"}):
             data["paused_reason"] = "untrusted_context"
