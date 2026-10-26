@@ -31,6 +31,8 @@ MAX_ATTEMPTS = 3
 SHARD_RECORDS = 64
 SHARD_BYTES = 48 * 1024
 BUDGET_SECONDS = 30
+# Review outages longer than a normal weekend before any automatic replay.
+RECOVERY_REVIEW_AFTER_SECONDS = 4 * 24 * 60 * 60
 EXTENDED_SLICE_SECONDS = 60
 MIN_SEND_INTERVAL = 1
 RECORD_BYTES = 40 * 1024
@@ -1626,6 +1628,14 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
         budget.require()
         with _diagnostic_context(stage="load_ledger"):
             ledger = store.load()
+        # A restored transport must not silently drain a multi-day outage.
+        # Historical labels are presentation only, not send authorization.
+        now = clock.now()
+        if ((now - ledger.manifest.cursor).total_seconds() > RECOVERY_REVIEW_AFTER_SECONDS
+                or any(entry.status in {"pending", "retry_wait"}
+                       and (now - entry.source.created_at).total_seconds() > RECOVERY_REVIEW_AFTER_SECONDS
+                       for entry in ledger.entries.values())):
+            return _summary(ledger, paused="recovery_hold")
 
         def save(entry):
             store.put(entry)
