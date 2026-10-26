@@ -110,7 +110,10 @@ def test_cursor_lag_boundary_without_attempting_a_post(hold, expect_hold):
     prior = delivery_fixture(queued=False)
     summary, http = forward_run(prior, now=NOW + hold)
     assert (summary.paused_reason == "recovery_hold") is expect_hold
-    assert not http.server["slack_posts"]
+    if expect_hold:
+        assert not http.server["slack_posts"]
+    else:
+        assert len(http.server["slack_posts"]) == 1
 
 
 def test_drain_keeps_specific_recovery_hold_code():
