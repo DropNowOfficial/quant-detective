@@ -206,6 +206,7 @@ class Manifest:
     cursor: datetime
     shard_count: int
     next_send_at: datetime | None
+    fresh_after: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -338,6 +339,8 @@ def _envelope(document, keys):
 
 
 def _manifest(value, config):
+    if isinstance(value, dict) and "fresh_after" not in value:
+        value = value | {"fresh_after": None}
     _shape(value, Manifest)
     if type(value["version"]) is not int or value["version"] != SCHEMA_VERSION or value["repo"] != config.repo or value["channel_id"] != config.channel_id:
         raise LedgerUnavailable("Ledger version or target mismatch")
@@ -346,10 +349,13 @@ def _manifest(value, config):
         raise LedgerUnavailable("Invalid baseline IDs")
     result = Manifest(**(value | {"enabled_at": _time(value["enabled_at"]),
                                  "cursor": _time(value["cursor"]), "baseline_ids": frozenset(ids),
-                                 "next_send_at": _time(value["next_send_at"], optional=True)}))
+                                 "next_send_at": _time(value["next_send_at"], optional=True),
+                                 "fresh_after": _time(value["fresh_after"], optional=True)}))
     _integer(result.shard_count)
     if result.cursor < result.enabled_at:
         raise LedgerUnavailable("Ledger cursor predates baseline")
+    if result.fresh_after is not None and not result.enabled_at <= result.fresh_after <= result.cursor:
+        raise LedgerUnavailable("Invalid fresh-only cutoff")
     return result
 
 
@@ -736,7 +742,7 @@ class LedgerStore:
         if self._snapshot is not None:
             self._snapshot = Ledger(manifest, self._snapshot.entries)
 
-    def load(self) -> Ledger:
+    def load(self, *, repair=True) -> Ledger:
         if self._run_active and self._snapshot is not None:
             return self._snapshot
         issue, _ = self.github.get_issue(self.config.ledger_issue)
@@ -790,6 +796,8 @@ class LedgerStore:
         self._manifest_raw = issue["body"]
         self._manifest_revision = document["revision"]
         if len(shards) > manifest.shard_count:
+            if not repair:
+                raise LedgerUnavailable("Read-only load requires orphan repair")
             manifest = replace(manifest, shard_count=len(shards))
             self._write_manifest(manifest)
         result = Ledger(manifest, entries)
@@ -823,7 +831,9 @@ class LedgerStore:
         checked = _manifest(_encode(asdict(manifest)), self.config)
         old = ledger.manifest
         if (checked.enabled_at != old.enabled_at or checked.baseline_ids != old.baseline_ids
-                or checked.shard_count != old.shard_count or checked.cursor < old.cursor):
+                or checked.shard_count != old.shard_count or checked.cursor < old.cursor
+                or (old.fresh_after is not None and
+                    (checked.fresh_after is None or checked.fresh_after < old.fresh_after))):
             raise LedgerUnavailable("Cannot reset ledger identity, baseline, shards or cursor")
         if checked != old:
             self._write_manifest(checked)
@@ -1533,6 +1543,34 @@ class TimedHTTP:
             counts["request_seconds"] += elapsed
 
 
+def _fresh_after_allowed(entry: Entry, cutoff: datetime, now: datetime) -> bool:
+    scanned = _scan_time(entry.source)
+    return scanned is not None and scanned >= cutoff and 0 <= (now - scanned).total_seconds() <= 600
+
+
+def recover_fresh(store: LedgerStore, *, cutoff: datetime, now: datetime, apply=False) -> dict:
+    """Explicit, serialized recovery; preview by default, never sends to Slack."""
+    cutoff, now = _utc(cutoff), _utc(now)
+    with store.verified_run():
+        ledger = store.load(repair=False)
+        if cutoff < ledger.manifest.cursor or cutoff > now:
+            raise ValueError("Recovery cutoff must be between the cursor and now")
+        changes = []
+        for entry in ledger.entries.values():
+            if entry.status in {"pending", "retry_wait"} and not _fresh_after_allowed(entry, cutoff, now):
+                changes.append(replace(entry, status="needs_attention", next_attempt_at=None,
+                                       reason="fresh_only_recovery:" + cutoff.isoformat()))
+            elif entry.status == "attempting":
+                changes.append(replace(entry, status="unknown", reason="recovery_unconfirmed_attempt"))
+        if apply:
+            # Advance only after all retirements have been verified. Repeating
+            # after an interrupted write retains the same immutable snapshots.
+            store.put_many(changes)
+            store.update_manifest(replace(store.load().manifest, cursor=cutoff, fresh_after=cutoff))
+        return {"applied": apply, "cutoff": cutoff.isoformat(), "quarantined": len(changes),
+                "unknown_preserved": sum(e.status == "unknown" for e in ledger.entries.values())}
+
+
 def _fresh(entry: Entry, now: datetime, *, attempted=False) -> bool:
     scanned = _scan_time(entry.source)
     at = now.astimezone(ET)
@@ -1632,9 +1670,9 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
         # Historical labels are presentation only, not send authorization.
         now = clock.now()
         if ((now - ledger.manifest.cursor).total_seconds() > RECOVERY_REVIEW_AFTER_SECONDS
-                or any(entry.status in {"pending", "retry_wait"}
+                or (ledger.manifest.fresh_after is None and any(entry.status in {"pending", "retry_wait"}
                        and (now - entry.source.created_at).total_seconds() > RECOVERY_REVIEW_AFTER_SECONDS
-                       for entry in ledger.entries.values())):
+                       for entry in ledger.entries.values()))):
             return _summary(ledger, paused="recovery_hold")
 
         def save(entry):
@@ -1714,6 +1752,10 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                     clock.sleep(delay)
                 stage = mark("source_validation")
                 considered.add(entry.source.comment_id)
+                cutoff = ledger.manifest.fresh_after
+                if cutoff is not None and not _fresh_after_allowed(entry, cutoff, clock.now()):
+                    save(replace(entry, status="needs_attention", reason="fresh_only_not_current"))
+                    continue
                 if entry.attempts >= MAX_ATTEMPTS:
                     save(replace(entry, status="needs_attention", reason="attempts_exhausted"))
                     continue
@@ -1763,6 +1805,9 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                     send_budget.require()
                     # Use the immutable pre-attempt entry, freshly classified
                     # after durable writes: a first attempt is not a retry.
+                    if cutoff is not None and not _fresh_after_allowed(entry, cutoff, clock.now()):
+                        save(replace(attempted, status="needs_attention", reason="fresh_only_expired_before_post"))
+                        continue
                     payload = format_payload(entry, clock.now())
                     stage = mark("post")
                     try:
