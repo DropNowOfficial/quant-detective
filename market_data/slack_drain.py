@@ -44,6 +44,7 @@ COUNTS = ("delivered", "pending", "retry_wait", "unknown", "needs_attention",
 SAFE_PAUSES = frozenset({
     "budget_exhausted", "channel_hold", "delivery_uncertain", "ledger_unavailable",
     "discovery_unavailable", "discovery_deferred", "invalid_configuration", "disabled", "untrusted_context",
+    "recovery_hold",
     "internal_error",
 })
 
