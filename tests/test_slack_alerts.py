@@ -2545,6 +2545,9 @@ def test_cli_linux_hard_budget_interrupts_blocking_http(monkeypatch, tmp_path, c
 def test_cli_hard_budget_in_send_window_recovers_unknown_without_replay(monkeypatch, tmp_path, capsys):
     import time
     cli_env(monkeypatch, tmp_path)
+    # This older transport-deadline test uses an intentionally stale fixture;
+    # isolate POST uncertainty from the separately tested recovery gate.
+    monkeypatch.setattr(sa, "RECOVERY_REVIEW_AFTER_SECONDS", float("inf"))
     prior = delivery_fixture()
     class BlockSlack(DeliveryHTTP):
         def request(self, method, url, **kwargs):

@@ -31,6 +31,8 @@ MAX_ATTEMPTS = 3
 SHARD_RECORDS = 64
 SHARD_BYTES = 48 * 1024
 BUDGET_SECONDS = 30
+# Review outages longer than a normal weekend before any automatic replay.
+RECOVERY_REVIEW_AFTER_SECONDS = 4 * 24 * 60 * 60
 EXTENDED_SLICE_SECONDS = 60
 MIN_SEND_INTERVAL = 1
 RECORD_BYTES = 40 * 1024
@@ -41,6 +43,7 @@ BLOCK_TEXT_CHARS = 3000
 # Unicode escaping and comment envelopes, while bounding any untrusted response.
 MAX_RESPONSE_BYTES = 32 * 1024 * 1024
 REPO = "DropNowOfficial/quant-detective"
+REPO_ID = 1369484548
 PRODUCER_ID = 41898282
 CHANNEL_ID = "C0C7HLTGQ0N"
 API = "https://api.github.com"
@@ -203,6 +206,7 @@ class Manifest:
     cursor: datetime
     shard_count: int
     next_send_at: datetime | None
+    fresh_after: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -335,6 +339,8 @@ def _envelope(document, keys):
 
 
 def _manifest(value, config):
+    if isinstance(value, dict) and "fresh_after" not in value:
+        value = value | {"fresh_after": None}
     _shape(value, Manifest)
     if type(value["version"]) is not int or value["version"] != SCHEMA_VERSION or value["repo"] != config.repo or value["channel_id"] != config.channel_id:
         raise LedgerUnavailable("Ledger version or target mismatch")
@@ -343,10 +349,13 @@ def _manifest(value, config):
         raise LedgerUnavailable("Invalid baseline IDs")
     result = Manifest(**(value | {"enabled_at": _time(value["enabled_at"]),
                                  "cursor": _time(value["cursor"]), "baseline_ids": frozenset(ids),
-                                 "next_send_at": _time(value["next_send_at"], optional=True)}))
+                                 "next_send_at": _time(value["next_send_at"], optional=True),
+                                 "fresh_after": _time(value["fresh_after"], optional=True)}))
     _integer(result.shard_count)
     if result.cursor < result.enabled_at:
         raise LedgerUnavailable("Ledger cursor predates baseline")
+    if result.fresh_after is not None and not result.enabled_at <= result.fresh_after <= result.cursor:
+        raise LedgerUnavailable("Invalid fresh-only cutoff")
     return result
 
 
@@ -548,6 +557,11 @@ class GitHubClient:
         items, seen = [], set()
         page = 1
         next_page_advertised = False
+        # GitHub advertises the stable repository-ID alias in Link headers.
+        # Only this verified repository and the exact same endpoint may alias;
+        # all requests still use the original guarded /repos/ path below.
+        allowed_paths = {path, path.replace(f"/repos/{self.config.repo}/",
+                                           f"/repositories/{REPO_ID}/", 1)}
         while True:
             with _diagnostic_context(page=page):
                 value, response = self._request("GET", path + "?" + urlencode(query | {"per_page": 100, "page": page}))
@@ -561,13 +575,25 @@ class GitHubClient:
                     seen.add(item["id"])
                     items.append(item)
                 link = _header(response.headers, "Link") or ""
-                next_links = re.findall(r'<([^>]+)>;\s*rel="next"', link)
+                link_pattern = r'<([^<>]+)>;\s*rel="([^"\s]+)"'
+                if link and not re.fullmatch(r'\s*' + link_pattern + r'(?:\s*,\s*' + link_pattern + r')*\s*', link):
+                    raise LedgerUnavailable("Malformed GitHub pagination links", reason="pagination_invalid", http_status=response.status)
+                next_links = [url for url, relation in re.findall(link_pattern, link) if relation == "next"]
                 if next_links:
                     if len(next_links) != 1:
                         raise LedgerUnavailable("Ambiguous GitHub next page", reason="pagination_invalid", http_status=response.status)
-                    target = urlsplit(next_links[0])
                     expected = {k: [str(v)] for k, v in (query | {"per_page": 100, "page": page + 1}).items()}
-                    if target.scheme != "https" or target.netloc != "api.github.com" or target.path != path or target.fragment or parse_qs(target.query) != expected or not value:
+                    try:
+                        raw_target = next_links[0]
+                        target = urlsplit(raw_target)
+                        valid_target = (not any(ord(c) <= 32 or ord(c) == 127 for c in raw_target)
+                                        and "#" not in raw_target
+                                        and target.scheme == "https" and target.netloc == "api.github.com"
+                                        and target.path in allowed_paths
+                                        and parse_qs(target.query, keep_blank_values=True, strict_parsing=True) == expected)
+                    except ValueError:
+                        valid_target = False
+                    if not valid_target or not value:
                         raise LedgerUnavailable("Invalid GitHub next page", reason="pagination_invalid", http_status=response.status)
                 elif len(value) < 100:
                     return items
@@ -716,7 +742,7 @@ class LedgerStore:
         if self._snapshot is not None:
             self._snapshot = Ledger(manifest, self._snapshot.entries)
 
-    def load(self) -> Ledger:
+    def load(self, *, repair=True) -> Ledger:
         if self._run_active and self._snapshot is not None:
             return self._snapshot
         issue, _ = self.github.get_issue(self.config.ledger_issue)
@@ -770,6 +796,8 @@ class LedgerStore:
         self._manifest_raw = issue["body"]
         self._manifest_revision = document["revision"]
         if len(shards) > manifest.shard_count:
+            if not repair:
+                raise LedgerUnavailable("Read-only load requires orphan repair")
             manifest = replace(manifest, shard_count=len(shards))
             self._write_manifest(manifest)
         result = Ledger(manifest, entries)
@@ -803,7 +831,9 @@ class LedgerStore:
         checked = _manifest(_encode(asdict(manifest)), self.config)
         old = ledger.manifest
         if (checked.enabled_at != old.enabled_at or checked.baseline_ids != old.baseline_ids
-                or checked.shard_count != old.shard_count or checked.cursor < old.cursor):
+                or checked.shard_count != old.shard_count or checked.cursor < old.cursor
+                or (old.fresh_after is not None and
+                    (checked.fresh_after is None or checked.fresh_after < old.fresh_after))):
             raise LedgerUnavailable("Cannot reset ledger identity, baseline, shards or cursor")
         if checked != old:
             self._write_manifest(checked)
@@ -1513,6 +1543,34 @@ class TimedHTTP:
             counts["request_seconds"] += elapsed
 
 
+def _fresh_after_allowed(entry: Entry, cutoff: datetime, now: datetime) -> bool:
+    scanned = _scan_time(entry.source)
+    return scanned is not None and scanned >= cutoff and 0 <= (now - scanned).total_seconds() <= 600
+
+
+def recover_fresh(store: LedgerStore, *, cutoff: datetime, now: datetime, apply=False) -> dict:
+    """Explicit, serialized recovery; preview by default, never sends to Slack."""
+    cutoff, now = _utc(cutoff), _utc(now)
+    with store.verified_run():
+        ledger = store.load(repair=False)
+        if cutoff < ledger.manifest.cursor or cutoff > now:
+            raise ValueError("Recovery cutoff must be between the cursor and now")
+        changes = []
+        for entry in ledger.entries.values():
+            if entry.status in {"pending", "retry_wait"} and not _fresh_after_allowed(entry, cutoff, now):
+                changes.append(replace(entry, status="needs_attention", next_attempt_at=None,
+                                       reason="fresh_only_recovery:" + cutoff.isoformat()))
+            elif entry.status == "attempting":
+                changes.append(replace(entry, status="unknown", reason="recovery_unconfirmed_attempt"))
+        if apply:
+            # Advance only after all retirements have been verified. Repeating
+            # after an interrupted write retains the same immutable snapshots.
+            store.put_many(changes)
+            store.update_manifest(replace(store.load().manifest, cursor=cutoff, fresh_after=cutoff))
+        return {"applied": apply, "cutoff": cutoff.isoformat(), "quarantined": len(changes),
+                "unknown_preserved": sum(e.status == "unknown" for e in ledger.entries.values())}
+
+
 def _fresh(entry: Entry, now: datetime, *, attempted=False) -> bool:
     scanned = _scan_time(entry.source)
     at = now.astimezone(ET)
@@ -1606,7 +1664,16 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
         if not _valid_webhook_url(webhook_url):
             return _summary(None, paused="invalid_configuration")
         budget.require()
-        ledger = store.load()
+        with _diagnostic_context(stage="load_ledger"):
+            ledger = store.load()
+        # A restored transport must not silently drain a multi-day outage.
+        # Historical labels are presentation only, not send authorization.
+        now = clock.now()
+        if ((now - ledger.manifest.cursor).total_seconds() > RECOVERY_REVIEW_AFTER_SECONDS
+                or (ledger.manifest.fresh_after is None and any(entry.status in {"pending", "retry_wait"}
+                       and (now - entry.source.created_at).total_seconds() > RECOVERY_REVIEW_AFTER_SECONDS
+                       for entry in ledger.entries.values()))):
+            return _summary(ledger, paused="recovery_hold")
 
         def save(entry):
             store.put(entry)
@@ -1685,6 +1752,10 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                     clock.sleep(delay)
                 stage = mark("source_validation")
                 considered.add(entry.source.comment_id)
+                cutoff = ledger.manifest.fresh_after
+                if cutoff is not None and not _fresh_after_allowed(entry, cutoff, clock.now()):
+                    save(replace(entry, status="needs_attention", reason="fresh_only_not_current"))
+                    continue
                 if entry.attempts >= MAX_ATTEMPTS:
                     save(replace(entry, status="needs_attention", reason="attempts_exhausted"))
                     continue
@@ -1734,6 +1805,9 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                     send_budget.require()
                     # Use the immutable pre-attempt entry, freshly classified
                     # after durable writes: a first attempt is not a retry.
+                    if cutoff is not None and not _fresh_after_allowed(entry, cutoff, clock.now()):
+                        save(replace(attempted, status="needs_attention", reason="fresh_only_expired_before_post"))
+                        continue
                     payload = format_payload(entry, clock.now())
                     stage = mark("post")
                     try:
@@ -1811,7 +1885,9 @@ def _forward(config: Config, *, store: LedgerStore, github: GitHubClient,
                             and not discovery_failed and queue_pause is None
                             and not attempt_started and selected is not None
                             and selected.status == "pending" and not _was_attempted(selected)))
-    except LedgerUnavailable:
+    except LedgerUnavailable as error:
+        if error.stage == "load_ledger":
+            discovery_failure = vars(error)
         return _summary(ledger, delivered, "ledger_unavailable", discovery_complete=discovery_complete,
                         discovery_deferred=discovery_deferred, discovery_failure=discovery_failure)
 
@@ -1931,7 +2007,7 @@ def main(argv: list[str] | None = None) -> int:
         if os.environ.get("QD_SLACK_ENABLED") != "true":
             data["paused_reason"] = "disabled"
         elif (os.environ.get("GITHUB_REPOSITORY") != REPO
-              or os.environ.get("GITHUB_REPOSITORY_ID") != "1369484548"
+              or os.environ.get("GITHUB_REPOSITORY_ID") != str(REPO_ID)
               or os.environ.get("GITHUB_REF") != "refs/heads/main"
               or os.environ.get("GITHUB_EVENT_NAME") not in {"push", "schedule", "workflow_dispatch"}):
             data["paused_reason"] = "untrusted_context"
