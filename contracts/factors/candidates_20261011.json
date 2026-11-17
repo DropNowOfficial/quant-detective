@@ -1,0 +1,212 @@
+{
+ "contract_version": "candidates-v0-20261011",
+ "status_note": "Candidate contracts, NOT part of locked Factor Contract v1. No alpha claims. Every entry is NOT_VALIDATED. VALIDATION_STATUS here adds the value NOT_VALIDATED to lifecycle_fields.json (that file is unchanged); promotion requires validation_kernel evidence per docs/research/NEW_FACTOR_CANDIDATES_20261011.md, and Vector cannot self-certify.",
+ "lifecycle_extension": {
+  "validation_status": [
+   "NOT_VALIDATED"
+  ]
+ },
+ "candidates": [
+  {
+   "id": "gross_profitability",
+   "rank": 1,
+   "name": "Gross Profitability (GP/A)",
+   "CONTRACT_STATUS": "READY",
+   "DATA_STATUS": "PARTIAL",
+   "VALIDATION_STATUS": "NOT_VALIDATED",
+   "formula": "GrossProfit / TotalAssets, GrossProfit = Revenue - COGS (profit over assets, not gross margin); latest statement with known_at <= as_of, same period_end, period_type annual by default",
+   "inputs": [
+    {
+     "field": "revenue",
+     "source": "SEC EDGAR XBRL (US) / exchange filings via CNINFO (CN)",
+     "known_at": "filing acceptance datetime (US) / announcement date (CN)"
+    },
+    {
+     "field": "cogs",
+     "source": "same",
+     "known_at": "same"
+    },
+    {
+     "field": "total_assets",
+     "source": "same",
+     "known_at": "same"
+    }
+   ],
+   "pit_rule": "restated values are new facts with their own known_at; max staleness 548 days else MISSING; known_at is a timezone-aware datetime; version selection by (known_at, revision) with AmbiguousVersionError on unresolved conflicts",
+   "missing_rule": "any missing input, non-positive assets, or NaN => None; never 0. Financials/banks without COGS stay MISSING",
+   "direction_hypothesis": "higher => higher expected return (hypothesis only)",
+   "implementation": "factor_candidates/gross_profitability.py",
+   "tests": "tests/test_factor_candidates.py",
+   "data_gaps": "No vendor-grade PIT fundamentals ingested in repo yet; CN COGS definition varies (营业成本)",
+   "definition_status": "Gross-profit-over-assets is the standard definition; Novy-Marx (2013) full text NOT read in this repo (UNVERIFIED against paper)",
+   "required_record_fields": [
+    "security",
+    "period_end",
+    "known_at",
+    "source",
+    "period_type",
+    "currency",
+    "unit_scale",
+    "statement_ref",
+    "revision"
+   ],
+   "scoring_usable": false,
+   "provenance": {
+    "source_required": true,
+    "known_at_required": true,
+    "known_at_timezone_aware": true,
+    "missing_is_not_zero": true
+   },
+   "scoring_blocker": "NOT_VALIDATED (no backtest); Novy-Marx (2013) full text not read; PIT fundamentals pipeline not built; 3-company sample only",
+   "variants": [
+    {
+     "name": "annual_year_end_assets",
+     "role": "primary",
+     "definition": "GrossProfit / year-end TotalAssets, annual period (Novy-Marx uses total assets; average-asset denominator is not implemented)"
+    }
+   ]
+  },
+  {
+   "id": "sloan_accruals",
+   "rank": 2,
+   "name": "Balance-sheet Accruals (Sloan)",
+   "CONTRACT_STATUS": "READY",
+   "DATA_STATUS": "PARTIAL",
+   "VALIDATION_STATUS": "NOT_VALIDATED",
+   "formula": "((dCA - dCash) - (dCL - dSTD - dTP) - DepAmort) / avg(TA_t, TA_t-1); dCash = change in (cash and cash equivalents + short_term_investments); DepAmort = depreciation and amortization expense for the period, subtracted",
+   "inputs": [
+    {
+     "field": "current_assets (current and prior fiscal year)",
+     "source": "SEC EDGAR XBRL (US) / CNINFO exchange filings (CN)",
+     "known_at": "filing acceptance datetime, timezone-aware (US) / announcement date (CN); both years must be visible at as_of"
+    },
+    {
+     "field": "cash (current and prior fiscal year)",
+     "source": "SEC EDGAR XBRL (US) / CNINFO exchange filings (CN)",
+     "known_at": "filing acceptance datetime, timezone-aware (US) / announcement date (CN); both years must be visible at as_of"
+    },
+    {
+     "field": "short_term_investments (or explicit no_short_term_investments=true) (current and prior fiscal year)",
+     "source": "SEC EDGAR XBRL (US) / CNINFO exchange filings (CN)",
+     "known_at": "filing acceptance datetime, timezone-aware (US) / announcement date (CN); both years must be visible at as_of"
+    },
+    {
+     "field": "current_liabilities (current and prior fiscal year)",
+     "source": "SEC EDGAR XBRL (US) / CNINFO exchange filings (CN)",
+     "known_at": "filing acceptance datetime, timezone-aware (US) / announcement date (CN); both years must be visible at as_of"
+    },
+    {
+     "field": "short_term_debt (current and prior fiscal year)",
+     "source": "SEC EDGAR XBRL (US) / CNINFO exchange filings (CN)",
+     "known_at": "filing acceptance datetime, timezone-aware (US) / announcement date (CN); both years must be visible at as_of"
+    },
+    {
+     "field": "tax_payable (current and prior fiscal year)",
+     "source": "SEC EDGAR XBRL (US) / CNINFO exchange filings (CN)",
+     "known_at": "filing acceptance datetime, timezone-aware (US) / announcement date (CN); both years must be visible at as_of"
+    },
+    {
+     "field": "depreciation_amortization (component tags documented per company) (current and prior fiscal year)",
+     "source": "SEC EDGAR XBRL (US) / CNINFO exchange filings (CN)",
+     "known_at": "filing acceptance datetime, timezone-aware (US) / announcement date (CN); both years must be visible at as_of"
+    },
+    {
+     "field": "total_assets (current and prior fiscal year)",
+     "source": "SEC EDGAR XBRL (US) / CNINFO exchange filings (CN)",
+     "known_at": "filing acceptance datetime, timezone-aware (US) / announcement date (CN); both years must be visible at as_of"
+    }
+   ],
+   "pit_rule": "both statements must have known_at <= as_of; prior-year period must be 300-430 days before current; known_at is a timezone-aware datetime; version selection by (known_at, revision) with AmbiguousVersionError on unresolved conflicts",
+   "missing_rule": "any component missing in either year => None; tax_payable / short_term_debt are NOT zero-filled; short_term_investments missing WITHOUT the explicit no_short_term_investments flag raises PITError (missing is not zero)",
+   "direction_hypothesis": "higher accruals => lower expected return (hypothesis only)",
+   "implementation": "factor_candidates/accruals.py",
+   "tests": "tests/test_factor_candidates.py",
+   "data_gaps": "Strict missing rule will drop many names where XBRL tags are absent; CN balance sheets lack a clean tax-payable/STD split in some vendors",
+   "definition_status": "Formula checked against Sloan (1996) full text (public mirror). Text says dCash = 'change in cash/cash equivalents (Compustat item 1)'; Compustat item 1 = cash AND short-term investments is Compustat documentation, not verified here. Compustat-item -> XBRL mapping UNVERIFIED",
+   "required_record_fields": [
+    "security",
+    "period_end",
+    "known_at",
+    "source",
+    "period_type",
+    "currency",
+    "unit_scale",
+    "statement_ref",
+    "revision"
+   ],
+   "scoring_usable": false,
+   "provenance": {
+    "source_required": true,
+    "known_at_required": true,
+    "known_at_timezone_aware": true,
+    "missing_is_not_zero": true
+   },
+   "scoring_blocker": "NOT usable for scoring stocks: Compustat item -> XBRL tag mapping (items 1, 14, 34, 71) is UNVERIFIED; D&A scope and short-term-debt/tax-payable tags vary by company; NOT_VALIDATED",
+   "variants": [
+    {
+     "name": "balance_sheet_accruals",
+     "role": "primary",
+     "definition": "Sloan (1996) balance-sheet accruals, annual, scaled by average total assets"
+    },
+    {
+     "name": "cash_flow_ni_minus_cfo",
+     "role": "alternative",
+     "definition": "(NetIncome - CFO) / average total assets; NOT Sloan's original; reported in the real-data sample only, not implemented in factor_candidates"
+    }
+   ]
+  },
+  {
+   "id": "max_lottery",
+   "rank": 3,
+   "name": "MAX lottery demand",
+   "CONTRACT_STATUS": "READY",
+   "DATA_STATUS": "PARTIAL",
+   "VALIDATION_STATUS": "NOT_VALIDATED",
+   "formula": "PRIMARY (variant prior_calendar_month): max daily return within the previous calendar month; ALTERNATIVE (variant fixed_21_trading_days, not the paper's definition): max over trailing 21 trading days. >= 15 valid days (project choice)",
+   "inputs": [
+    {
+     "field": "daily_return (split/dividend adjusted)",
+     "source": "licensed daily price vendor (US) / exchange-derived adjusted prices (CN)",
+     "known_at": "end of trading day t (as published); adjustment revisions carry their own known_at"
+    }
+   ],
+   "pit_rule": "rows with known_at > as_of ignored (instant comparison); as_of is converted to the explicit calendar_timezone (America/New_York for US) BEFORE the as_of date and prior calendar month are chosen; trading calendar supplied explicitly as dates in that timezone; known_at is a timezone-aware datetime; version selection by (known_at, revision) with AmbiguousVersionError on unresolved conflicts",
+   "missing_rule": "absent rows, None, NaN are skipped, never 0; < min_obs => None. CN: suspended days are missing, limit-up (+10%/+20%) days kept but flagged as censored in validation",
+   "direction_hypothesis": "higher MAX => lower expected return (hypothesis only)",
+   "implementation": "factor_candidates/max_lottery.py",
+   "tests": "tests/test_factor_candidates.py",
+   "data_gaps": "Needs corporate-action-adjusted PIT price history; not ingested in repo",
+   "definition_status": "Prior-calendar-month definition checked in the Aug-2008 NYU working paper; published JFE 2011 text NOT available to this workstream",
+   "required_record_fields": [
+    "security",
+    "day",
+    "known_at",
+    "source",
+    "adjustment_basis",
+    "revision",
+    "ret"
+   ],
+   "scoring_usable": false,
+   "provenance": {
+    "source_required": true,
+    "known_at_required": true,
+    "known_at_timezone_aware": true,
+    "missing_is_not_zero": true
+   },
+   "scoring_blocker": "NOT_VALIDATED (no backtest); adjusted-price vendor convention not contractually documented; JFE 2011 text not read",
+   "calendar_timezone": "America/New_York",
+   "variants": [
+    {
+     "name": "prior_calendar_month",
+     "role": "primary",
+     "definition": "max daily return over all trading days of the previous calendar month, month chosen after converting as_of to calendar_timezone"
+    },
+    {
+     "name": "fixed_21_trading_days",
+     "role": "alternative",
+     "definition": "max over the trailing 21 trading days ending at the as_of calendar date; NOT the paper's definition"
+    }
+   ]
+  }
+ ]
+}

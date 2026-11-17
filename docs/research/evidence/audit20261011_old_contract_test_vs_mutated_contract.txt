@@ -1,0 +1,3 @@
+# OLD contract test run against a contract with formula/inputs/required_record_fields/pit_rule/missing_rule deleted from every candidate
+.                                                                        [100%]
+1 passed, 126 deselected in 0.08s

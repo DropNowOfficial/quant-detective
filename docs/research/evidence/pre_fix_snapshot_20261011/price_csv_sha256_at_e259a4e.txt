@@ -1,0 +1,7 @@
+ee9eae90158572a0c802d28df858f89f38a50687b6e886bf5fd258c4572da8de  daily_AAPL.csv
+8ccd7f9f17c2e615283c066ede1e6bc725cddfabbff7d7c7a00bfc68b55ba47c  daily_ADBE.csv
+8379bfac3437c5232236732f2d0b863fc1a99fcb67cea93cd62d9a0a1c2aa65f  daily_JNJ.csv
+   72 daily_AAPL.csv
+   72 daily_ADBE.csv
+   72 daily_JNJ.csv
+  216 total

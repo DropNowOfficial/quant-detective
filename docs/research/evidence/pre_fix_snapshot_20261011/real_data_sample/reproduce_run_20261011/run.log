@@ -1,0 +1,138 @@
+start_utc=2026-10-11T12:20:35Z host_tz_now=MST
+git_head=556f20bf51c3406ab88c0bd1026526fa8b025908 factor_candidates_tree=6ea006a98602cf0c026b562679eb95afa6798fc8
+git_dirty_paths=1
+
+=== 1 fetch_all (download + SHA256 vs committed manifests) ===
+MATCH             submissions_0000320193.json
+MATCH             companyfacts_0000320193.json
+MATCH             filing_index/AAPL_000032019324000123_index.htm
+MATCH             filing_index/AAPL_000032019324000123_hdr.sgml
+MATCH             filing_index/AAPL_000032019324000123_FilingSummary.xml
+MATCH             filings/AAPL_000032019324000123_R2.htm
+MATCH             filings/AAPL_000032019324000123_R3.htm
+MATCH             filings/AAPL_000032019324000123_R4.htm
+MATCH             filings/AAPL_000032019324000123_R5.htm
+MATCH             filings/AAPL_000032019324000123_R6.htm
+MATCH             filings/AAPL_000032019324000123_R7.htm
+MATCH             filings/AAPL_000032019324000123_R8.htm
+MATCH             filings/AAPL_000032019324000123_R50.htm
+MATCH             filing_index/AAPL_000032019325000079_index.htm
+MATCH             filing_index/AAPL_000032019325000079_hdr.sgml
+MATCH             filing_index/AAPL_000032019325000079_FilingSummary.xml
+MATCH             filings/AAPL_000032019325000079_R2.htm
+MATCH             filings/AAPL_000032019325000079_R3.htm
+MATCH             filings/AAPL_000032019325000079_R4.htm
+MATCH             filings/AAPL_000032019325000079_R5.htm
+MATCH             filings/AAPL_000032019325000079_R6.htm
+MATCH             filings/AAPL_000032019325000079_R7.htm
+MATCH             filings/AAPL_000032019325000079_R8.htm
+MATCH             filings/AAPL_000032019325000079_R49.htm
+MISMATCH          prices/yahoo_AAPL.json
+MATCH             prices/nasdaq_AAPL.json
+MATCH             submissions_0000200406.json
+MATCH             companyfacts_0000200406.json
+MATCH             filing_index/JNJ_000020040625000038_index.htm
+MATCH             filing_index/JNJ_000020040625000038_hdr.sgml
+MATCH             filings/JNJ_000020040625000038_R2.htm
+MATCH             filings/JNJ_000020040625000038_R3.htm
+MATCH             filings/JNJ_000020040625000038_R4.htm
+MATCH             filings/JNJ_000020040625000038_R5.htm
+MATCH             filings/JNJ_000020040625000038_R6.htm
+MATCH             filings/JNJ_000020040625000038_R7.htm
+MATCH             filings/JNJ_000020040625000038_R8.htm
+MATCH             filings/JNJ_000020040625000038_R9.htm
+MATCH             filings/JNJ_000020040625000038_R10.htm
+MATCH             filings/JNJ_000020040625000038_R11.htm
+MATCH             filing_index/JNJ_000020040626000016_index.htm
+MATCH             filing_index/JNJ_000020040626000016_hdr.sgml
+MATCH             filings/JNJ_000020040626000016_R2.htm
+MATCH             filings/JNJ_000020040626000016_R3.htm
+MATCH             filings/JNJ_000020040626000016_R4.htm
+MATCH             filings/JNJ_000020040626000016_R5.htm
+MATCH             filings/JNJ_000020040626000016_R6.htm
+MATCH             filings/JNJ_000020040626000016_R7.htm
+MATCH             filings/JNJ_000020040626000016_R8.htm
+MATCH             filings/JNJ_000020040626000016_R9.htm
+MATCH             filings/JNJ_000020040626000016_R10.htm
+MATCH             filings/JNJ_000020040626000016_R11.htm
+MISMATCH          prices/yahoo_JNJ.json
+MATCH             prices/nasdaq_JNJ.json
+MATCH             submissions_0000796343.json
+MATCH             companyfacts_0000796343.json
+MATCH             filing_index/ADBE_000079634325000004_index.htm
+MATCH             filing_index/ADBE_000079634325000004_hdr.sgml
+MATCH             filings/ADBE_000079634325000004_R2.htm
+MATCH             filings/ADBE_000079634325000004_R3.htm
+MATCH             filings/ADBE_000079634325000004_R4.htm
+MATCH             filings/ADBE_000079634325000004_R5.htm
+MATCH             filings/ADBE_000079634325000004_R6.htm
+MATCH             filings/ADBE_000079634325000004_R7.htm
+MATCH             filings/ADBE_000079634325000004_R8.htm
+MATCH             filings/ADBE_000079634325000004_R9.htm
+MATCH             filing_index/ADBE_000079634326000003_index.htm
+MATCH             filing_index/ADBE_000079634326000003_hdr.sgml
+MATCH             filings/ADBE_000079634326000003_R2.htm
+MATCH             filings/ADBE_000079634326000003_R3.htm
+MATCH             filings/ADBE_000079634326000003_R4.htm
+MATCH             filings/ADBE_000079634326000003_R5.htm
+MATCH             filings/ADBE_000079634326000003_R6.htm
+MATCH             filings/ADBE_000079634326000003_R7.htm
+MATCH             filings/ADBE_000079634326000003_R8.htm
+MATCH             filings/ADBE_000079634326000003_R9.htm
+MISMATCH          prices/yahoo_ADBE.json
+MATCH             prices/nasdaq_ADBE.json
+SUMMARY {"MATCH": 75, "MISMATCH": 3, "NO_EXPECTED_HASH": 0, "FETCH_FAILED": 0}
+MISMATCH: some re-downloaded files differ byte-for-byte from the originals. This is expected for regenerated/live sources; run verify_inputs.py, which compares values within stated tolerances.
+
+=== 2 extract (rebuild data_points.csv from fresh raw; must equal committed file) ===
+160 rows
+Counter({('AAPL', True): 48, ('JNJ', True): 44, ('ADBE', True): 44, ('AAPL', False): 8, ('JNJ', False): 8, ('ADBE', False): 8})
+Counter({'raw_field_matches_index': 104, 'RAW_FIELD_MISMATCH_index_used': 56})
+DATA_POINTS_IDENTICAL_TO_COMMITTED
+
+=== 3 recompute GP/A + Sloan from rebuilt data points; must equal committed results.json ===
+RESULTS_IDENTICAL_TO_COMMITTED
+
+=== 4 MAX with the fixed (explicit calendar_tz) repo implementation on fresh prices ===
+  "factor_or_sample_dirty": true
+ }
+}
+
+=== 5 verify_inputs (values vs fresh downloads; tolerance fallback if hashes differ) ===
+fetch_all hash counts: {'MATCH': 75, 'MISMATCH': 3, 'NO_EXPECTED_HASH': 0, 'FETCH_FAILED': 0} | retrieved 2026-10-11T12:20:35+00:00 -> 2026-10-11T12:21:15+00:00
+  MISMATCH (byte-level) prices/yahoo_AAPL.json  -> falling back to value/tolerance comparison below
+  MISMATCH (byte-level) prices/yahoo_JNJ.json  -> falling back to value/tolerance comparison below
+  MISMATCH (byte-level) prices/yahoo_ADBE.json  -> falling back to value/tolerance comparison below
+SEC companyfacts: 160 data points compared (exact)
+SEC R pages: 160 values compared (exact)
+SEC acceptance times: 6 filings compared (index page, hdr, submissions field)
+AAPL: yahoo sha256 MISMATCH; nasdaq sha256 MATCH
+  yahoo MISMATCH -> tolerance comparison (raw close <=0.005, adj rel <= 1e-06, return abs <= 0.0001): max|raw diff|=0 max adj rel diff=0 max return diff=0 -> WITHIN TOLERANCE
+  fresh yahoo raw close vs fresh nasdaq close: 71/71 within 0.005
+JNJ: yahoo sha256 MISMATCH; nasdaq sha256 MATCH
+  yahoo MISMATCH -> tolerance comparison (raw close <=0.005, adj rel <= 1e-06, return abs <= 0.0001): max|raw diff|=0 max adj rel diff=0 max return diff=0 -> WITHIN TOLERANCE
+  fresh yahoo raw close vs fresh nasdaq close: 71/71 within 0.005
+ADBE: yahoo sha256 MISMATCH; nasdaq sha256 MATCH
+  yahoo MISMATCH -> tolerance comparison (raw close <=0.005, adj rel <= 1e-06, return abs <= 0.0001): max|raw diff|=0 max adj rel diff=0 max return diff=0 -> WITHIN TOLERANCE
+  fresh yahoo raw close vs fresh nasdaq close: 71/71 within 0.005
+MAX AAPL MAX_primary_prior_calendar_month_Sep2026: baseline 0.035612 fresh 0.035612 -> exact
+MAX AAPL MAX_fixed_21_trading_days_asof_2026_09_30: baseline 0.035612 fresh 0.035612 -> exact
+MAX AAPL MAX_fixed_21_trading_days_asof_2026_10_11: baseline 0.017454 fresh 0.017454 -> exact
+MAX JNJ MAX_primary_prior_calendar_month_Sep2026: baseline 0.020087 fresh 0.020087 -> exact
+MAX JNJ MAX_fixed_21_trading_days_asof_2026_09_30: baseline 0.020087 fresh 0.020087 -> exact
+MAX JNJ MAX_fixed_21_trading_days_asof_2026_10_11: baseline 0.019339 fresh 0.019339 -> exact
+MAX ADBE MAX_primary_prior_calendar_month_Sep2026: baseline 0.053007 fresh 0.053007 -> exact
+MAX ADBE MAX_fixed_21_trading_days_asof_2026_09_30: baseline 0.053007 fresh 0.053007 -> exact
+MAX ADBE MAX_fixed_21_trading_days_asof_2026_10_11: baseline 0.053007 fresh 0.053007 -> exact
+VERIFY_INPUTS_OK
+
+=== 6 cross-check recompute against repo factor_candidates code at this HEAD ===
+AAPL 2024-09-28 repo Sloan -0.038659 vs standalone -0.038659 | repo GP/A 0.495049 vs 0.495049
+AAPL 2025-09-27 repo Sloan -0.026589 vs standalone -0.026589 | repo GP/A 0.543371 vs 0.543371
+JNJ 2024-12-29 repo Sloan -0.041788 vs standalone -0.041788 | repo GP/A 0.340637 vs 0.340637
+JNJ 2025-12-28 repo Sloan -0.037062 vs standalone -0.037062 | repo GP/A 0.320953 vs 0.320953
+ADBE 2024-11-29 repo Sloan -0.049659 vs standalone -0.049659 | repo GP/A 0.633377 vs 0.633377
+ADBE 2025-11-28 repo Sloan -0.058266 vs standalone -0.058266 | repo GP/A 0.719352 vs 0.719352
+CROSSCHECK_OK
+
+end_utc=2026-10-11T12:21:21Z exit_code=0

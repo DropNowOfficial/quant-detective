@@ -1,0 +1,9 @@
+AAPL: 26 filings audited; raw-minus-true-UTC hours seen: [4.0, 5.0]
+JNJ: 11 filings audited; raw-minus-true-UTC hours seen: [0.0]
+ADBE: 11 filings audited; raw-minus-true-UTC hours seen: [0.0]
+AAPL 0000320193-25-000079 raw 2025-10-31T14:01:26.000Z | index Accepted 2025-10-31 06:01:26 EDT | true UTC 2025-10-31T10:01:26Z | diff h 4.0
+AAPL 0000320193-24-000123 raw 2024-11-01T14:01:36.000Z | index Accepted 2024-11-01 06:01:36 EDT | true UTC 2024-11-01T10:01:36Z | diff h 4.0
+JNJ 0000200406-26-000016 raw 2026-02-11T21:06:11.000Z | index Accepted 2026-02-11 16:06:11 EST | true UTC 2026-02-11T21:06:11Z | diff h 0.0
+JNJ 0000200406-25-000038 raw 2025-02-13T21:07:39.000Z | index Accepted 2025-02-13 16:07:39 EST | true UTC 2025-02-13T21:07:39Z | diff h 0.0
+ADBE 0000796343-26-000003 raw 2026-01-15T22:01:55.000Z | index Accepted 2026-01-15 17:01:55 EST | true UTC 2026-01-15T22:01:55Z | diff h 0.0
+ADBE 0000796343-25-000004 raw 2025-01-13T21:02:17.000Z | index Accepted 2025-01-13 16:02:17 EST | true UTC 2025-01-13T21:02:17Z | diff h 0.0

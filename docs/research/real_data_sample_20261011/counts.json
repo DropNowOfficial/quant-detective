@@ -1,0 +1,26 @@
+{
+ "rows": 160,
+ "used_inputs": 112,
+ "context_extra_rows": 48,
+ "rows_per_ticker": {
+  "AAPL": 56,
+  "ADBE": 52,
+  "JNJ": 52
+ },
+ "used_per_ticker": {
+  "AAPL": 40,
+  "ADBE": 36,
+  "JNJ": 36
+ },
+ "filings": 6,
+ "used_with_rfile_value": 112,
+ "used_rfile_matches": 112,
+ "used_rfile_mismatches": 0,
+ "context_rows_with_rfile_mismatch": 24,
+ "all_rows_rfile_matches": 136,
+ "all_rows_rfile_mismatches": 24,
+ "rows_acceptance_raw_field_mismatch": 56,
+ "rows_with_later_filed_value_difference": 0,
+ "rows_with_earlier_or_same_day_value_difference": 1,
+ "used_rows_with_later_filed_value_difference": 0
+}

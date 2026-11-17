@@ -1,0 +1,29 @@
+fetch_all hash counts: {'MATCH': 75, 'MISMATCH': 3, 'NO_EXPECTED_HASH': 0, 'FETCH_FAILED': 0} | retrieved 2026-10-11T12:42:22+00:00 -> 2026-10-11T12:42:59+00:00
+  MISMATCH (byte-level) prices/yahoo_AAPL.json  -> falling back to value/tolerance comparison below
+  MISMATCH (byte-level) prices/yahoo_JNJ.json  -> falling back to value/tolerance comparison below
+  MISMATCH (byte-level) prices/yahoo_ADBE.json  -> falling back to value/tolerance comparison below
+SEC companyfacts: 160 data points compared (exact)
+SEC R pages: 160 values compared (exact)
+SEC acceptance times: 6 filings compared (index page, hdr, submissions field)
+AAPL: yahoo json sha256 MISMATCH; nasdaq json sha256 MATCH
+  DAILY_CSV_SHA256_MISMATCH (tolerated only if strict fields match and MAX values stay within tolerance): manifest ee9eae901585 fresh ee9eae901585; strict-field differences: ['raw_close_sha256']
+  NOTE: adjusted-close drift versus the original download cannot be measured directly (original CSV not in Git); it is bounded only through the MAX comparison below.
+  fresh yahoo raw close vs fresh nasdaq close: 71/71 within 0.005
+JNJ: yahoo json sha256 MISMATCH; nasdaq json sha256 MATCH
+  fresh daily CSV byte-identical to the originally used one (manifest sha256 equal)
+  fresh yahoo raw close vs fresh nasdaq close: 71/71 within 0.005
+ADBE: yahoo json sha256 MISMATCH; nasdaq json sha256 MATCH
+  fresh daily CSV byte-identical to the originally used one (manifest sha256 equal)
+  fresh yahoo raw close vs fresh nasdaq close: 71/71 within 0.005
+MAX AAPL MAX_primary_prior_calendar_month_Sep2026: baseline 0.035612 fresh 0.035612 -> exact
+MAX AAPL MAX_fixed_21_trading_days_asof_2026_09_30: baseline 0.035612 fresh 0.035612 -> exact
+MAX AAPL MAX_fixed_21_trading_days_asof_2026_10_11: baseline 0.017454 fresh 0.017454 -> exact
+MAX JNJ MAX_primary_prior_calendar_month_Sep2026: baseline 0.020087 fresh 0.020087 -> exact
+MAX JNJ MAX_fixed_21_trading_days_asof_2026_09_30: baseline 0.020087 fresh 0.020087 -> exact
+MAX JNJ MAX_fixed_21_trading_days_asof_2026_10_11: baseline 0.019339 fresh 0.019339 -> exact
+MAX ADBE MAX_primary_prior_calendar_month_Sep2026: baseline 0.053007 fresh 0.053007 -> exact
+MAX ADBE MAX_fixed_21_trading_days_asof_2026_09_30: baseline 0.053007 fresh 0.053007 -> exact
+MAX ADBE MAX_fixed_21_trading_days_asof_2026_10_11: baseline 0.053007 fresh 0.053007 -> exact
+VERIFY_INPUTS_FAIL
+  FAIL: AAPL: fresh daily CSV differs from manifest in strict fields ['raw_close_sha256']
+exit=1

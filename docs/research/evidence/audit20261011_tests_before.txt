@@ -1,0 +1,60 @@
+
+    def test_acceptance_columns_present():
+        cols = rows()[0].keys()
+        for c in ("acceptance_utc", "acceptance_et", "acceptance_index_et_naive",
+                  "acceptance_raw_submissions_field", "acceptance_check"):
+>           assert c in cols
+E           AssertionError: assert 'acceptance_index_et_naive' in dict_keys(['ticker', 'cik', 'accession', 'form', 'filing_date', 'acceptance_utc', 'acceptance_et', 'period_end_fy', 'f...facts_fp', 'later_restatement', 'amendments_10KA_in_recent_submissions', 'rfile_value', 'rfile_page', 'rfile_matches'])
+
+tests/test_real_data_sample_20261011.py:25: AssertionError
+______ test_acceptance_utc_is_index_accepted_time_converted_from_eastern _______
+
+    def test_acceptance_utc_is_index_accepted_time_converted_from_eastern():
+        for r in rows():
+>           naive = dt.datetime.strptime(r["acceptance_index_et_naive"], "%Y-%m-%d %H:%M:%S")
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'acceptance_index_et_naive'
+
+tests/test_real_data_sample_20261011.py:30: KeyError
+____________ test_every_row_records_whether_raw_field_matches_index ____________
+
+    def test_every_row_records_whether_raw_field_matches_index():
+>       assert {r["acceptance_check"] for r in rows()} <= {"raw_field_matches_index", "RAW_FIELD_MISMATCH_index_used"}
+                ^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'acceptance_check'
+
+tests/test_real_data_sample_20261011.py:40: KeyError
+=========================== short test summary info ============================
+FAILED tests/test_factor_audit_20261011.py::test_max_user_case_same_instant_utc_vs_new_york_identical
+FAILED tests/test_factor_audit_20261011.py::test_max_same_instant_any_offset_identical[-8]
+FAILED tests/test_factor_audit_20261011.py::test_max_same_instant_any_offset_identical[-5]
+FAILED tests/test_factor_audit_20261011.py::test_max_same_instant_any_offset_identical[0]
+FAILED tests/test_factor_audit_20261011.py::test_max_same_instant_any_offset_identical[1]
+FAILED tests/test_factor_audit_20261011.py::test_max_same_instant_any_offset_identical[5.5]
+FAILED tests/test_factor_audit_20261011.py::test_max_same_instant_any_offset_identical[9]
+FAILED tests/test_factor_audit_20261011.py::test_max_same_instant_any_offset_identical[14]
+FAILED tests/test_factor_audit_20261011.py::test_max_calendar_tz_is_what_decides_not_the_input_zone
+FAILED tests/test_factor_audit_20261011.py::test_max_month_boundary_in_calendar_tz_incl_dst[utc_instant0-0.2]
+FAILED tests/test_factor_audit_20261011.py::test_max_month_boundary_in_calendar_tz_incl_dst[utc_instant1-0.9]
+FAILED tests/test_factor_audit_20261011.py::test_max_month_boundary_in_calendar_tz_incl_dst[utc_instant2-0.9]
+FAILED tests/test_factor_audit_20261011.py::test_max_month_boundary_in_calendar_tz_incl_dst[utc_instant3-0.33]
+FAILED tests/test_factor_audit_20261011.py::test_max_fixed_variant_window_end_uses_calendar_date
+FAILED tests/test_factor_audit_20261011.py::test_max_calendar_tz_is_required_explicit_parameter
+FAILED tests/test_factor_audit_20261011.py::test_max_invalid_calendar_tz_rejected[None]
+FAILED tests/test_factor_audit_20261011.py::test_max_invalid_calendar_tz_rejected[]
+FAILED tests/test_factor_audit_20261011.py::test_max_invalid_calendar_tz_rejected[Not/AZone]
+FAILED tests/test_factor_audit_20261011.py::test_max_invalid_calendar_tz_rejected[EST5EDT_x]
+FAILED tests/test_factor_audit_20261011.py::test_max_invalid_calendar_tz_rejected[5]
+FAILED tests/test_factor_audit_20261011.py::test_sloan_dcash_includes_short_term_investments
+FAILED tests/test_factor_audit_20261011.py::test_sloan_missing_short_term_investments_without_flag_raises_not_zero
+FAILED tests/test_factor_audit_20261011.py::test_sloan_prior_year_missing_short_term_investments_without_flag_raises
+FAILED tests/test_factor_audit_20261011.py::test_sloan_explicit_no_short_term_investments_flag_uses_cash_only
+FAILED tests/test_factor_audit_20261011.py::test_sloan_flag_and_value_together_is_contradiction
+FAILED tests/test_factor_audit_20261011.py::test_sloan_zero_short_term_investments_value_is_a_real_value
+FAILED tests/test_factor_audit_20261011.py::test_sloan_late_revision_of_short_term_investments_not_in_earlier_calc
+FAILED tests/test_factor_audit_20261011.py::test_sloan_input_order_does_not_matter_with_sti
+FAILED tests/test_real_data_sample_20261011.py::test_acceptance_columns_present
+FAILED tests/test_real_data_sample_20261011.py::test_acceptance_utc_is_index_accepted_time_converted_from_eastern
+FAILED tests/test_real_data_sample_20261011.py::test_every_row_records_whether_raw_field_matches_index
+ERROR tests/test_candidate_contract_schema.py
+31 failed, 1 error in 0.25s

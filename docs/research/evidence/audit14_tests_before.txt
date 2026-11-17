@@ -1,0 +1,17 @@
+>       assert p.returncode != 0, "FALSE SUCCESS: verify_inputs failed but run_all.sh exited 0\n" + p.stdout
+E       AssertionError: FALSE SUCCESS: verify_inputs failed but run_all.sh exited 0
+FAILED tests/test_run_all_exit_status_20261011.py::test_verify_fails_but_later_copy_succeeds_overall_nonzero
+FAILED tests/test_run_all_exit_status_20261011.py::test_crosscheck_fails_overall_nonzero
+FAILED tests/test_run_all_exit_status_20261011.py::test_first_step_fails_overall_nonzero_and_later_steps_still_logged
+FAILED tests/test_later_filing_flag_20261011.py::test_2023_filing_is_not_a_later_restatement_of_2025_filing
+FAILED tests/test_later_filing_flag_20261011.py::test_filing_after_original_with_different_value_is_flagged
+FAILED tests/test_later_filing_flag_20261011.py::test_later_filing_same_value_not_flagged
+FAILED tests/test_later_filing_flag_20261011.py::test_same_day_different_accession_is_unordered_not_later
+FAILED tests/test_later_filing_flag_20261011.py::test_input_order_does_not_change_result
+FAILED tests/test_later_filing_flag_20261011.py::test_committed_csv_has_new_columns_and_no_old_misleading_name
+FAILED tests/test_later_filing_flag_20261011.py::test_committed_csv_old_filing_not_flagged_later
+FAILED tests/test_later_filing_flag_20261011.py::test_reports_do_not_infer_no_restatement
+FAILED tests/test_sample_counts_20261011.py::test_counts_json_matches_derivation
+FAILED tests/test_sample_counts_20261011.py::test_docs_state_derived_counts_and_no_stale_numbers
+ERROR tests/test_no_raw_market_data_tracked_20261011.py
+13 failed, 1 passed, 1 error in 0.78s

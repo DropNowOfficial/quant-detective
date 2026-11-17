@@ -1,0 +1,5 @@
+P1 GP/A same period_end+known_at conflict: 0.2 0.5 (order-dependent if differ)
+P2 MAX same-day same-known_at conflict: 0.02 0.1
+P3 duplicate trading days (days[0] outside window?): 0.01 vs clean 0.05
+P4 date-only known_at accepted (no timezone/time): 0.2
+P5 empty security accepted: 0.2

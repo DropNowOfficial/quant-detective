@@ -1,0 +1,1746 @@
+HEAD 556f20bf51c3406ab88c0bd1026526fa8b025908
+date_utc 2026-10-11T12:24:24Z
+
+$ uv sync --frozen
+Checked 26 packages in 0.44ms
+[exit 0]
+
+$ uv run python scripts/validate_schemas.py
+OK EvidencePack time_machine/fixtures/dev_syn001/predict_pack.json
+OK EvidencePack time_machine/fixtures/dev_syn001/reveal_pack.json
+OK Forecast time_machine/fixtures/dev_syn001/locked_forecast.json
+OK Score time_machine/fixtures/dev_syn001/score.json
+OK JSON failure_museum/exhibits/001_pe_cancellation.json
+OK JSON failure_museum/exhibits/002_ashare_dividend_double_count.json
+OK JSON failure_museum/exhibits/003_residual_momentum_omit_intercept.json
+OK JSON failure_museum/exhibits/004_growth_reinvestment_roic.json
+OK JSON Schema 2020-12 contracts/factors/candidates_20261011.json
+SCHEMA_GATE_OK
+[exit 0]
+
+$ uv run python -m validation_kernel.kernel_v0
+{
+  "kernel": "VALIDATION_KERNEL_v0",
+  "purpose": "Prevent conclusions that violate data/model contracts \u2014 not stock analysis",
+  "historical_failures": [
+    {
+      "failure": "HIST_PE_cancellation",
+      "caught_automatically": true,
+      "missed": false,
+      "reason": "Algebraic degeneracy CAUGHT: non-payer req_g=10.0% equals r for PEs [20.5, 379.0] \u2014 valuation cancelled (FAST V0).",
+      "detail": {
+        "r": 0.1,
+        "rows": [
+          {
+            "pe": 20.5,
+            "dps": 0.0,
+            "p0": 100.0,
+            "req_g": 0.1
+          },
+          {
+            "pe": 379.0,
+            "dps": 0.0,
+            "p0": 100.0,
+            "req_g": 0.1
+          }
+        ]
+      }
+    },
+    {
+      "failure": "HIST_000651_dividend_double_count",
+      "caught_automatically": true,
+      "missed": false,
+      "reason": "Dividend fail: annual DPS parts span FYs {'FY2025', 'FY2024'} \u2014 double-count risk (000651-class)",
+      "detail": {
+        "parts": [
+          {
+            "kind": "interim",
+            "report_fy": "FY2025",
+            "dps": 1.0
+          },
+          {
+            "kind": "annual",
+            "report_fy": "FY2025",
+            "dps": 2.0
+          },
+          {
+            "kind": "annual",
+            "report_fy": "FY2024",
+            "dps": 2.0
+          }
+        ],
+        "sum_wrong": 5.0,
+        "sum_correct_fy25": 3.0
+      }
+    },
+    {
+      "failure": "HIST_residual_momentum_omit_intercept",
+      "caught_automatically": true,
+      "missed": false,
+      "reason": "Residual Momentum degeneracy CAUGHT: OLS estimated with intercept but OOS uses \u03b5=rx\u2212\u03b2\u2032F (omits \u03b1) \u21d2 reported residual = \u03b1+\u03b5.",
+      "detail": {}
+    },
+    {
+      "failure": "HIST_advantest_reinvestment_growth",
+      "caught_automatically": true,
+      "missed": false,
+      "reason": "Invariant fail CAUGHT: g=22.0% with RR=10.0% and g_eff/iROIC unstated (implied iROIC\u2248220% if g_eff=0). Reinvestment/growth inconsistency. | Invariant fail CAUGHT: g=93.0% with RR=10.0% and g_eff/iROIC unstated (implied iROIC\u2248930% if g_eff=0). Reinvestment/growth inconsistency.",
+      "detail": {
+        "cases": [
+          {
+            "g": 0.22,
+            "rr": 0.1
+          },
+          {
+            "g": 0.93,
+            "rr": 0.1
+          }
+        ]
+      }
+    }
+  ],
+  "pass": true,
+  "registry_required_fields": [
+    "model_id",
+    "version",
+    "inputs",
+    "units",
+    "as_of",
+    "equations",
+    "invariants",
+    "allowed_domains",
+    "missing_data_policy",
+    "failure_conditions",
+    "validation_tests",
+    "output_interpretation"
+  ]
+}
+PASS -> /workspace/qd-factors-mainonly/validation_kernel/v0_report.json
+[exit 0]
+
+$ uv run --extra research pytest -q -p no:cacheprovider
+........................................................................ [  4%]
+........................................................................ [  9%]
+........................................................................ [ 13%]
+........................................................................ [ 18%]
+........................................................................ [ 22%]
+........................................................................ [ 27%]
+........................................................................ [ 31%]
+........................................................................ [ 36%]
+........................................................................ [ 40%]
+........................................................................ [ 45%]
+........................................................................ [ 49%]
+........................................................................ [ 54%]
+........................................................................ [ 58%]
+........................................................................ [ 63%]
+........................................................................ [ 67%]
+........................................................................ [ 72%]
+........................................................................ [ 76%]
+........................................................................ [ 81%]
+........................................................................ [ 85%]
+........................................................................ [ 90%]
+........................................................................ [ 94%]
+........................................................................ [ 99%]
+...........                                                              [100%]
+1595 passed in 32.45s
+[exit 0]
+
+$ uv run --extra research --directory legacy/trade-monitor python -m unittest discover -s tests -q
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:86: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd84f0>
+  return c.execute('SELECT line,prefix FROM cursors WHERE stream=? AND rule_id=? AND version=?',(stream,rule_id,version)).fetchone()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:86: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd8a90>
+  return c.execute('SELECT line,prefix FROM cursors WHERE stream=? AND rule_id=? AND version=?',(stream,rule_id,version)).fetchone()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd93f0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd96c0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9990>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd95d0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9b70>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd84f0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd98a0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9e40>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9f30>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda2f0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda4d0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda3e0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd8a90>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda020>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda110>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9a80>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda5c0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda7a0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9c60>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdab60>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda980>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9d50>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdaf20>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdaa70>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb5b0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb790>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb970>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb6a0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda200>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb880>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb1f0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb3d0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda890>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb2e0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdac50>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb100>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb4c0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdba60>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbb50>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbf10>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98130>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbc40>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb010>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbd30>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbe20>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdad40>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda6b0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98220>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98400>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e984f0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e985e0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e987c0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e989a0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdae30>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e986d0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98310>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98040>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98a90>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98b80>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99030>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e993f0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98c70>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99300>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e994e0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98f40>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99120>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e995d0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e997b0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99b70>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99d50>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99c60>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98e50>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99990>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99a80>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e996c0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e998a0>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98d60>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99210>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:56: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a020>
+  if inserted:c.execute('INSERT INTO events VALUES(?,?,?)',(decision.event_id,b,d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda6b0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbe20>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb010>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdae30>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbd30>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbb50>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdba60>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb2e0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb3d0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda890>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb4c0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb100>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdad40>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbc40>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb1f0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb6a0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb790>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdaa70>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb970>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9d50>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda200>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb5b0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9c60>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda7a0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda020>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda3e0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda5c0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9a80>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda110>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb880>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdaf20>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbf10>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda2f0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda4d0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda980>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdab60>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9f30>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9e40>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd98a0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd84f0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9b70>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd96c0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99e40>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99f30>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd93f0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99210>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9990>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a110>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99a80>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99990>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e998a0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99b70>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e995d0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98e50>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99c60>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99d50>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98d60>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98f40>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99300>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99120>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e993f0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a020>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e994e0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98040>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98310>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98b80>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e985e0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98400>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e986d0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e989a0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e987c0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98c70>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99030>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a3e0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a5c0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd95d0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e984f0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e996c0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98a90>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98130>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a6b0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98220>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a890>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a4d0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a2f0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9aa70>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ae30>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b010>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e997b0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9af20>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ab60>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a7a0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b100>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/legacy/trade-monitor/trade_monitor/store.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b2e0>
+  c.execute('PRAGMA foreign_keys=ON'); c.execute('PRAGMA synchronous=FULL')
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9990>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd96c0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9b70>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd98a0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9e40>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda4d0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbf10>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd84f0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda5c0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda7a0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda200>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb970>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb790>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9d50>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdaa70>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdad40>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb100>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb1f0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb3d0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdba60>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb2e0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9c60>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb4c0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb5b0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbb50>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb6a0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda890>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdae30>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbd30>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbc40>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb010>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbe20>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda6b0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b3d0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b100>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ab60>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b2e0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e997b0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ad40>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a7a0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a2f0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a4d0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ae30>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98130>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e996c0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a890>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98220>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a6b0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b010>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a5c0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99030>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e984f0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e987c0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9af20>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a3e0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e985e0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98b80>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e986d0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a020>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99120>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98310>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98040>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e994e0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98c70>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:277: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e989a0>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda6b0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb010>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbe20>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbc40>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbd30>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb6a0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb5b0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9c60>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbb50>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdba60>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda890>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb1f0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb2e0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb4c0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9d50>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb790>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdad40>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd84f0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda4d0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb970>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda200>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda7a0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb3d0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9e40>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd98a0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd96c0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9990>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9aa70>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ac50>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda5c0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9b70>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb100>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e993f0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99300>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98d60>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98a90>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98c70>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98400>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98f40>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98310>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99120>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a3e0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e987c0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a020>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e986d0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98b80>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e989a0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e984f0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a5c0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e994e0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99030>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98220>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a890>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ae30>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a2f0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a4d0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e985e0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e996c0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98040>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a7a0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e997b0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a6b0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ad40>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b100>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b3d0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99b70>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99990>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdaa70>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9af20>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99d50>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e995d0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b010>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99a80>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ab60>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99210>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98e50>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b2e0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b4c0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b5b0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99e40>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b970>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9bb50>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ba60>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99c60>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b6a0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b1f0>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99f30>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9bc40>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9bd30>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9f10220>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9f10400>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbf10>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdae30>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b790>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9be20>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b880>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/dataclasses.py:1323: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9f10310>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbf10>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb100>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdae30>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9990>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdaa70>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd98a0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9b70>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda5c0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda7a0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda200>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdad40>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9d50>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb970>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb790>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda4d0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd96c0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb4c0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb1f0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9e40>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdba60>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb3d0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb2e0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9c60>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbc40>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb010>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd84f0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbe20>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb5b0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda890>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda6b0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9bf10>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbb50>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b880>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbd30>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e998a0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9bd30>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9bc40>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99c60>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9bb50>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8ba92c4f0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb6a0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ba60>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b6a0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98130>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b790>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99f30>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b970>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9be20>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b1f0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99e40>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b5b0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b4c0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99210>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99a80>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e995d0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ab60>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9af20>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98e50>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b010>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b100>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ad40>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99b70>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98040>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e985e0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a6b0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e997b0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a7a0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99990>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a2f0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a890>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a4d0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99030>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99d50>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ae30>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e989a0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98b80>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a5c0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a3e0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98310>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e986d0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a020>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e987c0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98220>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e994e0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98a90>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99300>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b3d0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99120>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e996c0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e984f0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98400>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e993f0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98f40>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9aa70>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98d60>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98c70>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9f3c040>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9f3c400>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.13/pathlib/_local.py:507: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9f3c5e0>
+  def __new__(cls, *args, **kwargs):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd8b80>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a200>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a980>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8ba92c4f0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b2e0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ac50>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98d60>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98f40>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98400>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9aa70>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e996c0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98c70>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e993f0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99300>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98a90>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a020>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98310>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a110>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b3d0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a3e0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e989a0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ae30>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a4d0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a2f0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99990>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98220>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a890>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99d50>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a5c0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e987c0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98b80>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99120>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99030>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e994e0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a7a0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e997b0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9a6b0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98040>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e985e0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99b70>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98e50>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9af20>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ab60>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99a80>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b010>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b100>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99210>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e995d0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b4c0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b5b0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99e40>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b1f0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9be20>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99f30>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b970>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e99c60>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e998a0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb6a0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda6b0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb5b0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbe20>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd84f0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb010>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b880>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9bc40>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b6a0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9bf10>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9bd30>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9bb50>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9b790>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e98130>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbb50>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9e9ba60>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbd30>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9c60>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdbc40>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb2e0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda890>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb3d0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdba60>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9e40>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb1f0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb4c0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd96c0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fda4d0>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fdb790>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/workspace/qd-factors-mainonly/.venv/lib/python3.13/site-packages/pandas/core/arrays/datetimelike.py:460: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fc8b9fd9d50>
+  converted = ints_to_pydatetime(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 84 tests in 4.423s
+
+OK
+[exit 0]
+
+$ uv run python -m time_machine.cli run-fixture
+{
+  "lock_id": "5c996a050ab0cb9ab7edb9787736b37dcd44cc91a4365f0ef521bc072f97e59c",
+  "score": {
+    "lock_id": "5c996a050ab0cb9ab7edb9787736b37dcd44cc91a4365f0ef521bc072f97e59c",
+    "domain_scores": {
+      "fundamental": {
+        "abs_error": 0.2999999999999998,
+        "point": 5.2,
+        "realized": 5.5
+      },
+      "valuation_expectation": null,
+      "event_assimilation": null,
+      "risk": null,
+      "data_model_invariant": "PASS"
+    },
+    "error_taxonomy": [],
+    "note": "synthetic fixture \u2014 not stock analysis"
+  }
+}
+TM_FIXTURE_HASH=5c996a050ab0cb9ab7edb9787736b37dcd44cc91a4365f0ef521bc072f97e59c
+[exit 0]
+VERIFY_OK

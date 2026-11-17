@@ -1,0 +1,80 @@
+# Full verify-recipe run (make not installed; Makefile verify lines run in order), 2026-10-11T04:56:21-07:00
+# code commit: 0eee886e9b11033f1233f8ba74145576a4f7eb1d
+$ uv sync --frozen
+Checked 21 packages in 0.29ms
+exit=0
+
+$ uv run python scripts/validate_schemas.py
+OK EvidencePack time_machine/fixtures/dev_syn001/predict_pack.json
+OK EvidencePack time_machine/fixtures/dev_syn001/reveal_pack.json
+OK Forecast time_machine/fixtures/dev_syn001/locked_forecast.json
+OK Score time_machine/fixtures/dev_syn001/score.json
+OK JSON failure_museum/exhibits/001_pe_cancellation.json
+OK JSON failure_museum/exhibits/002_ashare_dividend_double_count.json
+OK JSON failure_museum/exhibits/003_residual_momentum_omit_intercept.json
+OK JSON failure_museum/exhibits/004_growth_reinvestment_roic.json
+SCHEMA_GATE_OK
+exit=0
+
+$ uv run python -m validation_kernel.kernel_v0
+    "model_id",
+    "version",
+    "inputs",
+    "units",
+    "as_of",
+    "equations",
+    "invariants",
+    "allowed_domains",
+    "missing_data_policy",
+    "failure_conditions",
+    "validation_tests",
+    "output_interpretation"
+  ]
+}
+PASS -> /workspace/qd-factors/validation_kernel/v0_report.json
+exit=0
+
+$ uv run --extra research pytest -q
+........................................................................ [ 43%]
+........................................................................ [ 47%]
+........................................................................ [ 52%]
+........................................................................ [ 56%]
+........................................................................ [ 61%]
+........................................................................ [ 65%]
+........................................................................ [ 69%]
+........................................................................ [ 74%]
+........................................................................ [ 78%]
+........................................................................ [ 82%]
+........................................................................ [ 87%]
+........................................................................ [ 91%]
+........................................................................ [ 95%]
+...................................................................      [100%]
+1651 passed in 52.00s
+exit=0
+
+$ uv run --extra research --directory legacy/trade-monitor python -m unittest discover -s tests -q
+----------------------------------------------------------------------
+Ran 84 tests in 4.662s
+
+OK
+exit=0
+
+$ uv run python -m time_machine.cli run-fixture
+      "fundamental": {
+        "abs_error": 0.2999999999999998,
+        "point": 5.2,
+        "realized": 5.5
+      },
+      "valuation_expectation": null,
+      "event_assimilation": null,
+      "risk": null,
+      "data_model_invariant": "PASS"
+    },
+    "error_taxonomy": [],
+    "note": "synthetic fixture \u2014 not stock analysis"
+  }
+}
+TM_FIXTURE_HASH=434e8ba76e85a7958441c7e8dde27176c84199fcf6ac7ac5628d8f506a586d37
+exit=0
+
+VERIFY_OK (all six recipe lines exit 0 above, run in order)

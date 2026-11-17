@@ -1,0 +1,73 @@
+{
+ "git_head": "556f20bf51c3406ab88c0bd1026526fa8b025908",
+ "factor_candidates_tree": "6ea006a98602cf0c026b562679eb95afa6798fc8",
+ "all_agree_within_tol": true,
+ "rows": [
+  {
+   "ticker": "AAPL",
+   "accession": "0000320193-24-000123",
+   "as_of_utc": "2024-11-01T10:02:36+00:00",
+   "repo_sloan": -0.03865862648993886,
+   "standalone_sloan": -0.03865862648993886,
+   "repo_gpa": 0.495049043783221,
+   "standalone_gpa": 0.495049043783221,
+   "abs_diff_sloan": 0.0,
+   "abs_diff_gpa": 0.0
+  },
+  {
+   "ticker": "AAPL",
+   "accession": "0000320193-25-000079",
+   "as_of_utc": "2025-10-31T10:02:26+00:00",
+   "repo_sloan": -0.02658856895892276,
+   "standalone_sloan": -0.02658856895892276,
+   "repo_gpa": 0.5433706063617461,
+   "standalone_gpa": 0.5433706063617461,
+   "abs_diff_sloan": 0.0,
+   "abs_diff_gpa": 0.0
+  },
+  {
+   "ticker": "JNJ",
+   "accession": "0000200406-25-000038",
+   "as_of_utc": "2025-02-13T21:08:39+00:00",
+   "repo_sloan": -0.041787713353774646,
+   "standalone_sloan": -0.041787713353774646,
+   "repo_gpa": 0.34063652112113,
+   "standalone_gpa": 0.34063652112113,
+   "abs_diff_sloan": 0.0,
+   "abs_diff_gpa": 0.0
+  },
+  {
+   "ticker": "JNJ",
+   "accession": "0000200406-26-000016",
+   "as_of_utc": "2026-02-11T21:07:11+00:00",
+   "repo_sloan": -0.037061642860532436,
+   "standalone_sloan": -0.037061642860532436,
+   "repo_gpa": 0.32095276341549117,
+   "standalone_gpa": 0.32095276341549117,
+   "abs_diff_sloan": 0.0,
+   "abs_diff_gpa": 0.0
+  },
+  {
+   "ticker": "ADBE",
+   "accession": "0000796343-25-000004",
+   "as_of_utc": "2025-01-13T21:03:17+00:00",
+   "repo_sloan": -0.049659217783999066,
+   "standalone_sloan": -0.049659217783999066,
+   "repo_gpa": 0.6333774396295071,
+   "standalone_gpa": 0.6333774396295071,
+   "abs_diff_sloan": 0.0,
+   "abs_diff_gpa": 0.0
+  },
+  {
+   "ticker": "ADBE",
+   "accession": "0000796343-26-000003",
+   "as_of_utc": "2026-01-15T22:02:55+00:00",
+   "repo_sloan": -0.058266081773432,
+   "standalone_sloan": -0.058266081773432,
+   "repo_gpa": 0.7193517765120694,
+   "standalone_gpa": 0.7193517765120694,
+   "abs_diff_sloan": 0.0,
+   "abs_diff_gpa": 0.0
+  }
+ ]
+}
